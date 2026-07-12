@@ -223,6 +223,12 @@ eventual presence (with an interim dstow-side implementation if needed).
 
 ### Gaps that warrant gostow work items (design-effort inputs)
 
+*All four are now filed as gostow feature requests:
+[gostow#33](https://github.com/rocne/gostow/issues/33) (expected-set planning),
+[gostow#34](https://github.com/rocne/gostow/issues/34) (structured conflicts),
+[gostow#35](https://github.com/rocne/gostow/issues/35) (ownership helper),
+[gostow#36](https://github.com/rocne/gostow/issues/36) (ignore seams).*
+
 1. **Pure expected-set planning** (item 5) — *the most consequential gap.*
    dstow's status states, drifted marker, check/clean orphan classification,
    and adopt candidates all compute expected-vs-actual; `Simulate` yields a
