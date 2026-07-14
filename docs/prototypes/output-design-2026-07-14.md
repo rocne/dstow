@@ -194,7 +194,9 @@ stderr. This is what makes `--json` and `snippet` composition-safe.
 fixed-width aligned.** `fix:` is the §1.4 remedy made structural: every
 refusal is followed by a blue `fix:` line containing a *runnable command or
 config pointer* (blue, not green — green means success). All prefixes pad
-to `warning:`'s width so stacked commentary aligns. The structural,
+to `warning:`'s width so stacked commentary aligns. *(Padding is
+provisional by the human's own note — accepted to try, revisit at
+implementation if it looks weird in practice.)* The structural,
 machine-stable `fix:` line is also what makes a future fix-runner
 (`dstow fix` re-running the last suggestion — recorded maybe-v2 on the
 map) cheap to add later.
@@ -210,16 +212,30 @@ through terminal preferences instead of fighting a hardcoded palette.
 to the 16 slots for exactly this reason; dstow makes it the only mode its
 defaults use.)
 
-**O5 — theming ships in v1 at rung 2**: a global-only `[color]` TOML table,
-one key per palette slot, value in git's `color.*` string grammar
-(`damaged = "bold red"`). The grammar includes 0–255 and `#RRGGBB` — so a
-*user's own overrides* may exceed ANSI-16 (hand-entering Catppuccin hexes
-works in v1); the O4 promise binds dstow's defaults, never the user's
-choices. Strictly downstream of the enable/disable chain — theme config
-can never re-enable color that `--color=never`/`NO_COLOR` turned off.
-**Named shippable theme presets** (catppuccin-mocha et al. as bundled
-files — delta's themes pattern) are the recorded v2 doorway: the per-slot
-key names chosen now are exactly what a preset file would set in bulk.
+**O5 — theming ships in v1: bundled presets + per-slot overrides.**
+Two channels, layered (top wins), all strictly downstream of the
+enable/disable chain:
+
+1. `DSTOW_COLORS` — env, packed per-slot overrides in the LS_COLORS-family
+   convention (`damaged=bold red:stowed=#a6e3a1`), values in git's
+   `color.*` grammar. One export = a whole shareable theme.
+2. `[color]` TOML table — global config, one key per palette slot, same
+   grammar (`damaged = "bold red"`).
+3. `DSTOW_THEME` — env, a bundled preset name.
+4. `theme` config key — bundled preset name. **v1 ships curated presets
+   compiled into the binary** (the Catppuccin family and peers; the exact
+   list is implementation curation) — no file format exists, just named
+   palettes.
+5. The default ANSI-16 semantic palette (O4's promise).
+
+Per-slot channels (1–2) beat preset channels (3–4); env beats config
+within each. The grammar allows 0–255 and `#RRGGBB`, so overrides and
+presets may exceed ANSI-16 — the O4 promise binds dstow's *defaults*,
+never the user's choices. Theme config can never re-enable color that
+`--color=never`/`NO_COLOR` turned off. **The v2 doorway is now
+user-supplied theme files** (community themes loaded from disk — delta's
+pattern); the bundled presets and slot vocabulary are exactly what such
+files would feed.
 
 **O6 — `--color <when>` requires a value** (auto/always/never; auto
 default). No bare `--color`, no `--no-color` sugar — NO_COLOR covers the
