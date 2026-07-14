@@ -223,11 +223,14 @@ downstream of the enable/disable chain:
    `eval $(dircolors)` pattern. There is no `DSTOW_THEME`.
 2. `[color]` TOML table — global config, one key per palette slot, same
    grammar (`damaged = "bold red"`).
-3. `theme` config key — a theme *name*, resolved with filesystem
-   semantics: the user themes dir (XDG) first, then the bundled presets —
-   which are themselves TOML files embedded in the binary (`go:embed`)
-   and served by the same loader. Dropping a file in the dir creates a
-   theme; presets and extendability are one mechanism.
+3. `theme` config key — **name or path, per the operand rule**: a bare
+   string is a theme *name* (user themes dir (XDG) first, then the
+   bundled presets — themselves TOML files embedded via `go:embed`,
+   served by the same loader); a path form (`/`, `~/`, `./`) is a theme
+   *file*, Unix-resolvable, living anywhere — including inside a repo,
+   which makes repo-shipped themes free. Dropping a file in the themes
+   dir creates a named theme; presets and extendability are one
+   mechanism.
 4. The default ANSI-16 semantic palette (O4's promise).
 
 **North-star invariants (bound now so the rest stays reachable):** a
