@@ -2,13 +2,21 @@
 # PROTOTYPE — renders the output-design mockups with real ANSI colors.
 # Throwaway asset of https://github.com/rocne/dstow/issues/26
 # Honors NO_COLOR. ANSI-16 slots only — your terminal theme owns the look.
+# v2: fix: is blue (not green); severity prefixes fixed-width aligned.
 
 if [ -n "${NO_COLOR:-}" ] || [ ! -t 1 ]; then
-  B='' D='' RD='' BRD='' GN='' YL='' MG='' CY='' R=''
+  B='' D='' RD='' BRD='' GN='' YL='' MG='' CY='' BL='' R=''
 else
   B=$'\033[1m'; D=$'\033[2m'; RD=$'\033[31m'; BRD=$'\033[1;31m'
-  GN=$'\033[32m'; YL=$'\033[33m'; MG=$'\033[35m'; CY=$'\033[36m'; R=$'\033[0m'
+  GN=$'\033[32m'; YL=$'\033[33m'; MG=$'\033[35m'; CY=$'\033[36m'
+  BL=$'\033[34m'; R=$'\033[0m'
 fi
+
+# fixed-width severity prefixes (width of "warning:")
+P_NOTE="${CY}note:${R}   "
+P_WARN="${YL}warning:${R}"
+P_ERR="${BRD}error:${R}  "
+P_FIX="${BL}fix:${R}    "
 
 hr() { printf '\n%s——— %s ———%s\n\n' "$D" "$1" "$R"; }
 
@@ -29,14 +37,14 @@ printf '  ledger:    not dstow'\''s %s(no entry)%s\n' "$D" "$R"
 printf '  adoptable by:\n'
 printf '    1) %srocne/dotfiles::zsh%s   %sowns 11 neighboring paths%s\n' "$B" "$R" "$D" "$R"
 printf '    2) %swork/dots::zsh%s        %sowns 2%s\n' "$B" "$R" "$D" "$R"
-printf '%sfix:%s dstow adopt ~/.zshrc dotfiles::zsh\n' "$GN" "$R"
+printf '%s dstow adopt ~/.zshrc dotfiles::zsh\n' "$P_FIX"
 
 hr 'dstow stow tmux vim work/dots::zsh  (mixed run)'
 printf 'stow %stmux%s %slinked 5%s\n' "$B" "$R" "$GN" "$R"
 printf 'stow %svim%s %sno-op (already stowed)%s\n' "$B" "$R" "$D" "$R"
 printf 'stow %swork/dots::zsh%s %sfailed%s %soccupied%s\n' "$B" "$R" "$BRD" "$R" "$MG" "$R"
 printf '  ~/.zshrc is a real file, not dstow'\''s\n'
-printf '  %sfix:%s dstow adopt ~/.zshrc work/dots::zsh — or re-run with --adopt\n' "$GN" "$R"
+printf '  %s dstow adopt ~/.zshrc work/dots::zsh — or re-run with --adopt\n' "$P_FIX"
 printf '\n%s1 stowed%s, 1 no-op, %s1 failed%s\n' "$B" "$R" "$BRD" "$R"
 
 hr 'bare "dstow stow"  (bulk confirm, interactive)'
@@ -47,23 +55,29 @@ printf '%szsh%s matches 2 packages:\n' "$B" "$R"
 printf '  1) rocne/dotfiles::zsh\n  2) work/dots::zsh\n'
 printf 'Stow which? [1/2/q]\n'
 
-hr 'ambiguity — non-interactive error'
-printf '%serror:%s %szsh%s is ambiguous — matches rocne/dotfiles::zsh, work/dots::zsh\n' "$BRD" "$R" "$B" "$R"
-printf '%sfix:%s qualify it: dstow stow dots::zsh\n' "$GN" "$R"
+hr 'ambiguity — non-interactive error (note the aligned prefixes)'
+printf '%s %szsh%s is ambiguous — matches rocne/dotfiles::zsh, work/dots::zsh\n' "$P_ERR" "$B" "$R"
+printf '%s qualify it: dstow stow dots::zsh\n' "$P_FIX"
 
 hr 'announcements (§1.3)'
-printf '%snote:%s created target directory ~/.config/foo\n' "$CY" "$R"
-printf '%snote:%s folding is off (dstow'\''s default: predictable one-link-per-file).\n' "$CY" "$R"
-printf '      To fold like classic stow: [folding] in ~/.config/dstow/config.toml\n'
+printf '%s created target directory ~/.config/foo\n' "$P_NOTE"
+printf '%s folding is off (dstow'\''s default: predictable one-link-per-file).\n' "$P_NOTE"
+printf '         To fold like classic stow: [folding] in ~/.config/dstow/config.toml\n'
+
+hr 'mixed severities stacked (alignment showcase)'
+printf '%s created target directory ~/.config/foo\n' "$P_NOTE"
+printf '%s dependency %sfzf%s is not on PATH (hint: dnf install fzf)\n' "$P_WARN" "$B" "$R"
+printf '%s cannot remove %srocne/dotfiles%s: 3 packages still stowed\n' "$P_ERR" "$B" "$R"
+printf '%s dstow repo remove rocne/dotfiles --unstow\n' "$P_FIX"
 
 hr 'D12 knob refusal'
-printf '%serror:%s --no-folding is not a dstow flag\n' "$BRD" "$R"
-printf '%sfix:%s folding is a global setting: [folding] in ~/.config/dstow/config.toml\n' "$GN" "$R"
-printf '      %s(renamed .stowrc fold flags are honored — see docs on stow compat)%s\n' "$D" "$R"
+printf '%s --no-folding is not a dstow flag\n' "$P_ERR"
+printf '%s folding is a global setting: [folding] in ~/.config/dstow/config.toml\n' "$P_FIX"
+printf '         %s(renamed .stowrc fold flags are honored — see docs on stow compat)%s\n' "$D" "$R"
 
 hr 'repo add with percent-encoding (continue-affirmative)'
-printf '%snote:%s this path contains '\'':'\'' and will be percent-encoded in names:\n' "$CY" "$R"
-printf '      local:/data/weird%%3A%%3Adir/dots\n'
+printf '%s this path contains '\'':'\'' and will be percent-encoded in names:\n' "$P_NOTE"
+printf '         local:/data/weird%%3A%%3Adir/dots\n'
 printf 'Register it with this name? [Y/n]  %s(n cancels — rename the directory, then re-add)%s\n' "$D" "$R"
 
 hr 'dstow check'

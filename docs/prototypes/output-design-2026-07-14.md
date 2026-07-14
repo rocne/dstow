@@ -23,7 +23,9 @@ Color annotations here use `⟨color⟩text⟨/⟩` notation. All colors are the
    `dstow status --json | jq` are always clean by construction.
 2. **Severity is a word, color is a reinforcement.** Every commentary line
    starts with a greppable, screen-reader-friendly prefix — `note:`,
-   `warning:`, `error:`, `fix:` — colored, but meaningful uncolored.
+   `warning:`, `error:`, `fix:` — colored, but meaningful uncolored, and
+   **padded to a fixed width** (that of `warning:`) so stacked commentary
+   aligns like check's `broken`/`orphaned` columns.
    The printer's test contract: `strip_ansi(styled) == plain` (gostow's
    invariant, adopted).
 3. **Semantic slots, not colors, in the code.** One owned printer maps
@@ -44,7 +46,7 @@ Color annotations here use `⟨color⟩text⟨/⟩` notation. All colors are the
 | note: | cyan | calm information |
 | warning: | yellow | — |
 | error: | bold red | — |
-| fix: | green | the remedy is the good news |
+| fix: | blue | actionable hint — deliberately *not* green (green means success, and a fix line appears precisely when nothing succeeded) |
 | names/FQNs in prose | bold | scannability |
 | repo header | bold; source dimmed | — |
 
@@ -80,7 +82,7 @@ shortest-unique suffix; FQN on ties (O9).
   adoptable by:
     1) ⟨bold⟩rocne/dotfiles::zsh⟨/⟩   ⟨dim⟩owns 11 neighboring paths⟨/⟩
     2) ⟨bold⟩work/dots::zsh⟨/⟩        ⟨dim⟩owns 2⟨/⟩
-⟨green⟩fix:⟨/⟩ dstow adopt ~/.zshrc dotfiles::zsh
+⟨blue⟩fix:⟨/⟩ dstow adopt ~/.zshrc dotfiles::zsh
 ```
 
 ### `dstow stow tmux vim work/dots::zsh` (mixed run)
@@ -90,7 +92,7 @@ stow ⟨bold⟩tmux⟨/⟩ ⟨green⟩linked 5⟨/⟩
 stow ⟨bold⟩vim⟨/⟩ ⟨dim⟩no-op (already stowed)⟨/⟩
 stow ⟨bold⟩work/dots::zsh⟨/⟩ ⟨bold-red⟩failed⟨/⟩ ⟨magenta⟩occupied⟨/⟩
   ~/.zshrc is a real file, not dstow's
-  ⟨green⟩fix:⟨/⟩ dstow adopt ~/.zshrc work/dots::zsh — or re-run with --adopt
+  ⟨blue⟩fix:⟨/⟩ dstow adopt ~/.zshrc work/dots::zsh — or re-run with --adopt
 
 ⟨bold⟩1 stowed⟨/⟩, 1 no-op, ⟨bold-red⟩1 failed⟨/⟩
 ```
@@ -120,7 +122,7 @@ Stow which? [1/2/q]
 
 ```
 ⟨bold-red⟩error:⟨/⟩ ⟨bold⟩zsh⟨/⟩ is ambiguous — matches rocne/dotfiles::zsh, work/dots::zsh
-⟨green⟩fix:⟨/⟩ qualify it: dstow stow dots::zsh
+⟨blue⟩fix:⟨/⟩ qualify it: dstow stow dots::zsh
 ```
 
 ### Announcements (§1.3)
@@ -135,7 +137,7 @@ Stow which? [1/2/q]
 
 ```
 ⟨bold-red⟩error:⟨/⟩ --no-folding is not a dstow flag
-⟨green⟩fix:⟨/⟩ folding is a global setting: [folding] in ~/.config/dstow/config.toml
+⟨blue⟩fix:⟨/⟩ folding is a global setting: [folding] in ~/.config/dstow/config.toml
       (renamed .stowrc fold flags are honored — see docs on stow compat)
 ```
 
@@ -188,22 +190,36 @@ booleans over string-enums where binary; FQNs always included.
 **O1 — stdout=data / stderr=commentary, absolute.** Prompts included on
 stderr. This is what makes `--json` and `snippet` composition-safe.
 
-**O2 — severity prefixes `note:` / `warning:` / `error:` + the `fix:` line.**
-`fix:` is the §1.4 remedy made structural: every refusal is followed by a
-green `fix:` line containing a *runnable command or config pointer*.
-Greppable, screen-reader-honest, colored second.
+**O2 — severity prefixes `note:` / `warning:` / `error:` + the `fix:` line,
+fixed-width aligned.** `fix:` is the §1.4 remedy made structural: every
+refusal is followed by a blue `fix:` line containing a *runnable command or
+config pointer* (blue, not green — green means success). All prefixes pad
+to `warning:`'s width so stacked commentary aligns. The structural,
+machine-stable `fix:` line is also what makes a future fix-runner
+(`dstow fix` re-running the last suggestion — recorded maybe-v2 on the
+map) cheap to add later.
 
 **O3 — the semantic palette as tabled above** (ANSI-16 slots only).
 
-**O4 — ANSI-16 is a documented promise, not just a default** (gh
-`Accessible` pattern per the theming survey): "dstow only ever emits the
-16 base colors; your terminal theme always wins."
+**O4 — ANSI-16 is a documented promise about dstow's own palette**: dstow's
+*defaults* only ever emit the 16 base ANSI slots, so your terminal theme
+(Catppuccin included — it ships palettes for every major emulator)
+rethemes dstow automatically, and colorblind/low-vision users retheme
+through terminal preferences instead of fighting a hardcoded palette.
+(That is the "gh Accessible pattern": gh added a mode restricting output
+to the 16 slots for exactly this reason; dstow makes it the only mode its
+defaults use.)
 
 **O5 — theming ships in v1 at rung 2**: a global-only `[color]` TOML table,
 one key per palette slot, value in git's `color.*` string grammar
-(`damaged = "bold red"`). Strictly downstream of the enable/disable chain —
-theme config can never re-enable color that `--color=never`/`NO_COLOR`
-turned off.
+(`damaged = "bold red"`). The grammar includes 0–255 and `#RRGGBB` — so a
+*user's own overrides* may exceed ANSI-16 (hand-entering Catppuccin hexes
+works in v1); the O4 promise binds dstow's defaults, never the user's
+choices. Strictly downstream of the enable/disable chain — theme config
+can never re-enable color that `--color=never`/`NO_COLOR` turned off.
+**Named shippable theme presets** (catppuccin-mocha et al. as bundled
+files — delta's themes pattern) are the recorded v2 doorway: the per-slot
+key names chosen now are exactly what a preset file would set in bulk.
 
 **O6 — `--color <when>` requires a value** (auto/always/never; auto
 default). No bare `--color`, no `--no-color` sugar — NO_COLOR covers the
