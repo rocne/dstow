@@ -212,30 +212,38 @@ through terminal preferences instead of fighting a hardcoded palette.
 to the 16 slots for exactly this reason; dstow makes it the only mode its
 defaults use.)
 
-**O5 — theming ships in v1: bundled presets + per-slot overrides.**
-Two channels, layered (top wins), all strictly downstream of the
-enable/disable chain:
+**O5 — theming ships in v1: theme files + per-slot overrides, one
+mechanism (the dircolors architecture).** Layered, top wins, all strictly
+downstream of the enable/disable chain:
 
-1. `DSTOW_COLORS` — env, packed per-slot overrides in the LS_COLORS-family
-   convention (`damaged=bold red:stowed=#a6e3a1`), values in git's
-   `color.*` grammar. One export = a whole shareable theme.
+1. `DSTOW_COLORS` — the ONLY theming env var: packed per-slot overrides,
+   LS_COLORS-family convention (`damaged=bold red:stowed=#a6e3a1`), values
+   in git's `color.*` grammar. Populated by hand or by generator:
+   `export DSTOW_COLORS=$(dstow colors theme catppuccin-mocha)` — the
+   `eval $(dircolors)` pattern. There is no `DSTOW_THEME`.
 2. `[color]` TOML table — global config, one key per palette slot, same
    grammar (`damaged = "bold red"`).
-3. `DSTOW_THEME` — env, a bundled preset name.
-4. `theme` config key — bundled preset name. **v1 ships curated presets
-   compiled into the binary** (the Catppuccin family and peers; the exact
-   list is implementation curation) — no file format exists, just named
-   palettes.
-5. The default ANSI-16 semantic palette (O4's promise).
+3. `theme` config key — a theme *name*, resolved with filesystem
+   semantics: the user themes dir (XDG) first, then the bundled presets —
+   which are themselves TOML files embedded in the binary (`go:embed`)
+   and served by the same loader. Dropping a file in the dir creates a
+   theme; presets and extendability are one mechanism.
+4. The default ANSI-16 semantic palette (O4's promise).
 
-Per-slot channels (1–2) beat preset channels (3–4); env beats config
-within each. The grammar allows 0–255 and `#RRGGBB`, so overrides and
-presets may exceed ANSI-16 — the O4 promise binds dstow's *defaults*,
-never the user's choices. Theme config can never re-enable color that
-`--color=never`/`NO_COLOR` turned off. **The v2 doorway is now
-user-supplied theme files** (community themes loaded from disk — delta's
-pattern); the bundled presets and slot vocabulary are exactly what such
-files would feed.
+**North-star invariants (bound now so the rest stays reachable):** a
+theme file is exactly the bare `[color]` schema, no wrapper keys; the
+packed string, the config table, and theme files share one slot
+vocabulary (CONTEXT.md states + severities) and one value grammar —
+losslessly convertible between representations, forever. v1 command:
+`dstow colors theme <name>` (emit the packed string; required, since it
+is the only session-theming path). Recorded v2: the converter/builder
+family (`--from-file`, `file --from-env`, per-slot builder flags);
+first-class repo-shipped themes (observation: a plain package targeting
+the themes dir already ships themes with zero new mechanism — dstow
+theming itself via dstow). Grammar allows 0–255/`#RRGGBB`, so user
+choices may exceed ANSI-16 — O4 binds dstow's defaults only. Theme
+config can never re-enable color the `--color`/`NO_COLOR` chain turned
+off.
 
 **O6 — `--color <when>` requires a value** (auto/always/never; auto
 default). No bare `--color`, no `--no-color` sugar — NO_COLOR covers the
