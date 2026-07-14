@@ -59,6 +59,38 @@ A **qualified source** carries an explicit scheme (`github:owner/name`,
 source** (bare `owner/name`, bare path) is governed by the
 confirm-unless-unambiguous rule.
 
+### Coordinate
+
+The path-shaped middle of a source or fully qualified name — one or more
+`/`-separated segments between the scheme and the package. A scheme may
+interpret its coordinates (`github:` reads `owner/name`; `local:` reads a
+filesystem path) but the grammar itself does not. Reserved characters inside
+a coordinate are percent-encoded (`%3A` for `:`, `%25` for `%`) — the same
+URI lineage as the scheme; dstow always emits the encoded canonical form
+itself, so users paste rather than construct it.
+
+### Fully qualified name (FQN)
+
+`scheme:coordinate::package` — the complete, globally unambiguous name of a
+package (drop the `::package` tail for a repo's FQN). `:` separates only the
+scheme; `::` separates only the package. **Any suffix cut at a segment
+boundary that resolves uniquely is a valid name** (`zsh`, `dots::zsh`,
+`rocne/dotfiles::zsh`); a leading `::` forces package-kind (`::zsh` — "the
+package zsh, whatever repo"). A name matching more than one entity is
+ambiguous *input*, resolved by confirm-unless-unambiguous — ambiguity exists
+only in user input, never in the model.
+
+*Retired: "shadowing" and "resolved set"* (2026-07-14) — with FQNs and
+suffix resolution, no name is ever silently resolved by registration order;
+bulk operations span all packages of all registered repos.
+
+### Name expression / path operand
+
+The two operand worlds: a **path operand** starts with `/`, `~/`, `./`, or
+`../` and always refers to the *target* world (a real file or directory); a
+**name expression** is anything else and resolves against registered FQNs —
+the *registry* world. The first character decides; no command ever guesses.
+
 ### Ledger
 
 The record of every link dstow creates and removes (XDG state). Disk is always
