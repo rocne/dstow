@@ -238,8 +238,11 @@ theme file is exactly the bare `[color]` schema, no wrapper keys; the
 packed string, the config table, and theme files share one slot
 vocabulary (CONTEXT.md states + severities) and one value grammar —
 losslessly convertible between representations, forever. v1 command:
-`dstow colors theme <name>` (emit the packed string; required, since it
-is the only session-theming path). Recorded v2: the converter/builder
+`dstow colors theme <name> [--format env|toml]` — default emits the
+packed string (the session-theming path); `toml` emits the same theme as
+a theme file, e.g. to seed a custom theme from a preset (flag spelling is
+design detail; a format flag doesn't change the concept, per the `--json`
+precedent). Recorded v2: the converter/builder
 family (`--from-file`, `file --from-env`, per-slot builder flags);
 first-class repo-shipped themes (observation: a plain package targeting
 the themes dir already ships themes with zero new mechanism — dstow
