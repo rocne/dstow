@@ -93,8 +93,21 @@ the *registry* world. The first character decides; no command ever guesses.
 
 ### Ledger
 
-The record of every link dstow creates and removes (XDG state). Disk is always
-the truth; the ledger is an index, pruned wherever disk contradicts it.
+The record of every link dstow creates and removes (XDG state) — a
+**current-state index**, never a history. The word is accounting's own
+distinction, kept deliberately: the *journal* is the chronological log of
+transactions; the *ledger* is the organized current state posted from it.
+dstow keeps the ledger and no journal ([ADR 0001](docs/adr/0001-ledger-is-a-current-state-index.md)).
+Disk is always the truth; the ledger is an index, pruned wherever disk
+contradicts it.
+
+### Contradicted entry
+
+A ledger entry disk disagrees with: the recorded path is gone, holds a
+non-link, or holds a different link than dstow wrote. Never trusted over
+reality; pruned by the next *write* command whose scope covers it (reads
+report, never prune). A contradicted entry is the evidence behind the
+**damaged** package state.
 
 ### Broken / orphaned links
 
@@ -107,9 +120,9 @@ the truth; the ledger is an index, pruned wherever disk contradicts it.
 ### Check / clean / rebuild
 
 The maintenance concepts: **check** verifies ledgered links and classifies
-(broken / orphaned); **clean** executes exactly check's plan; **rebuild**
-reconstructs a lost ledger by full target walk — rare and explicit. Command
-spellings are design.
+(broken / orphaned / contradicted); **clean** executes exactly check's plan;
+**rebuild** reconstructs a lost ledger by full target walk — rare and
+explicit. Command spellings are design.
 
 ### Folding (the fold setting)
 
