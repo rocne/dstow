@@ -182,6 +182,13 @@ inherent — changing one means re-registering a different thing. (Decided
 with the info resolution; "identity field" was rejected because inherent
 facts needn't identify — e.g. a hypothetical clone-time tool version.)
 
+A field is data *about* a scope, located in or derived from the scope's
+location and the metadata directories in scope — never the scope's content
+(what is *inside* it: packages, hook executables) and never the target.
+Content enumeration and target inspection are other reads' jobs. The one
+bend: the global scope's inherent fields are derived from the installation
+itself.
+
 ### Dependency
 
 A command a scope (package, repo, or global) declares it needs present on PATH.
