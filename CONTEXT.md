@@ -29,8 +29,18 @@ listed, removed.
 
 *Retired: "root".* The former "root / package root" concept is the same referent
 as repo; "root" survives only as informal prose for a repo's directory location,
-never as a distinct term. The search path (DSTOW_PATH + config) is an ordered
-list of repos.
+never as a distinct term. The repo set (global config + DSTOW_PATH) is unordered
+— registration order never affects what a name means (amended 2026-07-14 with
+the Naming grammar resolution; was an ordered search path).
+
+### Repo registry
+
+The persistent record of registered repos — configuration, not state, though
+commands write it rather than an editor (`git remote add` lineage: intent
+entered through a porcelain is still intent). The line it teaches: **config is
+intent — what should be managed; state is record — what actually happened.**
+The registry is not reconstructible from disk, so it lives with configuration;
+the ledger is the record and lives in state.
 
 ### Stow / unstow / restow
 
