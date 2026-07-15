@@ -189,23 +189,6 @@ Content enumeration and target inspection are other reads' jobs. The one
 bend: the global scope's inherent fields are derived from the installation
 itself.
 
-### Dependency
-
-A command a scope (package, repo, or global) declares it needs present on PATH.
-dstow **declares and verifies** dependencies — it never resolves or installs
-them (v1 ruling). Checks are warn-only; a missing dependency is a fact about
-the system, never a stow failure. "Deps" is acceptable informal prose.
-*Rejected: "requirement"* — too firm for warn-only semantics.
-
-- **Names** — the command names a dependency answers to; any one present
-  satisfies it (`fd` / `fdfind`). No primary; all names are equal.
-  (*Rejected: "alternatives"* — implies a primary; *"aliases"* — collides with
-  shell aliases.)
-- **Hint** — the optional human-oriented install suggestion a dependency
-  carries.
-- **Dependency query** — the scoped, machine-consumable read of declared
-  dependencies.
-
 ### Managed directory
 
 The directory dstow owns, where remote-sourced repos are cloned
