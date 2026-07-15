@@ -162,6 +162,26 @@ config, would produce against what the target actually holds:
   what current config would produce (e.g. fold setting changed since
   deployment). Established ops vocabulary: configuration drift.
 
+### Field
+
+A named, readable property of a scope (package, repo, or global). One field
+vocabulary is spoken everywhere a field appears — human output, field
+selection, machine output. Every field is either inherent or configured:
+
+- **Inherent field** — a fact of the thing as it exists: fixed by *which*
+  thing it is or *how it came to be*. No config file authors it; changing one
+  means re-making or re-registering the thing (or it cannot change at all).
+  Permanently read-only — no future property store will ever write one.
+- **Configured field** — an effective value from the config chain: the user's
+  declared intent for the thing, editable in files. The only territory a
+  future property write could ever touch.
+
+The test: an inherent field reads what the thing *is*; a configured field
+reads what the user *wants for it*. Chosen-once facts (a repo's source) are
+inherent — changing one means re-registering a different thing. (Decided
+with the info resolution; "identity field" was rejected because inherent
+facts needn't identify — e.g. a hypothetical clone-time tool version.)
+
 ### Dependency
 
 A command a scope (package, repo, or global) declares it needs present on PATH.
