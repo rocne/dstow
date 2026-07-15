@@ -33,6 +33,11 @@ never as a distinct term. The repo set (global config + DSTOW_PATH) is unordered
 — registration order never affects what a name means (amended 2026-07-14 with
 the Naming grammar resolution; was an ordered search path).
 
+A repo's packages are its visible directories — at the repo root by default, or
+inside a designated packages directory (an opt-in repo-level setting; decided
+2026-07-15 with the Metadata directory resolution). Hidden directories are never
+packages: package identity is locational, never declared by marker files.
+
 ### Repo registry
 
 The persistent record of registered repos — configuration, not state, though
@@ -179,3 +184,11 @@ the system, never a stow failure. "Deps" is acceptable informal prose.
 The directory dstow owns, where remote-sourced repos are cloned
 (`<managed>/repos/<scheme>/<owner>/<name>`). Not a cache: links point into it;
 its contents are load-bearing.
+
+### Metadata directory
+
+The never-stowed, dstow-claimed directory carrying a scope's metadata:
+`.dstow/` at a repo or package root; the global level's equivalent is dstow's
+XDG config directory. Auto-ignored by the engine at package roots — its
+contents are never deployed. Its top level is reserved territory: dstow claims
+the names inside it; unknown entries draw warnings, never refusals.
