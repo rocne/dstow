@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # The hermetic suite, on every platform we ship a binary for.
+  #
+  # GoReleaser builds linux+darwin x amd64+arm64. macos-latest is arm64 and
+  # ubuntu-24.04-arm is linux/arm64, so both axes are exercised without a
+  # fourth runner. fail-fast is off: a darwin failure must not hide a linux
+  # one.
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -count=1 ./...

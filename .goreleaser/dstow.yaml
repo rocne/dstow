@@ -1,0 +1,120 @@
+version: 2
+
+project_name: dstow
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: dstow
+    binary: dstow
+    main: ./cmd/dstow
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Env.VERSION}}
+
+archives:
+  - id: dstow
+    ids: [dstow]
+    name_template: "{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    # TODO(#47/#50): naming `files` here (as gostow does, for its man page and
+    # completion scripts) waits on dstow having any — restore once #47 grows
+    # a man page and shell completions and #50 wires the release pipeline
+    # that ships them. Until then the archive carries goreleaser's defaults
+    # (LICENSE*, README*, etc.).
+
+# TODO(#50): nfpms (.deb/.rpm packaging) waits on the GPG signing key
+# (GPG_KEY_PATH) and on the man page / completion assets #47 has not built
+# yet — restore this block from gostow's .goreleaser/gostow.yaml once #50
+# wires the release secrets and those assets exist.
+#
+# nfpms:
+#   - id: dstow
+#     package_name: dstow
+#     ids: [dstow]
+#     file_name_template: "{{ .ConventionalFileName }}"
+#     formats:
+#       - deb
+#       - rpm
+#     maintainer: Rocne Scribner <rocne.ks@gmail.com>
+#     homepage: https://github.com/rocne/dstow
+#     description: Dotfiles manager built on the gostow engine
+#     license: MIT
+#     bindir: /usr/bin
+
+# TODO(#50): homebrew_casks waits on the HOMEBREW_TAP_GITHUB_TOKEN secret
+# (#49) and a rocne/homebrew-tap entry — restore from the gostow pattern
+# once #50 lands them.
+#
+# homebrew_casks:
+#   - name: dstow
+#     ids: [dstow]
+#     repository:
+#       owner: rocne
+#       name: homebrew-tap
+#       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+#     homepage: https://github.com/rocne/dstow
+#     description: Dotfiles manager built on the gostow engine
+#     license: MIT
+
+# TODO(#50): cloudsmith publishing depends on the nfpms artifacts above and
+# the CLOUDSMITH_API_KEY secret (#49) — restore once both exist.
+#
+# publishers:
+#   - name: cloudsmith
+#     ids: [dstow]
+#     cmd: >-
+#       sh -c 'case "{{ .ArtifactName }}" in
+#       *.deb) exec cloudsmith push deb --republish ${CLOUDSMITH_REPO}/any-distro/any-version "{{ .ArtifactPath }}" ;;
+#       *.rpm) exec cloudsmith push rpm --republish ${CLOUDSMITH_REPO}/any-distro/any-version "{{ .ArtifactPath }}" ;;
+#       *) true ;;
+#       esac'
+#     env:
+#       - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
+#       - CLOUDSMITH_REPO={{ .Env.CLOUDSMITH_REPO }}
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Tag }}_checksums.txt"
+
+# TODO(#50): cosign signing waits on the GPG_PRIVATE_KEY-adjacent cosign
+# wiring release-ci provides — restore from the gostow pattern once #50
+# lands it.
+#
+# signs:
+#   - cmd: cosign
+#     artifacts: checksum
+#     signature: "${artifact}.sig"
+#     certificate: "${artifact}.pem"
+#     args:
+#       - sign-blob
+#       - "--output-certificate=${certificate}"
+#       - "--output-signature=${signature}"
+#       - "${artifact}"
+#       - "--yes"
+
+# TODO(#48/#50): release.extra_files ships the two public signing keys
+# (dstow-signing-key.asc, dstow-repo-signing-key.asc) alongside the release,
+# same as gostow's. Neither key is generated yet — restore once #50 sets the
+# release secrets and the keys are committed.
+#
+# release:
+#   extra_files:
+#     - glob: ./dstow-signing-key.asc
+#     - glob: ./dstow-repo-signing-key.asc
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
