@@ -8,7 +8,7 @@ document is silent, design decides; where it speaks, design obeys.
 
 **Vocabulary.** This document speaks the canonical language defined in
 [`CONTEXT.md`](../CONTEXT.md) (package, repo, source, scheme, ledger, occupied,
-drifted, dependency, …). Terms are used per their glossary definitions
+drifted, …). Terms are used per their glossary definitions
 throughout.
 
 **Product stance.** v1 is a fully featured, totally complete, finished product —
@@ -40,8 +40,7 @@ These govern every operation and outrank any per-section detail.
    fix it (e.g. an occupied path names adopt; an ambiguous source names its
    qualified spellings).
 5. **No unbacked claims.** dstow reports only what it can know: it never
-   asserts history without ledger evidence (§7.2), and never claims a
-   dependency is installable — only present or absent.
+   asserts history without ledger evidence (§7.2).
 6. **Explicit over implicit for consequential acts.** Nothing touches the
    network, deletes, or overwrites implicitly: sync phases, removals, cleans,
    and rebuilds run only when invoked. Guarded operations offer an explicit
@@ -88,7 +87,7 @@ These govern every operation and outrank any per-section detail.
    (`repos/`) to reserve sibling room for future kinds; scheme-namespaced so
    collisions are structurally impossible. Not a cache: links point into it.
 7. **Package metadata is never stowed** — whatever in-package location carries
-   hooks/config/dependencies is auto-ignored by the engine (name/layout is
+   hooks/config is auto-ignored by the engine (name/layout is
    design).
 
 ## 3. Deployment (stow / unstow / restow)
@@ -128,8 +127,7 @@ These govern every operation and outrank any per-section detail.
 2. **Package/repo-level knobs (v1 set)**: target override;
    exclude-from-bulk (bulk only — explicit naming proceeds); dot-translation;
    additive ignore patterns. **Global-only knobs**: folding; persistent repos;
-   dependency declarations (§9); default-scheme behavior is fixed in v1
-   (github.com, §5.2).
+   default-scheme behavior is fixed in v1 (github.com, §5.2).
 3. **Stow compatibility: dstow config is a strict superset of stow's.**
    dstow works out-of-the-box on an existing stow setup; renaming a `.stowrc`
    to the native config must just work. Slotting: `~/.stowrc` → global level;
@@ -236,7 +234,6 @@ carries no cached deployment state — deployment truth lives only in status.
    package does not count as stowed for this one.
 4. **Per-path detail on demand**: what occupies each path (real file, foreign
    link, directory mismatch) and the remedy where knowable.
-5. Unmet dependencies (§9) appear in package status detail.
 
 ## 8. Maintenance: ledger, check, clean, rebuild, adopt
 
@@ -264,7 +261,7 @@ carries no cached deployment state — deployment truth lives only in status.
    ranking packages that already own neighboring paths first — pure
    config+ledger computation, no walking.
 
-## 9. Hooks and dependencies
+## 9. Hooks
 
 ### 9.1 Hook lifecycle
 
@@ -282,25 +279,14 @@ carries no cached deployment state — deployment truth lives only in status.
 6. **Context contract**: hooks receive their scope's context (at minimum:
    action kind, package, target, repo); mechanism is design.
 
-### 9.2 Dependencies (declared, verified — never installed)
+### 9.2 Dependencies: none, deliberately
 
-1. **A dependency is a command a scope needs on PATH**, satisfiable by any of
-   its **names** (`fd`/`fdfind`), optionally carrying a human-oriented
-   **hint**. Declarations are declarative data, not scripts. Checks are
-   presence-on-PATH: instant, local, never network.
-2. **Three levels**: package and repo declarations live in the never-stowed
-   metadata location; global declarations live in global config. Effective
-   dependencies of a package: its own + its repo's + global.
-3. **Checking is warn-only and per-level, after that level's own pre hook**
-   (global-pre → check global → repo-pre → check repo → package-pre → check
-   package → link) — installer pre-hooks are first-class; bootstrap flows
-   (stow first, install later) never block. A missing dependency is a fact
-   about the system, reported loudly with its hint — never a stow failure.
-4. **Surfaces**: stow-time warnings; package status detail; and the
-   **dependency query** — scoped (package / repo / global / everything),
-   machine-consumable output, sane exit codes — deliberately shaped for the
-   loop-and-install hook pattern. dstow itself never wires hooks and
-   dependencies together.
+**dstow has no dependency concept** — no declarations, no presence checks, no
+dependency surfaces ([ADR 0002](adr/0002-no-dependency-concept.md); the
+superseded design is preserved in
+[docs/attic/dependencies.md](attic/dependencies.md)). Dependency management is
+user-side hook territory: a pre-hook carrying the user's own
+check-and-install commands.
 
 ## 10. Bootstrap
 
@@ -318,12 +304,13 @@ carries no cached deployment state — deployment truth lives only in status.
 
 Design and implementation (CLI syntax, config schema, architecture, code) are
 delegated. Additionally ruled out of v1's scope, recorded on the map:
-Homebrew-style tap semantics; dstow as an installer of software; a generic
-scoped-property store (deps as one property of many); an in-tool self-update
+Homebrew-style tap semantics; dstow as an installer of software; **any
+dependency concept — declaring, checking, or installing** (ADR 0002); a generic
+scoped-property store; an in-tool self-update
 command; an emitted repo setup script (clone → run: bootstrap dstow, then stow
 a package selection); changes to gostow; extraction of shared output/color
 plumbing. Design may keep doorways open
-(e.g. shaping the dependency query as a named-property read) but owes them
+(e.g. shaping `info` as a named-property read) but owes them
 nothing.
 
 ---
@@ -341,7 +328,7 @@ Each section's binding detail lives in its ticket's resolution:
 | §5, §6 | [Git-tap source requirements](https://github.com/rocne/dstow/issues/7) |
 | §7, §8 | [Status, list, and maintenance operations](https://github.com/rocne/dstow/issues/11) |
 | §9.1 | [Hook lifecycle requirements](https://github.com/rocne/dstow/issues/5) |
-| §9.2 | [System-requirements (deps) shape](https://github.com/rocne/dstow/issues/13) |
+| §9.2 | [System-requirements (deps) shape](https://github.com/rocne/dstow/issues/13); superseded by [Bootstrap #28](https://github.com/rocne/dstow/issues/28) + [ADR 0002](adr/0002-no-dependency-concept.md) |
 | §10 | [Bootstrap snippet and hosted installer requirements](https://github.com/rocne/dstow/issues/15) |
 | Vocabulary | [Terminology / ubiquitous language](https://github.com/rocne/dstow/issues/14) → `CONTEXT.md` |
 | v1 operation set | [Wrapper reconstruction](https://github.com/rocne/dstow/issues/2) |

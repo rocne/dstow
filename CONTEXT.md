@@ -29,8 +29,23 @@ listed, removed.
 
 *Retired: "root".* The former "root / package root" concept is the same referent
 as repo; "root" survives only as informal prose for a repo's directory location,
-never as a distinct term. The search path (DSTOW_PATH + config) is an ordered
-list of repos.
+never as a distinct term. The repo set (global config + DSTOW_PATH) is unordered
+— registration order never affects what a name means (amended 2026-07-14 with
+the Naming grammar resolution; was an ordered search path).
+
+A repo's packages are its visible directories — at the repo root by default, or
+inside a designated packages directory (an opt-in repo-level setting; decided
+2026-07-15 with the Metadata directory resolution). Hidden directories are never
+packages: package identity is locational, never declared by marker files.
+
+### Repo registry
+
+The persistent record of registered repos — configuration, not state, though
+commands write it rather than an editor (`git remote add` lineage: intent
+entered through a porcelain is still intent). The line it teaches: **config is
+intent — what should be managed; state is record — what actually happened.**
+The registry is not reconstructible from disk, so it lives with configuration;
+the ledger is the record and lives in state.
 
 ### Stow / unstow / restow
 
@@ -93,8 +108,21 @@ the *registry* world. The first character decides; no command ever guesses.
 
 ### Ledger
 
-The record of every link dstow creates and removes (XDG state). Disk is always
-the truth; the ledger is an index, pruned wherever disk contradicts it.
+The record of every link dstow creates and removes (XDG state) — a
+**current-state index**, never a history. The word is accounting's own
+distinction, kept deliberately: the *journal* is the chronological log of
+transactions; the *ledger* is the organized current state posted from it.
+dstow keeps the ledger and no journal ([ADR 0001](docs/adr/0001-ledger-is-a-current-state-index.md)).
+Disk is always the truth; the ledger is an index, pruned wherever disk
+contradicts it.
+
+### Contradicted entry
+
+A ledger entry disk disagrees with: the recorded path is gone, holds a
+non-link, or holds a different link than dstow wrote. Never trusted over
+reality; pruned by the next *write* command whose scope covers it (reads
+report, never prune). A contradicted entry is the evidence behind the
+**damaged** package state.
 
 ### Broken / orphaned links
 
@@ -107,9 +135,9 @@ the truth; the ledger is an index, pruned wherever disk contradicts it.
 ### Check / clean / rebuild
 
 The maintenance concepts: **check** verifies ledgered links and classifies
-(broken / orphaned); **clean** executes exactly check's plan; **rebuild**
-reconstructs a lost ledger by full target walk — rare and explicit. Command
-spellings are design.
+(broken / orphaned / contradicted); **clean** executes exactly check's plan;
+**rebuild** reconstructs a lost ledger by full target walk — rare and
+explicit. Command spellings are design.
 
 ### Folding (the fold setting)
 
@@ -134,25 +162,43 @@ config, would produce against what the target actually holds:
   what current config would produce (e.g. fold setting changed since
   deployment). Established ops vocabulary: configuration drift.
 
-### Dependency
+### Field
 
-A command a scope (package, repo, or global) declares it needs present on PATH.
-dstow **declares and verifies** dependencies — it never resolves or installs
-them (v1 ruling). Checks are warn-only; a missing dependency is a fact about
-the system, never a stow failure. "Deps" is acceptable informal prose.
-*Rejected: "requirement"* — too firm for warn-only semantics.
+A named, readable property of a scope (package, repo, or global). One field
+vocabulary is spoken everywhere a field appears — human output, field
+selection, machine output. Every field is either inherent or configured:
 
-- **Names** — the command names a dependency answers to; any one present
-  satisfies it (`fd` / `fdfind`). No primary; all names are equal.
-  (*Rejected: "alternatives"* — implies a primary; *"aliases"* — collides with
-  shell aliases.)
-- **Hint** — the optional human-oriented install suggestion a dependency
-  carries.
-- **Dependency query** — the scoped, machine-consumable read of declared
-  dependencies.
+- **Inherent field** — a fact of the thing as it exists: fixed by *which*
+  thing it is or *how it came to be*. No config file authors it; changing one
+  means re-making or re-registering the thing (or it cannot change at all).
+  Permanently read-only — no future property store will ever write one.
+- **Configured field** — an effective value from the config chain: the user's
+  declared intent for the thing, editable in files. The only territory a
+  future property write could ever touch.
+
+The test: an inherent field reads what the thing *is*; a configured field
+reads what the user *wants for it*. Chosen-once facts (a repo's source) are
+inherent — changing one means re-registering a different thing. (Decided
+with the info resolution; "identity field" was rejected because inherent
+facts needn't identify — e.g. a hypothetical clone-time tool version.)
+
+A field is data *about* a scope, located in or derived from the scope's
+location and the metadata directories in scope — never the scope's content
+(what is *inside* it: packages, hook executables) and never the target.
+Content enumeration and target inspection are other reads' jobs. The one
+bend: the global scope's inherent fields are derived from the installation
+itself.
 
 ### Managed directory
 
 The directory dstow owns, where remote-sourced repos are cloned
 (`<managed>/repos/<scheme>/<owner>/<name>`). Not a cache: links point into it;
 its contents are load-bearing.
+
+### Metadata directory
+
+The never-stowed, dstow-claimed directory carrying a scope's metadata:
+`.dstow/` at a repo or package root; the global level's equivalent is dstow's
+XDG config directory. Auto-ignored by the engine at package roots — its
+contents are never deployed. Its top level is reserved territory: dstow claims
+the names inside it; unknown entries draw warnings, never refusals.
