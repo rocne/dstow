@@ -281,8 +281,7 @@ benign-continue defaults Yes (`[Y/n]`, e.g. the encoding confirm).
 ## Handoffs
 
 - **info ticket**: the `info --json` field shape (sketched here, owned
-  there); whether `"partially stowed"` state strings appear in dep-query
-  contexts.
+  there).
 - **Config schema**: the `[color]` table lands in the global-config schema
   (keys = palette slots).
 - **Go architecture**: printer package seam (already queued there),
