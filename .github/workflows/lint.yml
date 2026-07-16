@@ -19,3 +19,6 @@ jobs:
       - uses: golangci/golangci-lint-action@v9
         with:
           version: "v2.11.4"
+
+      - name: Shellcheck
+        run: shellcheck test/run-e2e.sh test/e2e/*.sh test/e2e/procure/*.sh

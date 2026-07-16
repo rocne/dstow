@@ -37,5 +37,8 @@ go.work.sum
 # Built binary (go build ./... emits it at the repo root)
 /dstow
 
+# Staged e2e binary (test/run-e2e.sh builds it, Dockerfile.local COPYs it in)
+/test/e2e/dstow
+
 # Claude Code local settings
 .claude/settings.local.json
