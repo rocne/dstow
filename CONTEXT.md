@@ -80,9 +80,16 @@ The path-shaped middle of a source or fully qualified name — one or more
 `/`-separated segments between the scheme and the package. A scheme may
 interpret its coordinates (`github:` reads `owner/name`; `local:` reads a
 filesystem path) but the grammar itself does not. Reserved characters inside
-a coordinate are percent-encoded (`%3A` for `:`, `%25` for `%`) — the same
-URI lineage as the scheme; dstow always emits the encoded canonical form
-itself, so users paste rather than construct it.
+a coordinate are percent-encoded (`%3A` for `:`, `%25` for `%`, `%40` for
+`@`, and control characters) — the same URI lineage as the scheme; dstow
+always emits the encoded canonical form itself, so users paste rather than
+construct it.
+
+`@` is reserved as an optional, **scheme-interpreted suffix** on the
+coordinate (`coordinate@suffix`): v1 assigns it no semantics — what a suffix
+means belongs entirely to any scheme that later chooses to interpret it
+(anticipated lineage: `pkg@version` pinning). Decided at DESIGN.md synthesis,
+2026-07-16.
 
 ### Fully qualified name (FQN)
 
