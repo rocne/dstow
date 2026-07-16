@@ -1,0 +1,11 @@
+FROM ubuntu:24.04
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+# Exercisers are copied as a directory glob (*.sh) rather than one COPY line
+# per file the way dot-dagger does it — adding a new exerciser under
+# test/e2e/ then never requires touching this Dockerfile, only the
+# corresponding run_test line in test/run-e2e.sh.
+COPY *.sh /tests/
+COPY procure/ /procure/
+COPY dstow /staged/dstow
