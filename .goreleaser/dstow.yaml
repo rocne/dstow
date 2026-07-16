@@ -26,85 +26,116 @@ archives:
     ids: [dstow]
     name_template: "{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
     formats: [tar.gz]
-    # TODO(#47/#50): naming `files` here (as gostow does, for its man page and
+    # TODO(#47): naming `files` here (as gostow does, for its man page and
     # completion scripts) waits on dstow having any — restore once #47 grows
-    # a man page and shell completions and #50 wires the release pipeline
-    # that ships them. Until then the archive carries goreleaser's defaults
-    # (LICENSE*, README*, etc.).
+    # a man page and shell completions. Until then the archive carries
+    # goreleaser's defaults (LICENSE*, README*, etc.).
 
-# TODO(#50): nfpms (.deb/.rpm packaging) waits on the GPG signing key
-# (GPG_KEY_PATH) and on the man page / completion assets #47 has not built
-# yet — restore this block from gostow's .goreleaser/gostow.yaml once #50
-# wires the release secrets and those assets exist.
-#
-# nfpms:
-#   - id: dstow
-#     package_name: dstow
-#     ids: [dstow]
-#     file_name_template: "{{ .ConventionalFileName }}"
-#     formats:
-#       - deb
-#       - rpm
-#     maintainer: Rocne Scribner <rocne.ks@gmail.com>
-#     homepage: https://github.com/rocne/dstow
-#     description: Dotfiles manager built on the gostow engine
-#     license: MIT
-#     bindir: /usr/bin
+nfpms:
+  - id: dstow
+    # Unlike dotd (binary `dotd`, package `dot-dagger`), dstow needs no
+    # disambiguation: the binary and the install identity are both `dstow`.
+    package_name: dstow
+    ids: [dstow]
+    file_name_template: "{{ .ConventionalFileName }}"
+    formats:
+      - deb
+      - rpm
+    maintainer: Rocne Scribner <rocne.ks@gmail.com>
+    homepage: https://github.com/rocne/dstow
+    description: Dotfiles manager built on the gostow engine
+    license: MIT
+    bindir: /usr/bin
+    # TODO(#47): gostow's nfpms carry a `contents:` stanza that copies the
+    # compressed man page and shell completions into the package (man
+    # section 8, following GNU Stow's own administration-tool placement).
+    # dstow has neither yet. Unlike archives.files above, this isn't just a
+    # cosmetic omission: nfpm copies real files from disk at package-build
+    # time, so listing paths that don't exist fails the build (not just
+    # `goreleaser check`). Restore once #47 grows man/dstow.8 and
+    # completions/dstow.{bash,fish}, completions/_dstow.
+    rpm:
+      signature:
+        key_file: "{{ .Env.GPG_KEY_PATH }}"
+    deb:
+      signature:
+        key_file: "{{ .Env.GPG_KEY_PATH }}"
 
-# TODO(#50): homebrew_casks waits on the HOMEBREW_TAP_GITHUB_TOKEN secret
-# (#49) and a rocne/homebrew-tap entry — restore from the gostow pattern
-# once #50 lands them.
-#
-# homebrew_casks:
-#   - name: dstow
-#     ids: [dstow]
-#     repository:
-#       owner: rocne
-#       name: homebrew-tap
-#       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-#     homepage: https://github.com/rocne/dstow
-#     description: Dotfiles manager built on the gostow engine
-#     license: MIT
+# A cask, not a formula — see gostow's homebrew_casks comment for the
+# binary-only-formulae rationale (GoReleaser deprecated `brews:` for
+# `homebrew_casks:` in v2.10 for exactly this reason).
+homebrew_casks:
+  - name: dstow
+    ids: [dstow]
+    repository:
+      owner: rocne
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/rocne/dstow
+    description: Dotfiles manager built on the gostow engine
+    license: MIT
+    # Paths into the extracted archive. These are template metadata only —
+    # resolved by Homebrew against the release tarball at cask-install time,
+    # not required to exist locally — so pointing at #47's not-yet-built man
+    # page and completions here is safe now, unlike nfpms.contents above.
+    manpages:
+      - man/dstow.8
+    completions:
+      bash: completions/dstow.bash
+      zsh: completions/_dstow
+      fish: completions/dstow.fish
+    # Binaries are not notarized; strip the Gatekeeper quarantine xattr on install
+    # so the cask-installed dstow runs without "cannot be opened" errors on macOS.
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/dstow"]
+          end
 
-# TODO(#50): cloudsmith publishing depends on the nfpms artifacts above and
-# the CLOUDSMITH_API_KEY secret (#49) — restore once both exist.
+# Publish the signed .deb/.rpm to the Cloudsmith-hosted apt/dnf repo, giving
+# `apt install dstow` / `dnf install dstow` by name with auto-update.
+# (GoReleaser's native `cloudsmiths` block is Pro-only, so we drive the
+# cloudsmith CLI via a custom publisher instead.) Repo-index signing is handled
+# server-side by Cloudsmith using the dedicated repo-signing key — separate from
+# the package-signing key, which never leaves our control.
 #
-# publishers:
-#   - name: cloudsmith
-#     ids: [dstow]
-#     cmd: >-
-#       sh -c 'case "{{ .ArtifactName }}" in
-#       *.deb) exec cloudsmith push deb --republish ${CLOUDSMITH_REPO}/any-distro/any-version "{{ .ArtifactPath }}" ;;
-#       *.rpm) exec cloudsmith push rpm --republish ${CLOUDSMITH_REPO}/any-distro/any-version "{{ .ArtifactPath }}" ;;
-#       *) true ;;
-#       esac'
-#     env:
-#       - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
-#       - CLOUDSMITH_REPO={{ .Env.CLOUDSMITH_REPO }}
+# Publishers iterate every linux package and archive artifact, so the command
+# dispatches on extension and pushes only deb/rpm — tar.gz archives are skipped.
+# any-distro/any-version makes one upload installable across every apt/dnf distro
+# rather than maintaining a per-distro matrix.
+publishers:
+  - name: cloudsmith
+    ids: [dstow]
+    cmd: >-
+      sh -c 'case "{{ .ArtifactName }}" in
+      *.deb) exec cloudsmith push deb --republish ${CLOUDSMITH_REPO}/any-distro/any-version "{{ .ArtifactPath }}" ;;
+      *.rpm) exec cloudsmith push rpm --republish ${CLOUDSMITH_REPO}/any-distro/any-version "{{ .ArtifactPath }}" ;;
+      *) true ;;
+      esac'
+    env:
+      - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
+      - CLOUDSMITH_REPO={{ .Env.CLOUDSMITH_REPO }}
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Tag }}_checksums.txt"
 
-# TODO(#50): cosign signing waits on the GPG_PRIVATE_KEY-adjacent cosign
-# wiring release-ci provides — restore from the gostow pattern once #50
-# lands it.
-#
-# signs:
-#   - cmd: cosign
-#     artifacts: checksum
-#     signature: "${artifact}.sig"
-#     certificate: "${artifact}.pem"
-#     args:
-#       - sign-blob
-#       - "--output-certificate=${certificate}"
-#       - "--output-signature=${signature}"
-#       - "${artifact}"
-#       - "--yes"
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    signature: "${artifact}.sig"
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
 
-# TODO(#48/#50): release.extra_files ships the two public signing keys
+# TODO(#49): release.extra_files ships the two public signing keys
 # (dstow-signing-key.asc, dstow-repo-signing-key.asc) alongside the release,
-# same as gostow's. Neither key is generated yet — restore once #50 sets the
-# release secrets and the keys are committed.
+# same as gostow's. Neither key is generated yet — that happens when the
+# release secrets are set (#49) — restore once they're committed.
 #
 # release:
 #   extra_files:
