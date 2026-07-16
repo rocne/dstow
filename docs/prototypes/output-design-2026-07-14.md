@@ -180,7 +180,7 @@ booleans over string-enums where binary; FQNs always included.
 ```json
 // dstow info zsh --json   (fields per the info ticket; shape reserved here)
 {"fqn":"github:rocne/dotfiles::zsh","identity":{"repo":"github:rocne/dotfiles","scheme":"github"},
- "configuration":{"target":"~","dot_translation":true,"dependencies":[{"names":["zsh"],"hint":null}]}}
+ "configuration":{"target":"~","dot_translation":true}}
 ```
 
 ---
