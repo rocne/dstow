@@ -66,7 +66,7 @@ printf '         To fold like classic stow: [folding] in ~/.config/dstow/config.
 
 hr 'mixed severities stacked (alignment showcase)'
 printf '%s created target directory ~/.config/foo\n' "$P_NOTE"
-printf '%s dependency %sfzf%s is not on PATH (hint: dnf install fzf)\n' "$P_WARN" "$B" "$R"
+printf '%s unknown key %sfold_tree%s in config.toml (did you mean fold_trees?)\n' "$P_WARN" "$B" "$R"
 printf '%s cannot remove %srocne/dotfiles%s: 3 packages still stowed\n' "$P_ERR" "$B" "$R"
 printf '%s dstow repo remove rocne/dotfiles --unstow\n' "$P_FIX"
 
