@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/rocne/dstow/internal/config"
+	"github.com/rocne/dstow/internal/git"
 	"github.com/rocne/dstow/internal/hooks"
 	"github.com/rocne/dstow/internal/repo"
 )
@@ -29,6 +30,14 @@ type App struct {
 	Hooks      hooks.Runner        // injected hook streams (H6)
 	Prompt     Prompter            // confirmation seam; cli owns O12 rendering
 	Now        func() time.Time    // entry RecordedAt clock; nil means time.Now
+
+	// Version is the dstow version string cli populates from ldflags; it is
+	// info's global "version" field (§2.4). Empty until cli injects it.
+	Version string
+	// Git is the version-control seam (A17). status uses AheadBehind to report
+	// remote repos' behind/ahead as of the last update, no network; cli injects
+	// the exec adapter, tests inject git.Fake. Nil when no remote work is done.
+	Git git.Port
 }
 
 // now returns the injected clock or the wall clock.
