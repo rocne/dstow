@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -74,7 +75,9 @@ func BuildSet(registered []Source, sessionDirs []string) []Repo {
 // visible directory is definitionally a package, hidden directories are skipped
 // LOUDLY (one Warning each, M2), and non-directories are ignored silently. A
 // missing Root or missing packages directory is an error naming the path.
-// Output is sorted.
+// Symlinks are transparent (ruled 2026-07-17 on #41): a symlink to a
+// directory is a package like any other directory; a broken symlink is
+// skipped loudly in scoped mode, silently in root mode. Output is sorted.
 func (r Repo) Packages(packagesDir string) ([]string, []Warning, error) {
 	scoped := packagesDir != ""
 	dir := r.Root
@@ -96,7 +99,32 @@ func (r Repo) Packages(packagesDir string) ([]string, []Warning, error) {
 	)
 	for _, entry := range entries {
 		entryName := entry.Name()
-		if !entry.IsDir() {
+		isDir := entry.IsDir()
+		if !isDir && entry.Type()&fs.ModeSymlink != 0 {
+			// Symlinks are transparent (ruled 2026-07-17 on #41): a symlink to
+			// a directory is a visible directory and enumerates as a package,
+			// silently — transparency means it is no surprise. A symlink to a
+			// file is transparently a file (ignored silently, both modes). A
+			// broken symlink is skipped: loudly in scoped mode, where every
+			// visible entry is definitionally a package, so one that cannot
+			// resolve deserves the announcement; silently in root mode.
+			info, serr := os.Stat(filepath.Join(dir, entryName))
+			switch {
+			case serr == nil && info.IsDir():
+				isDir = true
+			case serr == nil:
+				continue
+			default:
+				if scoped && !strings.HasPrefix(entryName, ".") {
+					warns = append(warns, Warning{
+						Source: dir,
+						Detail: fmt.Sprintf("symlink %q does not resolve and was skipped; with a packages directory set, every visible directory is a package, and this entry cannot be read as one", entryName),
+					})
+				}
+				continue
+			}
+		}
+		if !isDir {
 			continue // non-directories are ignored in both modes
 		}
 		if strings.HasPrefix(entryName, ".") {

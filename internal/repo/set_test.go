@@ -138,6 +138,71 @@ func TestPackagesScopedModeHiddenLoud(t *testing.T) {
 	}
 }
 
+// Symlinks are transparent (ruled 2026-07-17 on #41): a symlink to a
+// directory enumerates as a package, silently, in both modes; a symlink to a
+// file is transparently a file (silent skip); a broken symlink skips loudly
+// in scoped mode and silently in root mode.
+func TestPackagesSymlinkTransparency(t *testing.T) {
+	realDir := filepath.Join(t.TempDir(), "real-pkg")
+	if err := os.MkdirAll(realDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	realFile := filepath.Join(t.TempDir(), "real-file")
+	if err := os.WriteFile(realFile, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	populate := func(t *testing.T, dir string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Join(dir, "plain"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		for link, dest := range map[string]string{
+			"linked":   realDir,
+			"filelink": realFile,
+			"dangling": filepath.Join(t.TempDir(), "gone"),
+		} {
+			if err := os.Symlink(dest, filepath.Join(dir, link)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	t.Run("root mode", func(t *testing.T) {
+		root := t.TempDir()
+		populate(t, root)
+		pkgs, warns, err := repo.Repo{Root: root}.Packages("")
+		if err != nil {
+			t.Fatalf("Packages: %v", err)
+		}
+		if want := []string{"linked", "plain"}; !reflect.DeepEqual(pkgs, want) {
+			t.Errorf("Packages = %v, want %v", pkgs, want)
+		}
+		if len(warns) != 0 {
+			t.Errorf("root mode should skip the broken symlink silently; got %+v", warns)
+		}
+	})
+
+	t.Run("scoped mode", func(t *testing.T) {
+		root := t.TempDir()
+		pkgDir := filepath.Join(root, "packages")
+		if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		populate(t, pkgDir)
+		pkgs, warns, err := repo.Repo{Root: root}.Packages("packages")
+		if err != nil {
+			t.Fatalf("Packages: %v", err)
+		}
+		if want := []string{"linked", "plain"}; !reflect.DeepEqual(pkgs, want) {
+			t.Errorf("Packages = %v, want %v", pkgs, want)
+		}
+		if len(warns) != 1 || !strings.Contains(warns[0].Detail, "dangling") {
+			t.Errorf("scoped mode should warn exactly once, naming the broken symlink; got %+v", warns)
+		}
+	})
+}
+
 // A missing packages directory is an error naming the path.
 func TestPackagesMissingDirErrors(t *testing.T) {
 	root := t.TempDir()
