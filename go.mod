@@ -4,8 +4,10 @@ go 1.26.1
 
 require (
 	github.com/BurntSushi/toml v1.6.0
+	github.com/adrg/xdg v0.5.3
 	github.com/fatih/color v1.19.0
 	github.com/mattn/go-isatty v0.0.20
+	github.com/rocne/gostow v0.4.0
 )
 
 require (
