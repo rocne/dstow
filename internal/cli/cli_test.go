@@ -93,6 +93,19 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+// TestVersionFlag asserts `dstow --version` prints the version on line 1 with
+// the version as its first semver-shaped token, exit 0 — the D30 contract
+// (release-ci#15) the release dry-run asserts via assert-version-contract.sh,
+// and what the canonical installer's ensure-check parses (D28/D30). The output
+// matches the version subcommand exactly: one source of truth, two spellings.
+func TestVersionFlag(t *testing.T) {
+	isolateXDG(t)
+	out, _, code := run(t, "--version")
+	if code != 0 || strings.TrimSpace(out) != "v1.2.3" {
+		t.Errorf("--version: out=%q code=%d, want %q / 0", out, code, "v1.2.3")
+	}
+}
+
 // TestUsageErrorsExit2 asserts cobra flag/arg/unknown-command failures and a
 // bad --color value all map to exit 2 (A3), with the message on stderr, stdout
 // clean (O1).

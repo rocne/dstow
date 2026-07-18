@@ -72,8 +72,13 @@ func Run(args []string, version string, stdin io.Reader, stdout, stderr io.Write
 // maps it to an exit code (A2).
 func (e *env) newRootCmd() *cobra.Command {
 	root := &cobra.Command{
-		Use:           "dstow",
-		Short:         "deploy dotfiles and configuration as symlinks",
+		Use:   "dstow",
+		Short: "deploy dotfiles and configuration as symlinks",
+		// Version enables cobra's root --version flag — the D30 contract
+		// (release-ci#15): the installer's ensure-check and the dry-run's
+		// assert-version-contract.sh both parse `dstow --version` line 1. The
+		// template below makes it print exactly what `dstow version` prints.
+		Version:       e.version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		// The bare invocation prints the top-level help on stdout (A2: help is
@@ -86,6 +91,7 @@ func (e *env) newRootCmd() *cobra.Command {
 		Args: cobra.NoArgs,
 	}
 	root.Annotations = map[string]string{helpKey: topLevelHelp}
+	root.SetVersionTemplate("{{.Version}}\n")
 
 	// PersistentPreRunE runs for every subcommand (only the root defines one),
 	// after flag parsing and arg validation succeed. It builds the printer and
