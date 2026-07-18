@@ -9,14 +9,17 @@ require (
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/rocne/gostow v0.4.0
+	github.com/spf13/cobra v1.10.1
 	golang.org/x/sys v0.43.0
 )
 
 require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.9.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	golang.org/x/net v0.53.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
