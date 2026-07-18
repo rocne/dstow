@@ -73,12 +73,14 @@ jobs:
       - name: Assert the artifact-shape contract (D34)
         run: sh .release-ci/release-dryrun/assert-artifact-shape.sh dstow
 
-      # D30 --version parse rule (rocne/release-ci#15): the snapshot binary's own
-      # version must be the first semver-shaped token on line 1 of --version.
-      # Parse-conformance only (tag-agnostic, passes on v0.0.0-dryrun); the
-      # stronger equals-version check runs in release.yml's smoke at release time.
-      - name: Assert the --version contract (D30)
-        run: ./dist/dstow_linux_amd64*/dstow --version 2>&1 | sh .release-ci/release-dryrun/assert-version-contract.sh
+      # D30 --version assert: intentionally absent, not forgotten. dstow's
+      # binary has no --version flag, and whether to add one (#81; PR #80 is
+      # the unmerged candidate) or opt out per release-ci M12 / adoption-audit
+      # row 6 is dstow's open decision — the assert must not force it. Until
+      # #81 rules, the installer degrades per D28 (pinned-version installs
+      # re-download each run; the presence check is unaffected). If #81 rules
+      # "conform", restore the step from the audit appendix; if "opt out",
+      # release-ci owes the release-time smoke escape before first release.
 
       - name: Verify the snapshot signature (cosign checksums)
         run: |
