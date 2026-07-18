@@ -1106,6 +1106,7 @@ reservation* in v1; none ships semantics.
 | `DSTOW_HOOK_*` namespace | absent-not-empty contract (H2) | scheme-specific variables (maybe-v2) |
 | `packages_dir` kind-first convention | `"packages"` documented convention (M3) | repo aggregator sibling room (maybe-v2) |
 | `snippet` group | `rc` only (B8) | `snippet hook <name>` skeletons — candidate v1.1 |
+| Interactive selection | ranked candidate & ambiguity lists named as `fix:` remedies; no interactive picker ships, in any context ([§2.4](#24-per-command-help-canonical) adopt, [§1.2](#12-encoding)) | a terminal picker that reads the choice interactively (maybe-v2) |
 
 ADRs: [0001 — the ledger is a current-state index](adr/0001-ledger-is-a-current-state-index.md);
 [0002 — no dependency concept](adr/0002-no-dependency-concept.md) (superseded
