@@ -97,8 +97,9 @@ homebrew_casks:
 # `apt install dstow` / `dnf install dstow` by name with auto-update.
 # (GoReleaser's native `cloudsmiths` block is Pro-only, so we drive the
 # cloudsmith CLI via a custom publisher instead.) Repo-index signing is handled
-# server-side by Cloudsmith using the dedicated repo-signing key — separate from
-# the package-signing key, which never leaves our control.
+# server-side by a Cloudsmith-managed key (rocne/releases) — separate from the
+# package-signing key, which never leaves our control. Cloudsmith serves that
+# index key's public half via its setup scripts, so it is not committed here.
 #
 # Publishers iterate every linux package and archive artifact, so the command
 # dispatches on extension and pushes only deb/rpm — tar.gz archives are skipped.
@@ -132,15 +133,18 @@ signs:
       - "${artifact}"
       - "--yes"
 
-# TODO(#49): release.extra_files ships the two public signing keys
-# (dstow-signing-key.asc, dstow-repo-signing-key.asc) alongside the release,
-# same as gostow's. Neither key is generated yet — that happens when the
-# release secrets are set (#49) — restore once they're committed.
+# Attach the package-signing public key to the GitHub release so a user can
+# verify a downloaded .deb/.rpm by hand.
 #
-# release:
-#   extra_files:
-#     - glob: ./dstow-signing-key.asc
-#     - glob: ./dstow-repo-signing-key.asc
+#   dstow-signing-key.asc  signs the packages themselves (fpr 64894FE3…).
+#                          Its private half is the GPG_PRIVATE_KEY repo secret.
+#
+# The apt/dnf repo INDEX is signed by a Cloudsmith-managed key (rocne/releases),
+# whose public half Cloudsmith serves via its setup.deb.sh / setup.rpm.sh — so it
+# is not committed here.
+release:
+  extra_files:
+    - glob: ./dstow-signing-key.asc
 
 changelog:
   sort: asc
