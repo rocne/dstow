@@ -20,7 +20,11 @@ jobs:
         with:
           version: "v2.11.4"
 
-      - name: Shellcheck
-        # install.sh/snippet.sh are piped into `sh` (or sourced from a user's
-        # rc) from the internet; a bug in them runs on a stranger's machine.
-        run: shellcheck install.sh snippet.sh test/run-e2e.sh test/e2e/*.sh test/e2e/procure/*.sh
+      # install.sh (and snippet.sh where vendored) is piped into `sh` from the
+      # internet; a bug in it runs on a stranger's machine. shellcheck is
+      # preinstalled on the ubuntu runner. Canonical step: release-ci#39.
+      - name: Shellcheck the vendored installer
+        run: shellcheck install.sh snippet.sh
+
+      - name: Shellcheck the test suite
+        run: shellcheck test/run-e2e.sh test/e2e/*.sh test/e2e/procure/*.sh
