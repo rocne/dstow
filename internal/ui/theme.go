@@ -265,12 +265,22 @@ func LoadTheme(ref, userThemesDir string) (Theme, []Warning, error) {
 	}
 }
 
-// availableThemes is the union of bundled preset names and any .toml basenames
-// in the user themes dir, sorted and de-duplicated — the remedy list.
-func availableThemes(userThemesDir string) []string {
-	set := map[string]struct{}{}
+// ThemePresence is one name in the theme roster and where it resolves from.
+// Both true means the user file shadows the bundled preset (C4).
+type ThemePresence struct {
+	Name    string
+	Bundled bool
+	User    bool
+}
+
+// ListThemes enumerates the theme roster the loader resolves against: the
+// bundled presets unioned with the .toml basenames in the user themes dir,
+// sorted by name. An unreadable user dir contributes nothing — the same
+// best-effort posture as the remedy list.
+func ListThemes(userThemesDir string) []ThemePresence {
+	set := map[string]*ThemePresence{}
 	for _, n := range BundledThemes() {
-		set[n] = struct{}{}
+		set[n] = &ThemePresence{Name: n, Bundled: true}
 	}
 	if userThemesDir != "" {
 		if entries, err := os.ReadDir(userThemesDir); err == nil {
@@ -278,14 +288,30 @@ func availableThemes(userThemesDir string) []string {
 				if e.IsDir() || !strings.HasSuffix(e.Name(), ".toml") {
 					continue
 				}
-				set[strings.TrimSuffix(e.Name(), ".toml")] = struct{}{}
+				n := strings.TrimSuffix(e.Name(), ".toml")
+				if p, ok := set[n]; ok {
+					p.User = true
+				} else {
+					set[n] = &ThemePresence{Name: n, User: true}
+				}
 			}
 		}
 	}
-	out := make([]string, 0, len(set))
-	for n := range set {
-		out = append(out, n)
+	out := make([]ThemePresence, 0, len(set))
+	for _, p := range set {
+		out = append(out, *p)
 	}
-	sort.Strings(out)
+	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	return out
+}
+
+// availableThemes is the union of bundled preset names and any .toml basenames
+// in the user themes dir, sorted and de-duplicated — the remedy list.
+func availableThemes(userThemesDir string) []string {
+	presences := ListThemes(userThemesDir)
+	out := make([]string, len(presences))
+	for i, p := range presences {
+		out[i] = p.Name
+	}
 	return out
 }

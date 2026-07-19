@@ -93,10 +93,18 @@ func (e *env) load(assumeYes bool) (*ops.App, []ops.Warning, error) {
 	return app, warnings, nil
 }
 
-// upgradeTheme recomposes the printer with the full §7.3 theming stack. Color
-// enablement is unchanged (it was fixed upstream of theming); only which style
-// each slot maps to is refined by the config layers.
-func (e *env) upgradeTheme(global *config.GlobalLevel, warnings *[]ops.Warning) {
+// loadGlobal is the light loader for commands that need only global config
+// (the theme verbs): no registry, no session repos, no App environment.
+func (e *env) loadGlobal() (*config.GlobalLevel, []ops.Warning, error) {
+	global, gwarns, err := config.LoadGlobal()
+	return global, appendConfigWarnings(nil, gwarns), err
+}
+
+// composeStack composes the full §7.3 theming stack — DSTOW_COLORS over the
+// [color] table over the theme key over the default palette — the one
+// composition owner both the printer upgrade and theme show's effective view
+// use. A theme-load failure degrades to a warning, never a refusal.
+func (e *env) composeStack(global *config.GlobalLevel, warnings *[]ops.Warning) ui.Theme {
 	envTheme, ewarns := ui.ParseDSTOWColors(dstowColorsEnv())
 	*warnings = appendUIWarnings(*warnings, ewarns)
 
@@ -119,7 +127,14 @@ func (e *env) upgradeTheme(global *config.GlobalLevel, warnings *[]ops.Warning) 
 		}
 	}
 
-	theme := ui.ComposeTheme(envTheme, tableTheme, keyTheme, ui.DefaultPalette())
+	return ui.ComposeTheme(envTheme, tableTheme, keyTheme, ui.DefaultPalette())
+}
+
+// upgradeTheme recomposes the printer with the full §7.3 theming stack. Color
+// enablement is unchanged (it was fixed upstream of theming); only which style
+// each slot maps to is refined by the config layers.
+func (e *env) upgradeTheme(global *config.GlobalLevel, warnings *[]ops.Warning) {
+	theme := e.composeStack(global, warnings)
 
 	mode, _ := parseColorMode(e.colorWhen) // already validated in PreRun
 	e.printer = ui.New(ui.Options{

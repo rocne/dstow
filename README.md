@@ -257,7 +257,8 @@ dstow repo update [<repo>…]          # download remote changes; touch nothing 
 dstow repo upgrade [<repo>…]         # fast-forward clean clones to what update fetched
 
 dstow snippet rc                     # print the shell-rc bootstrap snippet
-dstow colors theme <name> [--format env|toml]   # emit a theme
+dstow theme list                     # list available themes
+dstow theme show [<name>] [slot=value ...] [--format env|toml]   # show / emit colors
 ```
 
 - **`repo update` and `repo upgrade` are two explicit phases; neither runs on
@@ -405,7 +406,7 @@ Themes layer, top wins:
    ```sh
    export DSTOW_COLORS='damaged=bold red:stowed=#a6e3a1'
    # or generate a whole theme:
-   export DSTOW_COLORS=$(dstow colors theme catppuccin-mocha)
+   export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
    ```
 
 2. **The `[color]` table** in global config — one key per slot, same grammar:
@@ -440,14 +441,17 @@ Themes layer, top wins:
    hues (green stowed, red damaged, …). Because defaults stay within the 16
    named ANSI colors, your terminal theme supplies the actual colors.
 
-Emit a theme for your session or to a file — the packed string, the config
-table, and theme files share one slot vocabulary and one value grammar, so they
-are losslessly convertible:
+Discover, inspect, and emit themes with the `theme` group — the packed string,
+the config table, and theme files share one slot vocabulary and one value
+grammar, so they are losslessly convertible:
 
 ```sh
-dstow colors theme catppuccin-mocha                       # packed DSTOW_COLORS string
-dstow colors theme catppuccin-mocha --format toml \
-  > ~/.config/dstow/themes/mine.toml                      # a theme file
+dstow theme list                                          # the roster: name, origin, active
+dstow theme show                                          # the effective palette, rendered
+dstow theme show catppuccin-mocha                         # a named theme, rendered
+dstow theme show catppuccin-mocha --format env            # packed DSTOW_COLORS string
+dstow theme show cargo heading='bold yellow' --format toml \
+  > ~/.config/dstow/themes/mine.toml                      # a tweaked theme file
 ```
 
 The color slots are: `stowed` `partially_stowed` `not_stowed` `occupied`

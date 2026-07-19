@@ -45,7 +45,7 @@ rebuild Reconstruct a lost ledger by walking configured targets (rare)
 Groups:
 repo Manage repos: add, remove, update, upgrade
 snippet Print canned shell snippets: rc bootstrap
-colors Theming utilities: emit a theme for your session or a file
+theme Theming: list themes; show, tweak, and emit colors
 Also:
 completion Generate shell completion (bash, zsh, fish, powershell)
 version Print version

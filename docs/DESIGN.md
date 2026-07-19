@@ -128,11 +128,16 @@ these blocks, never byte equality.
 Every command is a **group** (subcommands only, no operands; bare group
 prints its help) or a **leaf** (operands only, never subcommands) —
 operand/subcommand collision is impossible by construction. Groups are nouns
-(`repo`, `snippet`, `colors`); leaves are verbs plus the established query
+(`repo`, `snippet`, `theme`); leaves are verbs plus the established query
 names (`list`, `info`, `status`).
 
 - Groups: `repo` {add, remove, update, upgrade} · `snippet` {rc} ·
-  `colors` {theme} · hidden `name` {encode, decode}.
+  `theme` {list, show} · hidden `name` {encode, decode}.
+  *(`theme` replaces the `colors` group — ruled 2026-07-19 with the
+  prior-art defaults: a command's noun is the noun of its output, and
+  `colors theme` emitted themes while showing no colors. `theme list`
+  discovers the roster; `theme show` outputs colors — the effective stack,
+  a named theme, or either with slot=value tweaks.)*
 - Leaves: `stow` `unstow` `restow` `adopt` · `list` `info` `status` ·
   `check` `clean` `rebuild` · `completion` `version`.
 - **Root `--version` flag** (ruled at
@@ -151,6 +156,8 @@ names (`list`, `info`, `status`).
 - **Long-canonical-plus-alias naming; glossary terms canonical** (D7).
 - **No CLI flag twins for config knobs** (D12): no `--target`,
   `--no-folding`, `--ignore` flags; refusals name the knob and its file.
+  *(Scope ruled 2026-07-19: D12 binds deployment-behavior knobs; parameters
+  of an emission — `theme show`'s slot=value operands — are outside it.)*
 - **No config-mutation commands**: declare by editing the metadata file (like
   every knob); write commands are deferred to the v2 property store, where
   they can arrive as a designed family.
@@ -195,7 +202,7 @@ Maintain:
 Groups:
   repo        Manage repos: add, remove, update, upgrade
   snippet     Print canned shell snippets: rc bootstrap
-  colors      Theming utilities: emit a theme for your session or a file
+  theme       Theming: list themes; show, tweak, and emit colors
 
 Also:
   completion  Generate shell completion (bash, zsh, fish, powershell)
@@ -511,25 +518,40 @@ Examples:
   dstow snippet rc >> ~/.bashrc
 ```
 
-#### colors (group)
+#### theme (group)
 
 ```
-Theming utilities.
+Theming: list the available themes; show, tweak, and emit colors.
 
 Usage:
-  dstow colors <command>
+  dstow theme <command>
 
 Commands:
-  theme         Emit a named theme — as a packed DSTOW_COLORS string
-                (default) or a theme file (--format toml)
+  list          List the available themes: bundled presets and your themes
+                dir, active theme marked
+  show          Show colors, each value in its own style: the effective
+                palette (bare), a named theme, slot=value tweaks on top;
+                --format env|toml emits for machines
 
 Examples:
-  export DSTOW_COLORS=$(dstow colors theme catppuccin-mocha)
-  dstow colors theme catppuccin-mocha --format toml > ~/.config/dstow/themes/mine.toml
+  dstow theme list
+  dstow theme show
+  dstow theme show catppuccin-mocha
+  export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
+  dstow theme show cargo heading='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
 ```
 
-*(`--format env|toml` — exact flag spelling is implementation detail; a
-format flag doesn't change the concept, per the `--json` precedent.)*
+*(Ruled 2026-07-19, replacing the `colors` group. `show` bare renders the
+effective §7.3 stack — the composed truth of what dstow is using; a ref
+renders that theme AS LOADED (its declared slots); `slot=value` operands
+layer on top, the top of the stack. Overrides are **operands, not per-slot
+flags** — D12 was ruled inapplicable here (re-scoped: it targets flag twins
+of deployment-behavior knobs; parameters of an emission are not that), and
+operands reuse the one slot=value grammar besides. `--format env|toml` —
+exact flag spelling is implementation detail; a format flag doesn't change
+the concept, per the `--json` precedent. The default output is the rendered
+view; the machine formats are the emission path, so `theme show` absorbs the
+old `colors theme` converter whole.)*
 
 ## 3. Configuration
 
@@ -942,7 +964,8 @@ theme config can never re-enable color the chain turned off:
 1. **`DSTOW_COLORS`** — the only theming env var: packed per-slot overrides,
    LS_COLORS-family syntax (`damaged=bold red:stowed=#a6e3a1`), values in
    git's `color.*` grammar. Populated by hand or by generator:
-   `export DSTOW_COLORS=$(dstow colors theme catppuccin-mocha)`. There is no
+   `export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)`.
+   There is no
    `DSTOW_THEME`.
 2. **`[color]` TOML table** — global config, one key per slot, same grammar.
 3. **`theme` config key** — name or path per the operand rule: a bare string
@@ -955,7 +978,8 @@ theme config can never re-enable color the chain turned off:
 `[color]` schema, no wrapper keys; the packed string, the config table, and
 theme files share one slot vocabulary and one value grammar — losslessly
 convertible between representations, forever. v1 ships
-`dstow colors theme <name> [--format env|toml]`.
+`dstow theme show [<name>] [slot=value ...] [--format env|toml]` (the
+emission path) and `dstow theme list` (the roster).
 
 ## 8. Go architecture
 
