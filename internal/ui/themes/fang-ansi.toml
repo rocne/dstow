@@ -1,0 +1,9 @@
+# fang-ansi — charmbracelet/fang's AnsiColorScheme (theme.go), the Charm-stack
+# ANSI-16 help scheme. Hand-vendored prior art. Declares only the slots with a
+# fang analog (Title, Command, Comment, ErrorDetails); fang's Flag color
+# (magenta) has no separate slot here — name carries fang's Command color.
+# Everything else falls through to the default palette.
+error = "red"
+name = "cyan"
+heading = "blue"
+muted = "brightblack"

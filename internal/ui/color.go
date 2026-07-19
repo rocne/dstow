@@ -275,24 +275,32 @@ func mustStyle(s string) Style {
 // (§7.2), emitting only the base ANSI-16 slots — the O4 promise, so the
 // terminal theme rethemes dstow automatically. A fresh map each call keeps
 // callers from mutating shared state.
+//
+// The prose and severity slots follow Cargo's help styling (clap-cargo
+// style.rs, the de facto cargo-CLI reference): heading = HEADER, name = LITERAL,
+// muted = PLACEHOLDER (the dim sibling of LITERAL, same hue lower weight),
+// error/warning/note = their cargo namesakes, fix = VALID (clap's did-you-mean
+// style — fix lines are things you type, so they share name's color). The nine
+// state slots have no cargo analog and keep dstow's semantic hues; damaged and
+// contradicted follow error (same evidence, two views — §7.2).
 func DefaultPalette() Theme {
 	return Theme{
 		SlotStowed:          mustStyle("green"),
 		SlotPartiallyStowed: mustStyle("yellow"),
 		SlotNotStowed:       mustStyle("dim"),
 		SlotOccupied:        mustStyle("magenta"),
-		SlotDamaged:         mustStyle("bold red"),
+		SlotDamaged:         mustStyle("bold brightred"),
 		SlotDrifted:         mustStyle("cyan"),
 		SlotBroken:          mustStyle("red"),
 		SlotOrphaned:        mustStyle("yellow"),
-		SlotContradicted:    mustStyle("bold red"),
-		SlotNote:            mustStyle("cyan"),
-		SlotWarning:         mustStyle("yellow"),
-		SlotError:           mustStyle("bold red"),
-		SlotFix:             mustStyle("blue"),
-		SlotName:            mustStyle("bold blue"),
-		SlotHeading:         mustStyle("bold magenta"),
-		SlotMuted:           mustStyle("dim"),
+		SlotContradicted:    mustStyle("bold brightred"),
+		SlotNote:            mustStyle("brightgreen"),
+		SlotWarning:         mustStyle("bold yellow"),
+		SlotError:           mustStyle("bold brightred"),
+		SlotFix:             mustStyle("bold brightcyan"),
+		SlotName:            mustStyle("bold brightcyan"),
+		SlotHeading:         mustStyle("bold brightgreen"),
+		SlotMuted:           mustStyle("cyan"),
 	}
 }
 

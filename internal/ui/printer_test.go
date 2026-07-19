@@ -207,12 +207,12 @@ func TestSeverityStyledPrefixPlainMessage(t *testing.T) {
 }
 
 // fix: is blue (34), not green — a fix appears when nothing succeeded (O2).
-func TestFixIsBlue(t *testing.T) {
+func TestFixStyledPerPalette(t *testing.T) {
 	p, _, errb := newBuffered(t, ColorAlways, false)
 	p.Fixf("run this")
 	line := errb.String()
-	if !strings.Contains(line, "\x1b[34m") {
-		t.Errorf("fix prefix should be blue (SGR 34), got %q", line)
+	if !strings.Contains(line, "\x1b[1;96m") {
+		t.Errorf("fix prefix should be bold brightcyan (SGR 1;96, §7.2), got %q", line)
 	}
 	if strings.Contains(line, "\x1b[32m") {
 		t.Error("fix prefix must not be green (SGR 32)")

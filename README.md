@@ -428,9 +428,17 @@ Themes layer, top wins:
    The bundled presets are the four [catppuccin](https://github.com/catppuccin/catppuccin)
    flavors — `catppuccin-latte`, `catppuccin-frappe`, `catppuccin-macchiato`,
    `catppuccin-mocha` — generated from one
-   [Whiskers](https://github.com/catppuccin/whiskers) template.
+   [Whiskers](https://github.com/catppuccin/whiskers) template, plus two
+   ANSI-16 ports of established CLI schemes: `cargo`
+   ([Cargo's help styling](https://github.com/crate-ci/clap-cargo)) and
+   `fang-ansi` ([charmbracelet/fang](https://github.com/charmbracelet/fang)'s
+   `AnsiColorScheme`). The ports declare only the slots their source
+   specifies; the rest falls through this stack.
 
-4. **The default ANSI-16 palette.**
+4. **The default ANSI-16 palette** — itself cargo-derived: the help and
+   diagnostic slots follow Cargo's styling, the state slots keep semantic
+   hues (green stowed, red damaged, …). Because defaults stay within the 16
+   named ANSI colors, your terminal theme supplies the actual colors.
 
 Emit a theme for your session or to a file — the packed string, the config
 table, and theme files share one slot vocabulary and one value grammar, so they

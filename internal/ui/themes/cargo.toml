@@ -1,0 +1,11 @@
+# cargo — Cargo's help styling (clap-cargo style.rs), the de facto reference
+# for cargo-like CLIs. Hand-vendored prior art; ANSI-16 names only, so the
+# terminal theme supplies the actual colors. Declares only the slots with a
+# cargo analog: the nine state slots fall through to the default palette.
+note = "brightgreen"
+warning = "bold yellow"
+error = "bold brightred"
+fix = "bold brightcyan"
+name = "bold brightcyan"
+heading = "bold brightgreen"
+muted = "cyan"
