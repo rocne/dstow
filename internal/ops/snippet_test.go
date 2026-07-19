@@ -44,7 +44,7 @@ func TestSnippetRCContract(t *testing.T) {
 	if curlIdx < 0 {
 		t.Fatal("snippet never fetches the installer")
 	}
-	if !(pathIdx < guardIdx && guardIdx < curlIdx) {
+	if pathIdx >= guardIdx || guardIdx >= curlIdx {
 		t.Errorf("snippet order must be PATH line (%d) < presence guard (%d) < fetch (%d)", pathIdx, guardIdx, curlIdx)
 	}
 }

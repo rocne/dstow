@@ -1,7 +1,7 @@
 // Package dstow carries repo-root artifacts that must ride inside the binary.
-// go:embed cannot reach above a package's directory, so files vendored at the
-// repo root (snippet.sh, owned by release-ci per D26) are embedded here and
-// consumed by the internal packages.
+// The go:embed directive cannot reach above a package's directory, so files
+// vendored at the repo root (snippet.sh, owned by release-ci per D26) are
+// embedded here and consumed by the internal packages.
 package dstow
 
 import _ "embed"
