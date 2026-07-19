@@ -31,6 +31,8 @@ if ! printf '%s\n' "$out" | sh -n; then
 fi
 
 # §9.1 contract: the PATH line bakes the contractual default install dir.
+# shellcheck disable=SC2016 # the single quotes are the point: match the
+# literal unexpanded $HOME/$PATH text as it must appear in the snippet.
 case "$out" in
   *'PATH="$HOME/.local/bin:$PATH"'*) ;;
   *) printf 'FAIL: snippet does not bake ~/.local/bin onto PATH\n'; exit 1 ;;
