@@ -20,8 +20,10 @@ func (e *env) newListCmd() *cobra.Command {
 		asJSON       bool
 	)
 	cmd := &cobra.Command{
-		Use:               "list",
-		Short:             firstLine(listHelp),
+		Use:               "list [<name>]",
+		Short:             shorts["list"],
+		Long:              listLong,
+		GroupID:           groupInspect,
 		Args:              cobra.MaximumNArgs(1),
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -35,9 +37,8 @@ func (e *env) newListCmd() *cobra.Command {
 			return e.runList(ops.ListRequest{Name: name, ReposOnly: reposOnly, PackagesOnly: packagesOnly}, asJSON)
 		},
 	}
-	staticHelp(cmd, listHelp)
 	cmd.Flags().BoolVar(&reposOnly, "repos", false, "Repos only (source, scheme, bulk-exclusion)")
-	cmd.Flags().BoolVar(&packagesOnly, "packages", false, "Packages only (repo-attributed)")
+	cmd.Flags().BoolVar(&packagesOnly, "packages", false, "Packages only (repo-attributed; same-named entries shown with qualified names)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Machine-readable listing")
 	return cmd
 }
@@ -109,8 +110,11 @@ func (e *env) newInfoCmd() *cobra.Command {
 		asJSON  bool
 	)
 	cmd := &cobra.Command{
-		Use:               "info",
-		Short:             firstLine(infoHelp),
+		Use:               "info [<name>]",
+		Short:             shorts["info"],
+		Long:              infoLong,
+		Example:           infoExample,
+		GroupID:           groupInspect,
 		Args:              cobra.MaximumNArgs(1),
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -121,10 +125,9 @@ func (e *env) newInfoCmd() *cobra.Command {
 			return e.runInfo(ops.InfoRequest{Name: name, Fields: fields, Recurse: recurse}, asJSON)
 		},
 	}
-	staticHelp(cmd, infoHelp)
-	cmd.Flags().StringArrayVarP(&fields, "field", "f", nil, "Only the named field(s); repeatable")
-	cmd.Flags().BoolVarP(&recurse, "recurse", "r", false, "Visit every applicable scope in turn")
-	cmd.Flags().BoolVar(&asJSON, "json", false, "Machine-readable: a flat object keyed by field name")
+	cmd.Flags().StringArrayVarP(&fields, "field", "f", nil, "Only the named field(s); repeatable. One field prints its bare value; several print labeled lines")
+	cmd.Flags().BoolVarP(&recurse, "recurse", "r", false, "Visit every applicable scope in turn, per-scope attributed; scopes a named field does not apply to are silently skipped")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Machine-readable: a flat object keyed by field name (an array of scope objects under --recurse)")
 	return cmd
 }
 
@@ -272,14 +275,16 @@ func formatFieldValue(f ops.Field, bare bool) string {
 func (e *env) newStatusCmd() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:               "status",
-		Short:             firstLine(statusHelp),
+		Use:               "status [<name>... | <path>]",
+		Short:             shorts["status"],
+		Long:              statusLong,
+		Example:           statusExample,
+		GroupID:           groupInspect,
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runStatus(args, asJSON)
 		},
 	}
-	staticHelp(cmd, statusHelp)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Machine-readable status")
 	return cmd
 }

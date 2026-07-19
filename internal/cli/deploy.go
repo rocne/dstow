@@ -26,26 +26,27 @@ func verbFor(cmdName string) engine.Verb {
 // newStowCmd builds stow, unstow, or restow — identical in shape (§2.4): name
 // operands or --all, -n/--dry-run, and (for stow/restow only, since --adopt
 // pre-accepts stow's occupied refusal, D15) --adopt.
-func (e *env) newStowCmd(cmdName, help string) *cobra.Command {
+func (e *env) newStowCmd(cmdName, long, example string) *cobra.Command {
 	var (
 		all    bool
 		adopt  bool
 		dryRun bool
 	)
 	cmd := &cobra.Command{
-		Use:                   cmdName,
-		Short:                 firstLine(help),
-		DisableFlagsInUseLine: true,
-		ValidArgsFunction:     e.completeNames,
+		Use:               cmdName + " <name>...",
+		Short:             shorts[cmdName],
+		Long:              long,
+		Example:           example,
+		GroupID:           groupDeploy,
+		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runDeploy(verbFor(cmdName), cmdName, args, all, adopt, dryRun)
 		},
 	}
-	staticHelp(cmd, help)
 	cmd.Flags().BoolVar(&all, "all", false, "Every package of every registered repo, without asking")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show the plan; change nothing")
 	if cmdName != "unstow" {
-		cmd.Flags().BoolVar(&adopt, "adopt", false, "Adopt a real file at an expected path instead of refusing")
+		cmd.Flags().BoolVar(&adopt, "adopt", false, "Where an expected path holds a real file, adopt it into the package instead of refusing (adopt rules apply: plan shown, confirmation on differing content)")
 	}
 	return cmd
 }
@@ -204,14 +205,16 @@ func (e *env) newAdoptCmd() *cobra.Command {
 		force    bool
 	)
 	cmd := &cobra.Command{
-		Use:               "adopt",
-		Short:             firstLine(adoptHelp),
+		Use:               "adopt <file> [<package>]",
+		Short:             shorts["adopt"],
+		Long:              adoptLong,
+		Example:           adoptExample,
+		GroupID:           groupDeploy,
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runAdopt(args, occupied, dryRun, force)
 		},
 	}
-	staticHelp(cmd, adoptHelp)
 	cmd.Flags().BoolVar(&occupied, "occupied", false, "All occupied paths of the named package")
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Show the plan; change nothing")
 	cmd.Flags().BoolVar(&force, "force", false, "Overwrite differing package content without asking")

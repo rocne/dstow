@@ -13,6 +13,29 @@ import (
 	"github.com/rocne/dstow/internal/ui"
 )
 
+// shorts holds each command's §2.3 one-line description, keyed by name — the
+// canonical wording the root command list renders.
+var shorts = map[string]string{
+	"stow":   "Link packages into their targets",
+	"unstow": "Remove packages' links from their targets",
+	"restow": "Unstow, then stow again (refresh links)",
+	"adopt":  "Import an existing file into a package, leaving a link behind",
+
+	"list":   "What is configured: repos, packages, targets (never reads disk)",
+	"info":   "Everything dstow knows about one repo or package",
+	"status": "What is deployed: live state of packages against their targets",
+
+	"check":   "Verify every link in the ledger; classify broken and orphaned",
+	"clean":   "Execute exactly what check reported (broken freely, orphans ask)",
+	"rebuild": "Reconstruct a lost ledger by walking configured targets (rare)",
+
+	"repo":    "Manage repos: add, remove, update, upgrade",
+	"snippet": "Print canned shell snippets: rc bootstrap",
+	"colors":  "Theming utilities: emit a theme for your session or a file",
+
+	"version": "Print version",
+}
+
 // env is the composition root's shared state: the injected streams and
 // version, the resolved persistent flags, the one printer, and the memoized
 // heavy load. It threads through every command constructor so nothing lives in
@@ -47,11 +70,10 @@ type env struct {
 // the one place in dstow that owns exit codes (A3).
 func Run(args []string, version string, stdin io.Reader, stdout, stderr io.Writer) int {
 	e := &env{
-		version:   version,
-		stdin:     stdin,
-		stdout:    stdout,
-		stderr:    stderr,
-		colorWhen: "auto",
+		version: version,
+		stdin:   stdin,
+		stdout:  stdout,
+		stderr:  stderr,
 	}
 
 	root := e.newRootCmd()
@@ -73,7 +95,8 @@ func Run(args []string, version string, stdin io.Reader, stdout, stderr io.Write
 func (e *env) newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "dstow",
-		Short: "deploy dotfiles and configuration as symlinks",
+		Short: rootShort,
+		Long:  rootLong,
 		// Version enables cobra's root --version flag — the D30 contract
 		// (release-ci#15): the installer's ensure-check and the dry-run's
 		// assert-version-contract.sh both parse `dstow --version` line 1. The
@@ -90,7 +113,6 @@ func (e *env) newRootCmd() *cobra.Command {
 		// root takes none of its own (subcommands only).
 		Args: cobra.NoArgs,
 	}
-	root.Annotations = map[string]string{helpKey: topLevelHelp}
 	root.SetVersionTemplate("{{.Version}}\n")
 
 	// PersistentPreRunE runs for every subcommand (only the root defines one),
@@ -117,26 +139,35 @@ func (e *env) newRootCmd() *cobra.Command {
 	}
 
 	pf := root.PersistentFlags()
-	pf.StringVar(&e.colorWhen, "color", "auto", "Colorize output: auto (default), always, never")
+	pf.StringVar(&e.colorWhen, "color", "", "Colorize output: auto (default), always, never")
 	pf.BoolVarP(&e.quiet, "quiet", "q", false, `Suppress informational output (announcements survive)`)
 	pf.BoolVarP(&e.yes, "yes", "y", false, `Assume "yes" at confirmation prompts`)
+	// Defining the help and version flags ourselves gives them the canonical
+	// wording; cobra sees them and adds no differently-worded twins.
+	pf.BoolP("help", "h", false, "Help for dstow or any command")
+	root.Flags().BoolP("version", "v", false, "Print version")
 
-	// One help func for the whole tree: it prints each command's canonical help
-	// text (stored in Annotations) to stdout, verbatim (A2, §2.3/§2.4).
+	// One help func for the whole tree: cobra generates each command's help
+	// from its own definition (Long, Example, groups, flags — the same surface
+	// the parser runs), and cli styles the generated text through the ui slots
+	// (A2 as amended — issue #96).
 	root.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		if text, ok := cmd.Annotations[helpKey]; ok {
-			_, _ = io.WriteString(cmd.OutOrStdout(), text)
-			return
-		}
-		// Commands without pinned text (cobra's built-in completion/help) keep
-		// cobra's default rendering.
-		_ = cmd.Usage()
+		f := e.helpPrinter().Out()
+		f.Printf("%s", styleHelp(f, helpText(cmd)))
 	})
 
+	// The §2.3 sections are cobra command groups, in canonical order.
+	root.AddGroup(
+		&cobra.Group{ID: groupDeploy, Title: "Deploy:"},
+		&cobra.Group{ID: groupInspect, Title: "Inspect:"},
+		&cobra.Group{ID: groupMaintain, Title: "Maintain:"},
+		&cobra.Group{ID: groupGroups, Title: "Groups:"},
+		&cobra.Group{ID: groupAlso, Title: "Also:"},
+	)
 	root.AddCommand(
-		e.newStowCmd("stow", stowHelp),
-		e.newStowCmd("unstow", unstowHelp),
-		e.newStowCmd("restow", restowHelp),
+		e.newStowCmd("stow", stowLong, stowExample),
+		e.newStowCmd("unstow", unstowLong, unstowExample),
+		e.newStowCmd("restow", restowLong, restowExample),
 		e.newAdoptCmd(),
 		e.newListCmd(),
 		e.newInfoCmd(),
@@ -150,20 +181,33 @@ func (e *env) newRootCmd() *cobra.Command {
 		e.newNameCmd(),
 		e.newVersionCmd(),
 	)
+	root.SetHelpCommandGroupID(groupAlso)
+	// Materialize cobra's completion command now so it carries the §2.3
+	// wording and sits in its §2.3 section.
+	root.InitDefaultCompletionCmd()
+	for _, c := range root.Commands() {
+		if c.Name() == "completion" {
+			c.Short = "Generate shell completion (bash, zsh, fish, powershell)"
+			c.GroupID = groupAlso
+		}
+	}
 	return root
 }
 
-// helpKey names the Annotations entry carrying a command's canonical help text.
-const helpKey = "dstow_help"
-
-// staticHelp attaches a canonical help string to a command so the shared help
-// func prints it verbatim.
-func staticHelp(cmd *cobra.Command, text string) {
-	if cmd.Annotations == nil {
-		cmd.Annotations = map[string]string{}
-	}
-	cmd.Annotations[helpKey] = text
+// Command listings keep §2.3's canonical order (AddCommand order), not
+// cobra's alphabetical sort.
+func init() {
+	cobra.EnableCommandSorting = false
 }
+
+// The §2.3 section ids (cobra group ids), in canonical order.
+const (
+	groupDeploy   = "deploy"
+	groupInspect  = "inspect"
+	groupMaintain = "maintain"
+	groupGroups   = "groups"
+	groupAlso     = "also"
+)
 
 // baseTheme composes the no-config theme: DSTOW_COLORS (env) over the default
 // palette. Lightweight commands (version, name, completion) render against it;
