@@ -66,8 +66,12 @@ The installer drops `dstow` into `~/.local/bin`. It is idempotent: run against a
 machine that already has dstow, it prints one status line and exits 0.
 
 **Installer flags:** `--force` reinstalls even when present; `--version vX.Y.Z`
-installs a specific release (and implies `--force`). Downloads are checksum-
-verified always, and cosign-verified when cosign is available.
+ensures exactly that release — already installed at that version it exits 0,
+otherwise it installs it (no implied force). The install dir is tunable
+(`--install-dir`, `DSTOW_INSTALL_DIR`, `XDG_BIN_HOME`); `~/.local/bin` is the
+default the snippet relies on. Downloads are checksum-verified always, and
+cosign-verified when cosign is available. See `install.sh --help` for the
+full surface.
 
 ### With Go
 
