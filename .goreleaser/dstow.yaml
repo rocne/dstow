@@ -44,7 +44,7 @@ nfpms:
     maintainer: Rocne Scribner <rocne.ks@gmail.com>
     homepage: https://github.com/rocne/dstow
     description: Dotfiles manager built on the gostow engine
-    license: MIT
+    license: GPL-3.0-only
     bindir: /usr/bin
     # TODO(#47): gostow's nfpms carry a `contents:` stanza that copies the
     # compressed man page and shell completions into the package (man
@@ -73,7 +73,7 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/rocne/dstow
     description: Dotfiles manager built on the gostow engine
-    license: MIT
+    license: GPL-3.0-only
     # Paths into the extracted archive. These are template metadata only —
     # resolved by Homebrew against the release tarball at cask-install time,
     # not required to exist locally — so pointing at #47's not-yet-built man

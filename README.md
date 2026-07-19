@@ -566,3 +566,8 @@ dstow name decode 'weird%3Aname'  # -> weird:name
 
 Everything above is the v1 surface. `dstow <command> --help` is the
 authoritative, always-current reference for any command's flags and examples.
+
+## License
+
+dstow is licensed under the [GNU General Public License v3.0](LICENSE).
+Copyright (c) 2026 Rocne Scribner.
