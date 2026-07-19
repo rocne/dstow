@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.0](https://github.com/rocne/dstow/compare/v0.1.2...v0.2.0) (2026-07-19)
+
+
+### Features
+
+* cobra-generated, themed help from the canonical content ([#98](https://github.com/rocne/dstow/issues/98)) ([056869c](https://github.com/rocne/dstow/commit/056869c1fbffbc8433e56e50400140c97a92e6dd))
+* color the prose slots — help shows color by default and themed ([#100](https://github.com/rocne/dstow/issues/100)) ([154388c](https://github.com/rocne/dstow/commit/154388c257419c5da2f88d219b2963a398413a2a))
+* preset roster = four catppuccin flavors, Whiskers-generated ([#105](https://github.com/rocne/dstow/issues/105)) ([#106](https://github.com/rocne/dstow/issues/106)) ([ffbb1ad](https://github.com/rocne/dstow/commit/ffbb1ad30cac735f3d051ff5e19c90dcf2bc00a1))
+* quiet underlined headings in catppuccin-mocha — structure over tint ([#104](https://github.com/rocne/dstow/issues/104)) ([cd17e6e](https://github.com/rocne/dstow/commit/cd17e6e1162873ab483d69e215b95937b2094c32))
+
+
+### Bug Fixes
+
+* catppuccin-mocha names to blue — lavender was indistinguishable from mauve headings ([#103](https://github.com/rocne/dstow/issues/103)) ([a85a78e](https://github.com/rocne/dstow/commit/a85a78e31a982d8d96e72da12c88b39010197a3a))
+
 ## [0.1.2](https://github.com/rocne/dstow/compare/v0.1.1...v0.1.2) (2026-07-19)
 
 
