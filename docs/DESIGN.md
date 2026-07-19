@@ -112,7 +112,16 @@ by the dependency removal, doorway kept at synthesis.)*
 
 *Resolution: [CLI surface: commands, flags, help text (#22)](https://github.com/rocne/dstow/issues/22);
 full decision ledger D1–D16 there. Help text below is the approved canonical
-text (prototype v2 as amended through 2026-07-16).*
+content (prototype v2 as amended through 2026-07-16).*
+
+**The §2.3/§2.4 blocks bind content, not bytes** (ruled 2026-07-19 —
+[#96](https://github.com/rocne/dstow/issues/96)): the command inventory, the
+wording of descriptions and prose, the flag roster with its descriptions, and
+the examples are canonical — they are the material *fed into* help
+generation. Layout and rendering belong to cobra's help pipeline (A2 as
+amended): approving the help prototype approved what help *says*, never a
+hand-rendered bypass of the generator. Tests assert content presence against
+these blocks, never byte equality.
 
 ### 2.1 The shape rule
 
@@ -894,6 +903,13 @@ presentation specifics there are provisional, the rules here bind.*
   allows 0–255/hex); the promise binds defaults only.
 - **`--color <when>`** requires a value: auto (default) / always / never; no
   bare `--color`, no `--no-color` sugar — NO_COLOR covers the env side (O6).
+- **Help is colorized** (ruled 2026-07-19 —
+  [#96](https://github.com/rocne/dstow/issues/96)): help renders through the
+  same stack as everything else — section headings via `heading`, command
+  and flag names via `names`, placeholder/annotation text via `muted` —
+  strictly downstream of the §7.3 enable chain, so piped, `NO_COLOR`, and
+  `--color=never` help is plain text. One slot vocabulary: no help-specific
+  slots.
 - **`--quiet` drops routine chatter only** (O7): no-op lines, all-good
   summaries, progress. Announcements (§1.3), warnings, errors, and `fix:`
   lines always survive.
@@ -949,7 +965,16 @@ gostow-consumption seams; ephemeral internals are implementation's.*
   (v1.10.x, no viper) with `SilenceUsage`+`SilenceErrors`; all `RunE` errors
   are typed domain errors that `cli` alone maps to exit codes and renders
   through the printer — one owner for §1.4 wording. Help stays on stdout
-  (help *is* the requested data) (A2).
+  (help *is* the requested data) (A2). **Help is cobra-generated** (A2,
+  amended per the content-not-bytes ruling —
+  [#96](https://github.com/rocne/dstow/issues/96), 2026-07-19): every
+  command carries its Short/Long/Example and flag usage strings sourced from
+  the §2.3/§2.4 content; the root's command sections are cobra command
+  groups. No bespoke help renderer, no verbatim byte-pinning — the parser
+  surface and the help surface share one definition, so a flag appears in
+  help by construction. Help renders themed through `ui` (§7.2), strictly
+  downstream of the §7.3 enable chain; disabled color emits plain text (O11
+  strip contract).
 - **Exit-code map** (A3), mapped in exactly one place in `cli`:
   `0` success · `1` negative answer (any package failed; a requested field
   applicable but unset/empty; check found findings) · `2` usage error ·
@@ -971,8 +996,9 @@ gostow-consumption seams; ephemeral internals are implementation's.*
   TTY (prompts live on stderr); injectable for tests.
 - **fang is ruled out** (A18): experimental, lipgloss v2 + colorprofile is a
   second styling engine (the two-engines smell), auto commands collide with
-  the pinned leaves, and it restyles help approved verbatim. Engine
-  unification: **fatih/color alone**.
+  the pinned leaves. (Its former third ground — restyling "help approved
+  verbatim" — retired with the A2 amendment; the rejection stands on the
+  other two.) Engine unification: **fatih/color alone**.
 
 ### 8.3 Domain modules
 
