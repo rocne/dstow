@@ -166,7 +166,7 @@ func TestSnippetRC(t *testing.T) {
 	if errs != "" {
 		t.Errorf("snippet rc wrote to stderr: %q", errs)
 	}
-	if !strings.HasPrefix(out, "# dstow bootstrap") {
+	if !strings.HasPrefix(out, "#!/usr/bin/env sh") {
 		t.Errorf("snippet rc stdout unexpected: %q", out)
 	}
 }
