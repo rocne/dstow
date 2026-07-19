@@ -1,33 +1,50 @@
 package ops_test
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/rocne/dstow/internal/ops"
 )
 
-// wantRC is the §9.1 B1 canonical text, transcribed from DESIGN.md (the spec,
-// not the implementation): the exact bytes dstow snippet rc must emit. The
-// test is a spec-vs-implementation check — the embedded snippets/rc.sh and
-// this literal are two independent sources that must agree byte for byte.
-const wantRC = `# dstow bootstrap — https://github.com/rocne/dstow
-# Ensure the install dir is on PATH, then install dstow only if missing.
-# POSIX "is dir in PATH" idiom (builtin, fork-free):
-#   https://unix.stackexchange.com/q/32210
-case ":$PATH:" in
-  *":$HOME/.local/bin:"*) ;;                 # already on PATH
-  *) PATH="$HOME/.local/bin:$PATH" ;;
-esac
-
-if ! command -v dstow >/dev/null 2>&1; then
-  curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh
-fi
-`
-
+// TestSnippetRC asserts the emitted snippet is byte-identical to the vendored
+// snippet.sh at the repo root — the canonical rc bootstrap (§9.1 B1 as amended
+// per release-ci D26: one file, one owner, zero transcription drift). Reading
+// the file at test time (rather than comparing two embeds) verifies the embed
+// actually points at the vendored file and cannot go stale against it.
 func TestSnippetRC(t *testing.T) {
-	app := &ops.App{}
-	got := app.SnippetRC().Text
-	if got != wantRC {
-		t.Errorf("SnippetRC() text does not match canonical B1 bytes.\n got: %q\nwant: %q", got, wantRC)
+	want, err := os.ReadFile("../../snippet.sh")
+	if err != nil {
+		t.Fatalf("reading vendored snippet.sh: %v", err)
+	}
+	got := (&ops.App{}).SnippetRC().Text
+	if got != string(want) {
+		t.Errorf("SnippetRC() text does not match the vendored snippet.sh.\n got: %q\nwant: %q", got, want)
+	}
+}
+
+// TestSnippetRCContract asserts the §9.1 invariants the snippet must keep
+// whatever its exact bytes: the PATH line bakes the contractual default
+// install dir (B6) and precedes the install guard, and the guard
+// short-circuits on presence before any network (present ⇒ offline).
+func TestSnippetRCContract(t *testing.T) {
+	text := (&ops.App{}).SnippetRC().Text
+
+	pathIdx := strings.Index(text, `PATH="$HOME/.local/bin:$PATH"`)
+	guardIdx := strings.Index(text, "! command -v")
+	curlIdx := strings.Index(text, "curl -fsSL")
+
+	if pathIdx < 0 {
+		t.Fatal("snippet does not bake the contractual default install dir onto PATH")
+	}
+	if guardIdx < 0 {
+		t.Fatal("snippet has no negated command -v presence guard")
+	}
+	if curlIdx < 0 {
+		t.Fatal("snippet never fetches the installer")
+	}
+	if pathIdx >= guardIdx || guardIdx >= curlIdx {
+		t.Errorf("snippet order must be PATH line (%d) < presence guard (%d) < fetch (%d)", pathIdx, guardIdx, curlIdx)
 	}
 }
