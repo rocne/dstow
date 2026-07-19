@@ -20,18 +20,18 @@ func TestParseColorValue(t *testing.T) {
 		want []color.Attribute
 	}{
 		// The eight basic foreground colors (30–37).
-		{"black fg", "black", []color.Attribute{30}},
-		{"red fg", "red", []color.Attribute{31}},
-		{"green fg", "green", []color.Attribute{32}},
-		{"yellow fg", "yellow", []color.Attribute{33}},
-		{"blue fg", "blue", []color.Attribute{34}},
-		{"magenta fg", "magenta", []color.Attribute{35}},
-		{"cyan fg", "cyan", []color.Attribute{36}},
-		{"white fg", "white", []color.Attribute{37}},
+		{"black fg", "black", []color.Attribute{color.FgBlack}},
+		{"red fg", "red", []color.Attribute{color.FgRed}},
+		{"green fg", "green", []color.Attribute{color.FgGreen}},
+		{"yellow fg", "yellow", []color.Attribute{color.FgYellow}},
+		{"blue fg", "blue", []color.Attribute{color.FgBlue}},
+		{"magenta fg", "magenta", []color.Attribute{color.FgMagenta}},
+		{"cyan fg", "cyan", []color.Attribute{color.FgCyan}},
+		{"white fg", "white", []color.Attribute{color.FgWhite}},
 		// Bright variants (90–97).
-		{"bright red fg", "brightred", []color.Attribute{91}},
-		{"bright white fg", "brightwhite", []color.Attribute{97}},
-		{"bright black fg", "brightblack", []color.Attribute{90}},
+		{"bright red fg", "brightred", []color.Attribute{color.FgHiRed}},
+		{"bright white fg", "brightwhite", []color.Attribute{color.FgHiWhite}},
+		{"bright black fg", "brightblack", []color.Attribute{color.FgHiBlack}},
 		// default explicitly resets the channel (39 fg).
 		{"default fg", "default", []color.Attribute{39}},
 		// normal leaves the channel unchanged: emits no code.
@@ -45,11 +45,11 @@ func TestParseColorValue(t *testing.T) {
 		{"hex black", "#000000", []color.Attribute{38, 2, 0, 0, 0}},
 		{"hex white", "#ffffff", []color.Attribute{38, 2, 255, 255, 255}},
 		// Foreground then background ordering (fg 31, bg 42).
-		{"fg then bg", "red green", []color.Attribute{31, 42}},
+		{"fg then bg", "red green", []color.Attribute{color.FgRed, color.BgGreen}},
 		{"bg default", "normal default", []color.Attribute{49}},
-		{"bg bright", "black brightred", []color.Attribute{30, 101}},
-		{"bg 256", "red 231", []color.Attribute{31, 48, 5, 231}},
-		{"bg hex", "red #a6e3a1", []color.Attribute{31, 48, 2, 0xa6, 0xe3, 0xa1}},
+		{"bg bright", "black brightred", []color.Attribute{color.FgBlack, color.BgHiRed}},
+		{"bg 256", "red 231", []color.Attribute{color.FgRed, 48, 5, 231}},
+		{"bg hex", "red #a6e3a1", []color.Attribute{color.FgRed, 48, 2, 0xa6, 0xe3, 0xa1}},
 		// Every attribute.
 		{"bold", "bold", []color.Attribute{color.Bold}},
 		{"dim", "dim", []color.Attribute{color.Faint}},
@@ -59,20 +59,20 @@ func TestParseColorValue(t *testing.T) {
 		{"italic", "italic", []color.Attribute{color.Italic}},
 		{"strike", "strike", []color.Attribute{color.CrossedOut}},
 		// Attribute + color, order-independent.
-		{"bold red", "bold red", []color.Attribute{color.Bold, 31}},
-		{"red bold", "red bold", []color.Attribute{31, color.Bold}},
+		{"bold red", "bold red", []color.Attribute{color.Bold, color.FgRed}},
+		{"red bold", "red bold", []color.Attribute{color.FgRed, color.Bold}},
 		// Negations render as nothing (validated, no base to cancel).
 		{"no- negation emits nothing", "no-bold", nil},
 		{"no negation emits nothing", "nobold", nil},
-		{"negation alongside a color", "no-italic red", []color.Attribute{31}},
+		{"negation alongside a color", "no-italic red", []color.Attribute{color.FgRed}},
 		// reset renders SGR 0 first.
 		{"reset alone", "reset", []color.Attribute{color.Reset}},
-		{"reset hoisted to front", "red reset", []color.Attribute{color.Reset, 31}},
+		{"reset hoisted to front", "red reset", []color.Attribute{color.Reset, color.FgRed}},
 		// Empty string yields the zero Style.
 		{"empty string", "", nil},
 		{"whitespace only", "   ", nil},
 		// Case-insensitive words.
-		{"uppercase RED", "RED", []color.Attribute{31}},
+		{"uppercase RED", "RED", []color.Attribute{color.FgRed}},
 		{"mixed case Bold", "Bold", []color.Attribute{color.Bold}},
 	}
 	for _, tt := range tests {
@@ -132,22 +132,22 @@ func TestParseColorValueThirdColorNamesWord(t *testing.T) {
 // construction.
 func TestDefaultPalette(t *testing.T) {
 	want := map[Slot][]color.Attribute{
-		SlotStowed:          {32},             // green
-		SlotPartiallyStowed: {33},             // yellow
-		SlotNotStowed:       {color.Faint},    // dim
-		SlotOccupied:        {35},             // magenta
-		SlotDamaged:         {color.Bold, 31}, // bold red
-		SlotDrifted:         {36},             // cyan
-		SlotBroken:          {31},             // red
-		SlotOrphaned:        {33},             // yellow
-		SlotContradicted:    {color.Bold, 31}, // bold red
-		SlotNote:            {36},             // cyan
-		SlotWarning:         {33},             // yellow
-		SlotError:           {color.Bold, 31}, // bold red
-		SlotFix:             {34},             // blue
-		SlotName:            {color.Bold, 34}, // bold blue
-		SlotHeading:         {color.Bold, 35}, // bold magenta
-		SlotMuted:           {color.Faint},    // dim
+		SlotStowed:          {color.FgGreen},               // green
+		SlotPartiallyStowed: {color.FgYellow},              // yellow
+		SlotNotStowed:       {color.Faint},                 // dim
+		SlotOccupied:        {color.FgMagenta},             // magenta
+		SlotDamaged:         {color.Bold, color.FgRed},     // bold red
+		SlotDrifted:         {color.FgCyan},                // cyan
+		SlotBroken:          {color.FgRed},                 // red
+		SlotOrphaned:        {color.FgYellow},              // yellow
+		SlotContradicted:    {color.Bold, color.FgRed},     // bold red
+		SlotNote:            {color.FgCyan},                // cyan
+		SlotWarning:         {color.FgYellow},              // yellow
+		SlotError:           {color.Bold, color.FgRed},     // bold red
+		SlotFix:             {color.FgBlue},                // blue
+		SlotName:            {color.Bold, color.FgBlue},    // bold blue
+		SlotHeading:         {color.Bold, color.FgMagenta}, // bold magenta
+		SlotMuted:           {color.Faint},                 // dim
 	}
 	pal := DefaultPalette()
 	if len(pal) != 16 {
