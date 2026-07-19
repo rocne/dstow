@@ -126,6 +126,13 @@ names (`list`, `info`, `status`).
   `colors` {theme} · hidden `name` {encode, decode}.
 - Leaves: `stow` `unstow` `restow` `adopt` · `list` `info` `status` ·
   `check` `clean` `rebuild` · `completion` `version`.
+- **Root `--version` flag** (ruled at
+  [#81](https://github.com/rocne/dstow/issues/81), 2026-07-19): prints
+  exactly what `dstow version` prints — one source of truth, two spellings.
+  Exists to satisfy the release-ci D30 parse rule (the installer's
+  ensure-check and the release smoke parse `dstow --version` line 1); the
+  `version` subcommand remains the canonical spelling and the one §2.3
+  advertises.
 
 ### 2.2 Standing principles
 
