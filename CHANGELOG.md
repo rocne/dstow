@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/rocne/dstow/compare/v0.2.0...v0.3.0) (2026-07-19)
+
+
+### Features
+
+* cargo-derived default palette, cargo + fang-ansi presets ([#109](https://github.com/rocne/dstow/issues/109)) ([e7c718e](https://github.com/rocne/dstow/commit/e7c718ed6cfec671762b1ba1f75f1d2a2c4000e3))
+
 ## [0.2.0](https://github.com/rocne/dstow/compare/v0.1.2...v0.2.0) (2026-07-19)
 
 
