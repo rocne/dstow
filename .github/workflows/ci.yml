@@ -68,3 +68,19 @@ jobs:
 
       - name: Pre-release e2e
         run: ./test/run-e2e.sh
+
+  # The bundled theme presets are Whiskers-generated artifacts (#105): the
+  # template is the source of truth, the TOMLs are vendored output. Regenerate
+  # and diff so a template edit can never land without its artifacts.
+  themes-fresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: catppuccin/setup-whiskers@v2.0.0
+
+      - name: Regenerate presets
+        run: whiskers internal/ui/themes/dstow.tera
+
+      - name: Generated presets match the template
+        run: git diff --exit-code internal/ui/themes/

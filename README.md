@@ -425,6 +425,11 @@ Themes layer, top wins:
    # theme = "~/themes/mine.toml"
    ```
 
+   The bundled presets are the four [catppuccin](https://github.com/catppuccin/catppuccin)
+   flavors — `catppuccin-latte`, `catppuccin-frappe`, `catppuccin-macchiato`,
+   `catppuccin-mocha` — generated from one
+   [Whiskers](https://github.com/catppuccin/whiskers) template.
+
 4. **The default ANSI-16 palette.**
 
 Emit a theme for your session or to a file — the packed string, the config
