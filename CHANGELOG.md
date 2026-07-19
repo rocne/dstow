@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/rocne/dstow/compare/v0.1.1...v0.1.2) (2026-07-19)
+
+
+### Bug Fixes
+
+* **release:** drop cask manpages/completions dstow doesn't ship yet ([#47](https://github.com/rocne/dstow/issues/47)) ([#94](https://github.com/rocne/dstow/issues/94)) ([f4e3977](https://github.com/rocne/dstow/commit/f4e3977891186cb30ab0bb0cb5cb6c8e176a22fa))
+
 ## [0.1.1](https://github.com/rocne/dstow/compare/v0.1.0...v0.1.1) (2026-07-19)
 
 
