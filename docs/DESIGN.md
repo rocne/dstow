@@ -1045,25 +1045,20 @@ ledger B1–B9; [Release-ci and installer wiring survey (#19)](https://github.co
 
 Emitted by `dstow snippet rc`, to stdout, composable (`>> ~/.bashrc`); dstow
 never edits rc files. **Present ⇒ silent, invisible, offline** — the
-installer is never even fetched. Canonical text (B1):
+installer is never even fetched.
 
-```sh
-# dstow bootstrap — https://github.com/rocne/dstow
-# Ensure the install dir is on PATH, then install dstow only if missing.
-# POSIX "is dir in PATH" idiom (builtin, fork-free):
-#   https://unix.stackexchange.com/q/32210
-case ":$PATH:" in
-  *":$HOME/.local/bin:"*) ;;                 # already on PATH
-  *) PATH="$HOME/.local/bin:$PATH" ;;
-esac
-
-if ! command -v dstow >/dev/null 2>&1; then
-  curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh
-fi
-```
-
-**Every snippet emission is a go:embed document** — real files, diffable,
-shellcheck-able in CI; never string literals (B2).
+- **Canonical text is the vendored `snippet.sh`** (B1, amended per
+  release-ci D26 — [#64](https://github.com/rocne/dstow/issues/64)): the
+  snippet is *authored* in release-ci and vendored at dstow's repo root
+  beside `install.sh`, propagated the same way (B3). The contract the text
+  keeps, whatever its bytes: the PATH line bakes the contractual default
+  install dir (`~/.local/bin`, §9.2 B6) and is prepended *before* the guard;
+  the guard short-circuits before any network when the tool is present; the
+  snippet never breaks shell startup and leaves no variables behind.
+- **Every snippet emission is a go:embed document** — real files, diffable,
+  shellcheck-able in CI; never string literals (B2). `dstow snippet rc`
+  embeds the vendored `snippet.sh` itself — one file, one owner, zero
+  transcription drift.
 
 ### 9.2 The installer
 
@@ -1077,11 +1072,17 @@ shellcheck-able in CI; never string literals (B2).
 - **The silence matrix** (B5): rc + present = nothing; rc + absent = installs
   and announces; direct invocation always speaks (one status line + exit 0
   when present — "exits cleanly" means exit 0, not muteness).
-- **The installer contract is a floor** (B6): `command -v` presence check;
-  `--force`; `--version vX.Y.Z` implies force; `~/.local/bin` default bound
-  as *contract* (the snippet hardcodes it); checksum mandatory, cosign
-  opportunistic. Anything above the floor is release-ci's to grow freely;
-  the snippet depends on nothing above it.
+- **The installer contract is a floor** (B6, amended per the release-ci
+  counter-offers dstow accepts — [#64](https://github.com/rocne/dstow/issues/64)):
+  presence is the **dual check, install path first** (release-ci D16 —
+  `command -v` alone never converges for an off-PATH install dir; it remains
+  correct only inside the rc snippet, which fixes PATH first); `--force`;
+  `--version vX.Y.Z` is **ensure-exactly** (D28: already at that version ⇒
+  exit 0, otherwise install; it does *not* imply force); the install dir is
+  **tunable with the default as the contract** (D9/M1: flag > namespaced env >
+  `XDG_BIN_HOME` > `~/.local/bin` — the *default* is what the snippet bakes);
+  checksum mandatory, cosign opportunistic. Anything above the floor is
+  release-ci's to grow freely; the snippet depends on nothing above it.
 
 ### 9.3 Release wiring
 
