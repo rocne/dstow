@@ -188,7 +188,7 @@ removes them without asking). Nothing else is ever touched.`
 const rebuildLong = `Reconstruct a lost ledger by scanning configured targets for links into
 known repos. The only full tree walk dstow has; explicit and rare.`
 
-// snippet and colors groups (§2.4).
+// snippet and theme groups (§2.4).
 
 const snippetLong = `Print canned POSIX-sh snippets to stdout. dstow never edits rc files.`
 
@@ -197,10 +197,16 @@ const snippetExample = `  dstow snippet rc >> ~/.bashrc`
 // snippetRCShort is the rc entry's description in the §2.4 snippet block.
 const snippetRCShort = "The shell-rc bootstrap: installs dstow iff absent — silent and network-free whenever dstow is already present"
 
-const colorsLong = `Theming utilities.`
+const themeLong = `Theming: list the available themes; show, tweak, and emit colors.`
 
-const colorsExample = `  export DSTOW_COLORS=$(dstow colors theme catppuccin-mocha)
-  dstow colors theme catppuccin-mocha --format toml > ~/.config/dstow/themes/mine.toml`
+const themeExample = `  dstow theme list
+  dstow theme show
+  dstow theme show catppuccin-mocha
+  export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
+  dstow theme show cargo heading='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml`
 
-// colorsThemeShort is the theme entry's description in the §2.4 colors block.
-const colorsThemeShort = "Emit a named theme — as a packed DSTOW_COLORS string (default) or a theme file (--format toml)"
+// themeListShort and themeShowShort are the verb descriptions in the §2.4
+// theme block.
+const themeListShort = "List the available themes: bundled presets and your themes dir, active theme marked"
+
+const themeShowShort = "Show colors, each value in its own style: the effective palette (bare), a named theme, slot=value tweaks on top; --format env|toml emits for machines"

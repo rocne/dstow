@@ -139,6 +139,17 @@ func (f *Face) Style(slot Slot, text string) string {
 	return st.render(text)
 }
 
+// StyleWith renders text in an explicit style iff this face's color is on —
+// the seam for showing a theme's own colors rather than the printer's (theme
+// show renders each slot in the theme under inspection, not the active one).
+// StripANSI(result) == text always (O11).
+func (f *Face) StyleWith(st Style, text string) string {
+	if !f.colorOn {
+		return text
+	}
+	return st.render(text)
+}
+
 // severityWidth is len("warning:") — the width every severity prefix is padded
 // to so stacked commentary aligns (§7.2; the padding is provisional in the
 // spec, implemented as specced).

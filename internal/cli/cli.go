@@ -31,7 +31,7 @@ var shorts = map[string]string{
 
 	"repo":    "Manage repos: add, remove, update, upgrade",
 	"snippet": "Print canned shell snippets: rc bootstrap",
-	"colors":  "Theming utilities: emit a theme for your session or a file",
+	"theme":   "Theming: list themes; show, tweak, and emit colors",
 
 	"version": "Print version",
 }
@@ -177,7 +177,7 @@ func (e *env) newRootCmd() *cobra.Command {
 		e.newRebuildCmd(),
 		e.newRepoCmd(),
 		e.newSnippetCmd(),
-		e.newColorsCmd(),
+		e.newThemeCmd(),
 		e.newNameCmd(),
 		e.newVersionCmd(),
 	)

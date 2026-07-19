@@ -75,6 +75,33 @@ func validSlot(key string) bool {
 	return ok
 }
 
+// Slots returns the closed sixteen in canonical §3.3 order, a fresh copy per
+// call — the one order every slot-per-line rendering and emission follows.
+func Slots() []Slot {
+	out := make([]Slot, len(allSlots))
+	copy(out, allSlots)
+	return out
+}
+
+// ParseSlotAssignment parses one slot=value operand (the theme show override
+// grammar). Unlike the env/table/file paths this is a hard error, never
+// warn-and-skip: the user typed the assignment on this very command line, so
+// a bad one is a usage mistake with nothing else to salvage.
+func ParseSlotAssignment(arg string) (Slot, Style, error) {
+	key, value, ok := strings.Cut(arg, "=")
+	if !ok {
+		return "", Style{}, fmt.Errorf("operand %q is not in slot=value form", arg)
+	}
+	if !validSlot(key) {
+		return "", Style{}, fmt.Errorf("unknown color slot %q; the valid slots are: %s", key, strings.Join(slotNames, ", "))
+	}
+	st, err := ParseColorValue(value)
+	if err != nil {
+		return "", Style{}, fmt.Errorf("slot %q has an invalid color value: %v", key, err)
+	}
+	return Slot(key), st, nil
+}
+
 // Style is one parsed git color.* value: an ordered list of raw SGR parameters
 // (fatih color.Attribute is a raw SGR int). The zero value has no parameters
 // and renders plain — as do a lone `normal` and lone attribute negations,

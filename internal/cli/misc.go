@@ -2,11 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
+	"github.com/rocne/dstow/internal/config"
 	"github.com/rocne/dstow/internal/name"
 	"github.com/rocne/dstow/internal/ops"
+	"github.com/rocne/dstow/internal/ui"
 )
 
 // newVersionCmd builds the version leaf (§2.1): prints the version to stdout.
@@ -55,57 +58,181 @@ func (e *env) newSnippetCmd() *cobra.Command {
 	return cmd
 }
 
-// newColorsCmd builds the colors group (§2.4). theme emits a named theme as a
-// packed DSTOW_COLORS string (default) or a theme file (--format toml).
-func (e *env) newColorsCmd() *cobra.Command {
+// newThemeCmd builds the theme group (§2.4): list enumerates the roster, show
+// renders colors — the effective stack bare, a named theme by ref, slot=value
+// overrides on top — and emits them for machines via --format env|toml.
+func (e *env) newThemeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "colors",
-		Short:   shorts["colors"],
-		Long:    colorsLong,
-		Example: colorsExample,
+		Use:     "theme",
+		Short:   shorts["theme"],
+		Long:    themeLong,
+		Example: themeExample,
 		GroupID: groupGroups,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
+	cmd.AddCommand(e.newThemeListCmd(), e.newThemeShowCmd())
+	return cmd
+}
+
+// newThemeListCmd builds theme list: the roster of names the loader resolves —
+// bundled presets and the user themes dir — with origin and the active marker.
+func (e *env) newThemeListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: themeListShort,
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			global, warnings, err := e.loadGlobal()
+			e.renderWarnings(warnings)
+			if err != nil {
+				return err
+			}
+			res := (&ops.App{Global: global}).ThemeList()
+			width := 0
+			for _, row := range res.Rows {
+				if len(row.Name) > width {
+					width = len(row.Name)
+				}
+			}
+			for _, row := range res.Rows {
+				origin := "bundled"
+				switch {
+				case row.Bundled && row.User:
+					origin = "user (shadows bundled)"
+				case row.User:
+					origin = "user"
+				}
+				line := fmt.Sprintf("%-*s  %s", width, row.Name, origin)
+				if row.Active {
+					line += "  (active)"
+				}
+				e.pr().Out().Println(line)
+			}
+			return nil
+		},
+	}
+}
+
+// newThemeShowCmd builds theme show. Operands: at most one bare ref (a theme
+// name or path; absent = the effective §7.3 stack) plus any number of
+// slot=value overrides, layered on top. The default output renders each slot's
+// value in its own style; --format env|toml emits for machines.
+func (e *env) newThemeShowCmd() *cobra.Command {
 	var format string
-	theme := &cobra.Command{
-		Use:     "theme <name>",
-		Short:   colorsThemeShort,
-		Example: colorsExample,
-		Args:    cobra.ExactArgs(1),
+	cmd := &cobra.Command{
+		Use:               "show [theme] [slot=value ...]",
+		Short:             themeShowShort,
+		Example:           themeExample,
+		Args:              cobra.ArbitraryArgs,
+		ValidArgsFunction: completeThemeShow,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, err := parseColorFormat(format)
 			if err != nil {
 				return &usageError{err}
 			}
-			res, err := (&ops.App{}).ColorsTheme(args[0], f)
+			ref := ""
+			overrides := ui.Theme{}
+			for _, arg := range args {
+				if !strings.Contains(arg, "=") {
+					if ref != "" {
+						return &usageError{fmt.Errorf("at most one theme operand: got %q and %q", ref, arg)}
+					}
+					ref = arg
+					continue
+				}
+				slot, st, aerr := ui.ParseSlotAssignment(arg)
+				if aerr != nil {
+					return &usageError{aerr}
+				}
+				overrides[slot] = st
+			}
+
+			var effective ui.Theme
+			var warnings []ops.Warning
+			if ref == "" {
+				global, ws, lerr := e.loadGlobal()
+				warnings = ws
+				if lerr != nil {
+					e.renderWarnings(warnings)
+					return lerr
+				}
+				effective = e.composeStack(global, &warnings)
+			}
+
+			res, err := (&ops.App{}).ThemeShow(ref, effective, overrides, f)
 			if err != nil {
+				e.renderWarnings(warnings)
 				return err
 			}
-			e.renderWarnings(res.Warnings)
-			e.pr().Out().Printf("%s", res.Text)
-			if f == ops.ColorFormatEnv {
-				e.pr().Out().Printf("\n")
+			warnings = append(warnings, res.Warnings...)
+			e.renderWarnings(warnings)
+
+			switch f {
+			case ops.ColorFormatRendered:
+				out := e.pr().Out()
+				for _, slot := range ui.Slots() {
+					st, ok := res.Theme[slot]
+					if !ok {
+						continue
+					}
+					value, verr := ui.EmitColorValue(st)
+					if verr != nil {
+						return verr
+					}
+					if value == "" {
+						value = "normal"
+					}
+					out.Printf("%-17s %s\n", string(slot), out.StyleWith(st, value))
+				}
+			case ops.ColorFormatEnv:
+				e.pr().Out().Printf("%s\n", res.Text)
+			default:
+				e.pr().Out().Printf("%s", res.Text)
 			}
 			return nil
 		},
 	}
-	theme.Flags().StringVar(&format, "format", "env", "Output format: env (packed DSTOW_COLORS) or toml (theme file)")
-	cmd.AddCommand(theme)
+	cmd.Flags().StringVar(&format, "format", "", "Emit for machines: env (packed DSTOW_COLORS) or toml (theme file); default is the rendered view")
 	return cmd
 }
 
-// parseColorFormat maps the --format value to an ops.ColorFormat.
+// completeThemeShow completes theme show operands (A20, best-effort-silent):
+// theme names (only while no bare ref is present yet) and slot= override
+// stems.
+func completeThemeShow(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	var out []string
+	hasRef := false
+	for _, a := range args {
+		if !strings.Contains(a, "=") {
+			hasRef = true
+		}
+	}
+	if !hasRef {
+		for _, p := range ui.ListThemes(config.UserThemesDir()) {
+			out = append(out, p.Name)
+		}
+	}
+	for _, slot := range ui.Slots() {
+		out = append(out, string(slot)+"=")
+	}
+	return out, cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp
+}
+
+// parseColorFormat maps the --format value to an ops.ColorFormat. Absent means
+// the rendered human view; a format flag never changes the concept (§2.4).
 func parseColorFormat(f string) (ops.ColorFormat, error) {
 	switch f {
-	case "env", "":
+	case "":
+		return ops.ColorFormatRendered, nil
+	case "env":
 		return ops.ColorFormatEnv, nil
 	case "toml":
 		return ops.ColorFormatTOML, nil
 	default:
-		return ops.ColorFormatEnv, fmt.Errorf("invalid --format value %q: use env or toml", f)
+		return ops.ColorFormatRendered, fmt.Errorf("invalid --format value %q: use env or toml", f)
 	}
 }
 

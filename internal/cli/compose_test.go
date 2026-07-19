@@ -3,6 +3,7 @@ package cli
 import (
 	"testing"
 
+	"github.com/rocne/dstow/internal/ops"
 	"github.com/rocne/dstow/internal/ui"
 )
 
@@ -34,14 +35,18 @@ func TestParseColorMode(t *testing.T) {
 	}
 }
 
-// TestParseColorFormat asserts the colors --format resolution (env default,
-// toml, error otherwise) — a format flag never changes the concept.
+// TestParseColorFormat asserts the theme show --format resolution (rendered
+// default, env, toml, error otherwise) — a format flag never changes the
+// concept.
 func TestParseColorFormat(t *testing.T) {
-	if f, err := parseColorFormat(""); err != nil || f != 0 {
-		t.Errorf("empty format should default to env, got %v err %v", f, err)
+	if f, err := parseColorFormat(""); err != nil || f != ops.ColorFormatRendered {
+		t.Errorf("empty format should default to the rendered view, got %v err %v", f, err)
 	}
-	if _, err := parseColorFormat("toml"); err != nil {
-		t.Errorf("toml is a valid format: %v", err)
+	if f, err := parseColorFormat("env"); err != nil || f != ops.ColorFormatEnv {
+		t.Errorf("env is a valid format, got %v err %v", f, err)
+	}
+	if f, err := parseColorFormat("toml"); err != nil || f != ops.ColorFormatTOML {
+		t.Errorf("toml is a valid format, got %v err %v", f, err)
 	}
 	if _, err := parseColorFormat("yaml"); err == nil {
 		t.Errorf("an unknown format must error")

@@ -82,7 +82,7 @@ func TestPerCommandHelpContent(t *testing.T) {
 		{"#### check / clean / rebuild (leaves)", 1, []string{"clean"}},
 		{"#### check / clean / rebuild (leaves)", 2, []string{"rebuild"}},
 		{"#### snippet (group)", 0, []string{"snippet"}},
-		{"#### colors (group)", 0, []string{"colors"}},
+		{"#### theme (group)", 0, []string{"theme"}},
 	}
 	for _, tc := range cases {
 		t.Run(strings.Join(tc.args, "_"), func(t *testing.T) {
