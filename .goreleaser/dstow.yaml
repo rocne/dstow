@@ -74,16 +74,14 @@ homebrew_casks:
     homepage: https://github.com/rocne/dstow
     description: Dotfiles manager built on the gostow engine
     license: GPL-3.0-only
-    # Paths into the extracted archive. These are template metadata only —
-    # resolved by Homebrew against the release tarball at cask-install time,
-    # not required to exist locally — so pointing at #47's not-yet-built man
-    # page and completions here is safe now, unlike nfpms.contents above.
-    manpages:
-      - man/dstow.8
-    completions:
-      bash: completions/dstow.bash
-      zsh: completions/_dstow
-      fish: completions/dstow.fish
+    # man page + shell completions are gated on #47, exactly like the archives:
+    # and nfpms: blocks above — NOT declared here. Homebrew resolves cask
+    # manpages/completions against paths INSIDE the release tarball at install
+    # time; the archive ships neither, so declaring them makes `brew install`
+    # abort linking a missing symlink source and roll the whole install back
+    # (hit on v0.1.1, dstow's first real cask install). Restore all three
+    # blocks together when #47 grows man/dstow.8 + completions/dstow.{bash,fish}
+    # + completions/_dstow.
     # Binaries are not notarized; strip the Gatekeeper quarantine xattr on install
     # so the cask-installed dstow runs without "cannot be opened" errors on macOS.
     hooks:
