@@ -24,9 +24,31 @@ func isolateThemeXDG(t *testing.T) {
 // active in a fresh HOME.
 func TestThemeList(t *testing.T) {
 	isolateThemeXDG(t)
-	out, _, code := run(t, "theme", "list")
+	out, errs, code := run(t, "theme", "list")
 	if code != 0 {
 		t.Fatalf("theme list exit = %d", code)
+	}
+	// The header is commentary: stderr, never stdout (O1).
+	if !strings.Contains(errs, "Theme Name") || !strings.Contains(errs, "Source") {
+		t.Errorf("stderr missing the header: %q", errs)
+	}
+	if strings.Contains(out, "Theme Name") {
+		t.Errorf("header leaked onto stdout:\n%s", out)
+	}
+
+	// --quiet drops the header (O7); rows survive.
+	qout, qerrs, _ := run(t, "-q", "theme", "list")
+	if strings.Contains(qerrs, "Theme Name") {
+		t.Errorf("--quiet should drop the header: %q", qerrs)
+	}
+	if qout != out {
+		t.Errorf("--quiet changed the data rows")
+	}
+
+	// Names render through the name slot when color is forced (beats NO_COLOR).
+	cout, _, _ := run(t, "--color", "always", "theme", "list")
+	if !strings.Contains(cout, "\x1b[1;96mcargo\x1b[") {
+		t.Errorf("colorized names missing the name slot styling:\n%q", cout)
 	}
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
 	if len(lines) != 6 {
