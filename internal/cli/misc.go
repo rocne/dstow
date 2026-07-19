@@ -13,34 +13,37 @@ import (
 // Lightweight — it skips the heavy load entirely.
 func (e *env) newVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "version",
-		Short: "Print version",
-		Args:  cobra.NoArgs,
+		Use:     "version",
+		Short:   shorts["version"],
+		Long:    "Print dstow's version.",
+		GroupID: groupAlso,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			e.pr().Out().Println(e.version)
 			return nil
 		},
 	}
-	staticHelp(cmd, "Print dstow's version.\n\nUsage:\n  dstow version\n")
 	return cmd
 }
 
 // newSnippetCmd builds the snippet group (§2.4). Bare group prints its help.
 func (e *env) newSnippetCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "snippet",
-		Short: firstLine(snippetHelp),
-		Args:  cobra.NoArgs,
+		Use:     "snippet",
+		Short:   shorts["snippet"],
+		Long:    snippetLong,
+		Example: snippetExample,
+		GroupID: groupGroups,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
-	staticHelp(cmd, snippetHelp)
-
 	rc := &cobra.Command{
-		Use:   "rc",
-		Short: "Print the shell-rc bootstrap snippet",
-		Args:  cobra.NoArgs,
+		Use:     "rc",
+		Short:   snippetRCShort,
+		Example: snippetExample,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// SnippetRC is compiled-in text and cannot fail (A4); no heavy load.
 			res := (&ops.App{}).SnippetRC()
@@ -48,7 +51,6 @@ func (e *env) newSnippetCmd() *cobra.Command {
 			return nil
 		},
 	}
-	staticHelp(rc, snippetHelp)
 	cmd.AddCommand(rc)
 	return cmd
 }
@@ -57,20 +59,22 @@ func (e *env) newSnippetCmd() *cobra.Command {
 // packed DSTOW_COLORS string (default) or a theme file (--format toml).
 func (e *env) newColorsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "colors",
-		Short: firstLine(colorsHelp),
-		Args:  cobra.NoArgs,
+		Use:     "colors",
+		Short:   shorts["colors"],
+		Long:    colorsLong,
+		Example: colorsExample,
+		GroupID: groupGroups,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
-	staticHelp(cmd, colorsHelp)
-
 	var format string
 	theme := &cobra.Command{
-		Use:   "theme",
-		Short: "Emit a named theme",
-		Args:  cobra.ExactArgs(1),
+		Use:     "theme <name>",
+		Short:   colorsThemeShort,
+		Example: colorsExample,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, err := parseColorFormat(format)
 			if err != nil {
@@ -88,7 +92,6 @@ func (e *env) newColorsCmd() *cobra.Command {
 			return nil
 		},
 	}
-	staticHelp(theme, colorsHelp)
 	theme.Flags().StringVar(&format, "format", "env", "Output format: env (packed DSTOW_COLORS) or toml (theme file)")
 	cmd.AddCommand(theme)
 	return cmd

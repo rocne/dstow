@@ -12,19 +12,20 @@ import (
 // newRepoCmd builds the repo group (§2.4). A bare group prints its help (§2.1).
 func (e *env) newRepoCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "repo",
-		Short: firstLine(repoHelp),
-		Args:  cobra.NoArgs,
+		Use:     "repo",
+		Short:   shorts["repo"],
+		Long:    repoLong,
+		GroupID: groupGroups,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
-	staticHelp(cmd, repoHelp)
 	cmd.AddCommand(
 		e.newRepoAddCmd(),
 		e.newRepoRemoveCmd(),
-		e.newRepoSyncCmd("update", repoUpdateHelp),
-		e.newRepoSyncCmd("upgrade", repoUpgradeHelp),
+		e.newRepoSyncCmd("update"),
+		e.newRepoSyncCmd("upgrade"),
 	)
 	return cmd
 }
@@ -35,14 +36,15 @@ func (e *env) newRepoCmd() *cobra.Command {
 func (e *env) newRepoAddCmd() *cobra.Command {
 	var stow bool
 	cmd := &cobra.Command{
-		Use:   "add",
-		Short: firstLine(repoAddHelp),
-		Args:  cobra.ExactArgs(1),
+		Use:     "add <source>",
+		Short:   "Register a repo from a source (path, URL, github:owner/name)",
+		Long:    repoAddLong,
+		Example: repoAddExample,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoAdd(args[0], stow)
 		},
 	}
-	staticHelp(cmd, repoAddHelp)
 	cmd.Flags().BoolVar(&stow, "stow", false, "After adding, stow this repo's packages (exclusions apply)")
 	return cmd
 }
@@ -95,15 +97,15 @@ func (e *env) newRepoRemoveCmd() *cobra.Command {
 		force  bool
 	)
 	cmd := &cobra.Command{
-		Use:               "remove",
-		Short:             firstLine(repoRemoveHelp),
+		Use:               "remove <repo>",
+		Short:             "Unregister a repo (deletes managed clones only)",
+		Long:              repoRemoveLong,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: e.completeRepos,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoRemove(args[0], unstow, force)
 		},
 	}
-	staticHelp(cmd, repoRemoveHelp)
 	cmd.Flags().BoolVar(&unstow, "unstow", false, "Unstow the repo's packages first, without prompting")
 	cmd.Flags().BoolVar(&force, "force", false, "Override both guards (unsaved work will be lost)")
 	return cmd
@@ -134,16 +136,21 @@ func (e *env) runRepoRemove(repoName string, unstow, force bool) error {
 
 // newRepoSyncCmd builds repo update or repo upgrade (§2.4): optional repo
 // operands; empty means every remote repo. A per-repo failure is exit 1.
-func (e *env) newRepoSyncCmd(cmdName, help string) *cobra.Command {
+func (e *env) newRepoSyncCmd(cmdName string) *cobra.Command {
+	short := "Download remote repo changes; touch nothing on disk"
+	if cmdName == "upgrade" {
+		short = "Fast-forward clean clones to what update downloaded"
+	}
 	cmd := &cobra.Command{
-		Use:               cmdName,
-		Short:             firstLine(help),
+		Use:               cmdName + " [<repo>...]",
+		Short:             short,
+		Long:              repoSyncLong,
+		Example:           repoSyncExample,
 		ValidArgsFunction: e.completeRepos,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoSync(cmdName, args)
 		},
 	}
-	staticHelp(cmd, help)
 	return cmd
 }
 

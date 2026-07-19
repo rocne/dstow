@@ -188,15 +188,6 @@ func fixFor(err error) string {
 	return ""
 }
 
-// firstLine returns the first line of a help block, for a command's cobra Short
-// (cli renders the full help itself; Short only feeds cobra-internal listings).
-func firstLine(help string) string {
-	if i := strings.IndexByte(help, '\n'); i >= 0 {
-		return help[:i]
-	}
-	return help
-}
-
 // fqnList joins FQNs for a remedy line.
 func fqnList(fqns []name.FQN) string {
 	ss := make([]string, len(fqns))

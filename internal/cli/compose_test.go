@@ -6,8 +6,10 @@ import (
 	"github.com/rocne/dstow/internal/ui"
 )
 
-// TestParseColorMode asserts the --color <when> resolution (§7.2/O6): the value
-// is required and one of the three words; anything else is an error.
+// TestParseColorMode asserts the --color <when> resolution (§7.2/O6): one of
+// the three words, or absent ("" — the flag's declared default, which means
+// auto); anything else is an error. Bare `--color` without a value is still
+// refused, at the flag layer (pflag requires a value for a string flag).
 func TestParseColorMode(t *testing.T) {
 	cases := []struct {
 		in      string
@@ -17,7 +19,7 @@ func TestParseColorMode(t *testing.T) {
 		{"auto", ui.ColorAuto, false},
 		{"always", ui.ColorAlways, false},
 		{"never", ui.ColorNever, false},
-		{"", ui.ColorAuto, true},
+		{"", ui.ColorAuto, false},
 		{"purple", ui.ColorAuto, true},
 		{"Auto", ui.ColorAuto, true}, // case-sensitive, per the pinned words
 	}

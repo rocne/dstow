@@ -12,14 +12,15 @@ import (
 func (e *env) newCheckCmd() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:   "check",
-		Short: firstLine(checkHelp),
-		Args:  cobra.NoArgs,
+		Use:     "check",
+		Short:   shorts["check"],
+		Long:    checkLong,
+		GroupID: groupMaintain,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runCheck(asJSON)
 		},
 	}
-	staticHelp(cmd, checkHelp)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Machine-readable report")
 	return cmd
 }
@@ -65,14 +66,15 @@ func (e *env) renderCheck(rep *ops.CheckReport) {
 func (e *env) newCleanCmd() *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{
-		Use:   "clean",
-		Short: firstLine(cleanHelp),
-		Args:  cobra.NoArgs,
+		Use:     "clean",
+		Short:   shorts["clean"],
+		Long:    cleanLong,
+		GroupID: groupMaintain,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runClean(force)
 		},
 	}
-	staticHelp(cmd, cleanHelp)
 	cmd.Flags().BoolVar(&force, "force", false, "Remove orphans without confirmation in any context")
 	return cmd
 }
@@ -132,14 +134,15 @@ func (e *env) renderClean(res *ops.CleanResult) {
 // walk. Its output is commentary (stderr).
 func (e *env) newRebuildCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rebuild",
-		Short: firstLine(rebuildHelp),
-		Args:  cobra.NoArgs,
+		Use:     "rebuild",
+		Short:   shorts["rebuild"],
+		Long:    rebuildLong,
+		GroupID: groupMaintain,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRebuild()
 		},
 	}
-	staticHelp(cmd, rebuildHelp)
 	return cmd
 }
 

@@ -19,7 +19,9 @@ import (
 // words; anything else is a usage error.
 func parseColorMode(when string) (ui.ColorMode, error) {
 	switch when {
-	case "auto":
+	// The flag's declared default is "" so pflag prints no default suffix in
+	// help; absent means auto (§7.2 O6).
+	case "auto", "":
 		return ui.ColorAuto, nil
 	case "always":
 		return ui.ColorAlways, nil
