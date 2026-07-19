@@ -145,8 +145,8 @@ func TestDefaultPalette(t *testing.T) {
 		SlotWarning:         {33},             // yellow
 		SlotError:           {color.Bold, 31}, // bold red
 		SlotFix:             {34},             // blue
-		SlotName:            {color.Bold},     // bold
-		SlotHeading:         {color.Bold},     // bold
+		SlotName:            {color.Bold, 34}, // bold blue
+		SlotHeading:         {color.Bold, 35}, // bold magenta
 		SlotMuted:           {color.Faint},    // dim
 	}
 	pal := DefaultPalette()

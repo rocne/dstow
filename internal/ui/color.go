@@ -290,8 +290,8 @@ func DefaultPalette() Theme {
 		SlotWarning:         mustStyle("yellow"),
 		SlotError:           mustStyle("bold red"),
 		SlotFix:             mustStyle("blue"),
-		SlotName:            mustStyle("bold"),
-		SlotHeading:         mustStyle("bold"),
+		SlotName:            mustStyle("bold blue"),
+		SlotHeading:         mustStyle("bold magenta"),
 		SlotMuted:           mustStyle("dim"),
 	}
 }

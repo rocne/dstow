@@ -895,7 +895,12 @@ presentation specifics there are provisional, the rules here bind.*
   · not stowed dim · occupied magenta · damaged bold red · drifted cyan ·
   broken red · orphaned yellow · contradicted bold red (same evidence as
   damaged, two views) · note: cyan · warning: yellow · error: bold red ·
-  fix: blue · names bold · heading bold · muted dim.
+  fix: blue · names bold blue · heading bold magenta · muted dim.
+  *(names/heading colored, ruled 2026-07-19 with help colorization —
+  [#96](https://github.com/rocne/dstow/issues/96): once help made the prose
+  slots its whole face, bold-only defaults undersold the O4 promise; weight
+  keeps them distinct from fix: blue and occupied magenta. Bundled themes
+  color all three prose slots.)*
 - **The O4 promise**: dstow's *defaults* emit only the 16 base ANSI slots, so
   the terminal theme rethemes dstow automatically and colorblind/low-vision
   users retheme through terminal preferences (gh's Accessible pattern made
