@@ -136,18 +136,18 @@ func TestDefaultPalette(t *testing.T) {
 		SlotPartiallyStowed: {color.FgYellow},              // yellow
 		SlotNotStowed:       {color.Faint},                 // dim
 		SlotOccupied:        {color.FgMagenta},             // magenta
-		SlotDamaged:         {color.Bold, color.FgRed},     // bold red
+		SlotDamaged:         {color.Bold, color.FgHiRed},   // bold brightred
 		SlotDrifted:         {color.FgCyan},                // cyan
 		SlotBroken:          {color.FgRed},                 // red
 		SlotOrphaned:        {color.FgYellow},              // yellow
-		SlotContradicted:    {color.Bold, color.FgRed},     // bold red
-		SlotNote:            {color.FgCyan},                // cyan
-		SlotWarning:         {color.FgYellow},              // yellow
-		SlotError:           {color.Bold, color.FgRed},     // bold red
-		SlotFix:             {color.FgBlue},                // blue
-		SlotName:            {color.Bold, color.FgBlue},    // bold blue
-		SlotHeading:         {color.Bold, color.FgMagenta}, // bold magenta
-		SlotMuted:           {color.Faint},                 // dim
+		SlotContradicted:    {color.Bold, color.FgHiRed},   // bold brightred
+		SlotNote:            {color.FgHiGreen},             // brightgreen
+		SlotWarning:         {color.Bold, color.FgYellow},  // bold yellow
+		SlotError:           {color.Bold, color.FgHiRed},   // bold brightred
+		SlotFix:             {color.Bold, color.FgHiCyan},  // bold brightcyan
+		SlotName:            {color.Bold, color.FgHiCyan},  // bold brightcyan
+		SlotHeading:         {color.Bold, color.FgHiGreen}, // bold brightgreen
+		SlotMuted:           {color.FgCyan},                // cyan
 	}
 	pal := DefaultPalette()
 	if len(pal) != 16 {

@@ -291,10 +291,12 @@ func TestLoadThemeBadValueWarns(t *testing.T) {
 }
 
 // Every embedded preset round-trips through the loader and parses
-// warning-free with all sixteen slots, exercising the same loader path as
-// user files (A5). The roster is the four Whiskers-generated catppuccin
-// flavors (#105).
-func TestBundledCatppuccinRoundTrips(t *testing.T) {
+// warning-free, exercising the same loader path as user files (A5). The four
+// Whiskers-generated catppuccin flavors (#105) declare all sixteen slots; the
+// hand-vendored prior-art presets (cargo, fang-ansi) declare only the slots
+// their source specifies — absent slots fall through the §7.3 stack by design.
+func TestBundledPresetsRoundTrip(t *testing.T) {
+	minSlots := map[string]int{"cargo": 7, "fang-ansi": 4}
 	for _, name := range BundledThemes() {
 		theme, warns, err := LoadTheme(name, "")
 		if err != nil {
@@ -303,15 +305,19 @@ func TestBundledCatppuccinRoundTrips(t *testing.T) {
 		if len(warns) != 0 {
 			t.Fatalf("%s must parse warning-free, got: %v", name, warns)
 		}
-		if len(theme) != 16 {
-			t.Errorf("%s has %d slots, want 16", name, len(theme))
+		want, partial := minSlots[name]
+		if !partial {
+			want = 16
+		}
+		if len(theme) != want {
+			t.Errorf("%s has %d slots, want %d", name, len(theme), want)
 		}
 	}
 }
 
 func TestBundledThemes(t *testing.T) {
 	got := BundledThemes()
-	want := []string{"catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha"}
+	want := []string{"cargo", "catppuccin-frappe", "catppuccin-latte", "catppuccin-macchiato", "catppuccin-mocha", "fang-ansi"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("BundledThemes() = %v, want %v", got, want)
 	}

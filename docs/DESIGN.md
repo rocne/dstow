@@ -892,15 +892,21 @@ presentation specifics there are provisional, the rules here bind.*
 ### 7.2 Palette, prompts, quiet
 
 - **The semantic palette (ANSI-16)**: stowed green · partially stowed yellow
-  · not stowed dim · occupied magenta · damaged bold red · drifted cyan ·
-  broken red · orphaned yellow · contradicted bold red (same evidence as
-  damaged, two views) · note: cyan · warning: yellow · error: bold red ·
-  fix: blue · names bold blue · heading bold magenta · muted dim.
+  · not stowed dim · occupied magenta · damaged bold brightred · drifted cyan
+  · broken red · orphaned yellow · contradicted bold brightred (same evidence
+  as damaged, two views) · note: brightgreen · warning: bold yellow ·
+  error: bold brightred · fix: bold brightcyan · names bold brightcyan ·
+  heading bold brightgreen · muted cyan.
   *(names/heading colored, ruled 2026-07-19 with help colorization —
-  [#96](https://github.com/rocne/dstow/issues/96): once help made the prose
-  slots its whole face, bold-only defaults undersold the O4 promise; weight
-  keeps them distinct from fix: blue and occupied magenta. Bundled themes
-  color all three prose slots.)*
+  [#96](https://github.com/rocne/dstow/issues/96); prior-art defaults ruled
+  2026-07-19: the prose and severity slots follow Cargo's help styling
+  (clap-cargo `style.rs`, the de facto cargo-CLI reference) — heading =
+  HEADER, names = LITERAL, muted = PLACEHOLDER (LITERAL's same-hue,
+  lower-weight sibling), error/warning/note = their cargo namesakes, fix =
+  VALID (clap's did-you-mean style; fix lines are things you type, so they
+  deliberately share names' color). The state slots have no cargo analog and
+  keep dstow's semantic hues; damaged/contradicted follow error. Blue does
+  not appear in the defaults. Bundled themes color all three prose slots.)*
 - **The O4 promise**: dstow's *defaults* emit only the 16 base ANSI slots, so
   the terminal theme rethemes dstow automatically and colorblind/low-vision
   users retheme through terminal preferences (gh's Accessible pattern made
