@@ -91,12 +91,12 @@ esac
 # --color=always styles the help even when piped...
 colored=$(dstow --color=always --help)
 case $colored in
-  *"$esc["*) ;;
+  *"${esc}["*) ;;
   *) printf 'FAIL: dstow --color=always --help carries no ANSI styling\n'; exit 1 ;;
 esac
 
 # ...and stripping the styling restores the plain bytes exactly (O11).
-stripped=$(printf '%s\n' "$colored" | sed "s/$esc\[[0-9;]*m//g")
+stripped=$(printf '%s\n' "$colored" | sed "s/${esc}\[[0-9;]*m//g")
 if [ "$stripped" != "$got" ]; then
   printf 'FAIL: strip(colored help) differs from plain help (O11)\n'
   exit 1
@@ -109,7 +109,7 @@ case $no_color in
 esac
 forced=$(NO_COLOR=1 dstow --color=always --help)
 case $forced in
-  *"$esc["*) ;;
+  *"${esc}["*) ;;
   *) printf 'FAIL: --color=always must beat NO_COLOR (§7.3)\n'; exit 1 ;;
 esac
 
