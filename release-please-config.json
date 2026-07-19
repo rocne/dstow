@@ -6,7 +6,8 @@
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
       "include-v-in-tag": true,
-      "initial-version": "1.0.0"
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }
