@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/rocne/dstow/compare/v0.1.0...v0.1.1) (2026-07-19)
+
+
+### Bug Fixes
+
+* **signing:** adopt cosign v3 Sigstore bundle (release-ci[#45](https://github.com/rocne/dstow/issues/45), D35) ([#91](https://github.com/rocne/dstow/issues/91)) ([8038bd8](https://github.com/rocne/dstow/commit/8038bd8421c39246d0eb8686aab78203eadc3772))
+
 ## 0.1.0 (2026-07-19)
 
 
