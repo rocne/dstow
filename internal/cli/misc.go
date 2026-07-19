@@ -91,25 +91,35 @@ func (e *env) newThemeListCmd() *cobra.Command {
 				return err
 			}
 			res := (&ops.App{Global: global}).ThemeList()
-			width := 0
+			const nameHead, sourceHead = "Theme Name", "Source"
+			width := len(nameHead)
 			for _, row := range res.Rows {
 				if len(row.Name) > width {
 					width = len(row.Name)
 				}
 			}
+			// The header is commentary, not data: heading-styled, on stderr
+			// (O1), dropped by --quiet (O7) — piped stdout stays pure rows.
+			if !e.quiet {
+				head := fmt.Sprintf("%-*s  %s", width, nameHead, sourceHead)
+				e.pr().Err().Printf("%s\n", e.pr().Err().Style(ui.SlotHeading, head))
+			}
 			for _, row := range res.Rows {
-				origin := "bundled"
+				origin := "bundled" // origin styling deferred (Rocne, 2026-07-19)
 				switch {
 				case row.Bundled && row.User:
 					origin = "user (shadows bundled)"
 				case row.User:
 					origin = "user"
 				}
-				line := fmt.Sprintf("%-*s  %s", width, row.Name, origin)
+				// Pad on the plain name, then style: ANSI bytes must not
+				// count against the column width.
+				out := e.pr().Out()
+				line := out.Style(ui.SlotName, row.Name) + strings.Repeat(" ", width-len(row.Name)) + "  " + origin
 				if row.Active {
 					line += "  (active)"
 				}
-				e.pr().Out().Println(line)
+				out.Println(line)
 			}
 			return nil
 		},
