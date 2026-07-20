@@ -15,17 +15,17 @@ never depends on the directory you happen to be standing in.
   config can point elsewhere.
 
 ```
-github:yourname/dotfiles::zsh
-└─┬──┘ └───────┬───────┘  └┬┘
-  │            │           package
+github:yourname/dotfiles::starship
+└─┬──┘ └───────┬───────┘  └──┬───┘
+  │            │             package
   │            coordinate
   scheme
 ```
 
 That fully-qualified name (FQN) is a package's stable identity. You rarely type
-the whole thing — **any unambiguous suffix works** (`zsh`, `dotfiles::zsh`,
-`yourname/dotfiles::zsh`), and **the working directory never changes what a
-command does.**
+the whole thing — **any unambiguous suffix works** (`starship`,
+`dotfiles::starship`, `yourname/dotfiles::starship`), and **the working
+directory never changes what a command does.**
 
 ---
 
