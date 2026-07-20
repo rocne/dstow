@@ -184,7 +184,7 @@ func (e *env) runRepoSync(cmdName string, names []string) error {
 func (e *env) renderRepoSync(cmdName string, res *ops.RepoSyncResult) {
 	pr := e.pr()
 	for _, r := range res.Repos {
-		name := pr.Err().Style(ui.SlotName, r.FQN.String())
+		name := pr.Err().Style(ui.RoleName, r.FQN.String())
 		switch {
 		case r.Err != nil:
 			pr.Errorf("%s: %v", r.FQN, r.Err)

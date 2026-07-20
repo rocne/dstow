@@ -56,7 +56,7 @@ func (e *env) renderCheck(rep *ops.CheckReport) {
 		return
 	}
 	for _, f := range rep.Findings {
-		out.Println(out.Style(classSlot(f.Class), f.Class.String()) + "  " + f.Entry.Link + "  " + out.Style(ui.SlotMuted, f.Evidence))
+		out.Println(out.Style(classRole(f.Class), f.Class.String()) + "  " + f.Entry.Link + "  " + out.Style(ui.RoleMuted, f.Evidence))
 	}
 }
 

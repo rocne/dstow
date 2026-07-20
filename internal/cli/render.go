@@ -23,49 +23,49 @@ func (e *env) renderWarnings(ws []ops.Warning) {
 	}
 }
 
-// stateSlot maps a package state to its semantic slot (O3: only ui names
-// colors; callers name slots).
-func stateSlot(s ops.PackageState) ui.Slot {
+// stateRole maps a package state to its rendering role (O3: only ui names
+// colors; callers name roles).
+func stateRole(s ops.PackageState) ui.Role {
 	switch s {
 	case ops.StateStowed:
-		return ui.SlotStowed
+		return ui.RoleStowed
 	case ops.StatePartiallyStowed:
-		return ui.SlotPartiallyStowed
+		return ui.RolePartiallyStowed
 	case ops.StateOccupied:
-		return ui.SlotOccupied
+		return ui.RoleOccupied
 	case ops.StateDamaged:
-		return ui.SlotDamaged
+		return ui.RoleDamaged
 	default:
-		return ui.SlotNotStowed
+		return ui.RoleNotStowed
 	}
 }
 
-// linkStateSlot maps a per-link state to its slot.
-func linkStateSlot(s ops.LinkState) ui.Slot {
+// linkStateRole maps a per-link state to its role.
+func linkStateRole(s ops.LinkState) ui.Role {
 	switch s {
 	case ops.LinkStowed:
-		return ui.SlotStowed
+		return ui.RoleStowed
 	case ops.LinkOccupied:
-		return ui.SlotOccupied
+		return ui.RoleOccupied
 	case ops.LinkDamaged:
-		return ui.SlotDamaged
+		return ui.RoleDamaged
 	default:
-		return ui.SlotNotStowed
+		return ui.RoleNotStowed
 	}
 }
 
-// classSlot maps a check class to its slot. Unobservable has no palette entry
-// (it is a read-only #45 row, not a state or check class), so it renders muted.
-func classSlot(c ops.Class) ui.Slot {
+// classRole maps a check class to its role. Unobservable is not a state or
+// check class (a read-only #45 row), so it renders muted.
+func classRole(c ops.Class) ui.Role {
 	switch c {
 	case ops.ClassBroken:
-		return ui.SlotBroken
+		return ui.RoleBroken
 	case ops.ClassOrphaned:
-		return ui.SlotOrphaned
+		return ui.RoleOrphaned
 	case ops.ClassContradicted:
-		return ui.SlotContradicted
+		return ui.RoleContradicted
 	default:
-		return ui.SlotMuted
+		return ui.RoleMuted
 	}
 }
 

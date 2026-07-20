@@ -1,11 +1,15 @@
 # cargo — Cargo's help styling (clap-cargo style.rs), the de facto reference
 # for cargo-like CLIs. Hand-vendored prior art; ANSI-16 names only, so the
 # terminal theme supplies the actual colors. Declares only the slots with a
-# cargo analog: the nine state slots fall through to the default palette.
-note = "brightgreen"
-warning = "bold yellow"
-error = "bold brightred"
-fix = "bold brightcyan"
-name = "bold brightcyan"
-heading = "bold brightgreen"
-muted = "cyan"
+# clap-cargo analog: section1 = HEADER, name1 = LITERAL, value2 = PLACEHOLDER,
+# error1 = ERROR, warning1 = WARN, success1 = GOOD, info1 = VALID (the
+# did-you-mean style — renders fix:), info2 = NOTE. Everything else falls
+# through the §7.3 stack.
+section1 = "bold brightgreen"
+name1 = "bold brightcyan"
+value2 = "cyan"
+error1 = "bold brightred"
+warning1 = "bold yellow"
+success1 = "green"
+info1 = "bold brightcyan"
+info2 = "brightgreen"

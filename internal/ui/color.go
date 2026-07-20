@@ -1,6 +1,6 @@
 // Package ui is dstow's sole owner of the terminal streams (A4): every other
 // module returns data — diagnostics included — and ui alone renders it. This
-// file holds the value grammar: the sixteen semantic slots (§3.3), the parser
+// file holds the value grammar: the fourteen generic slots (§3.3), the parser
 // for git's color.* value grammar (§7.3), the default ANSI-16 palette (§7.2),
 // and the strip-ANSI helper that backs the O11 test contract.
 //
@@ -19,37 +19,39 @@ import (
 	"github.com/fatih/color"
 )
 
-// Slot is one of the sixteen semantic slots (§3.3): a closed set spelled in
-// the snake_case color vocabulary. Nothing outside ui ever names a color (O3);
-// callers name slots.
+// Slot is one of the fourteen generic slots (§3.3): the closed theming
+// vocabulary, spelled snake_case-compatible (family + prominence tier; 1 is
+// loudest). Themes, DSTOW_COLORS, and the [color] table speak slots and
+// nothing else; dstow's internal vocabulary reaches them only through the
+// stage-2 Role mapping below (§7.2). Nothing outside ui ever names a color
+// (O3).
 type Slot string
 
 const (
-	SlotStowed          Slot = "stowed"
-	SlotPartiallyStowed Slot = "partially_stowed"
-	SlotNotStowed       Slot = "not_stowed"
-	SlotOccupied        Slot = "occupied"
-	SlotDamaged         Slot = "damaged"
-	SlotDrifted         Slot = "drifted"
-	SlotBroken          Slot = "broken"
-	SlotOrphaned        Slot = "orphaned"
-	SlotContradicted    Slot = "contradicted"
-	SlotNote            Slot = "note"
-	SlotWarning         Slot = "warning"
-	SlotError           Slot = "error"
-	SlotFix             Slot = "fix"
-	SlotName            Slot = "name"
-	SlotHeading         Slot = "heading"
-	SlotMuted           Slot = "muted"
+	// Content group.
+	SlotSection1 Slot = "section1"
+	SlotSection2 Slot = "section2"
+	SlotName1    Slot = "name1"
+	SlotName2    Slot = "name2"
+	SlotValue1   Slot = "value1"
+	SlotValue2   Slot = "value2"
+	// Message group: error, warning, success, info families.
+	SlotError1   Slot = "error1"
+	SlotError2   Slot = "error2"
+	SlotWarning1 Slot = "warning1"
+	SlotWarning2 Slot = "warning2"
+	SlotSuccess1 Slot = "success1"
+	SlotSuccess2 Slot = "success2"
+	SlotInfo1    Slot = "info1"
+	SlotInfo2    Slot = "info2"
 )
 
-// allSlots is the closed sixteen, in §3.3 order (states, check classes,
-// severities, prose). Used to validate keys and to name the set in remedies.
+// allSlots is the closed fourteen, in §3.3 order (content, then the message
+// families). Used to validate keys and to name the set in remedies.
 var allSlots = []Slot{
-	SlotStowed, SlotPartiallyStowed, SlotNotStowed, SlotOccupied, SlotDamaged, SlotDrifted,
-	SlotBroken, SlotOrphaned, SlotContradicted,
-	SlotNote, SlotWarning, SlotError, SlotFix,
-	SlotName, SlotHeading, SlotMuted,
+	SlotSection1, SlotSection2, SlotName1, SlotName2, SlotValue1, SlotValue2,
+	SlotError1, SlotError2, SlotWarning1, SlotWarning2,
+	SlotSuccess1, SlotSuccess2, SlotInfo1, SlotInfo2,
 }
 
 var slotSet = func() map[Slot]struct{} {
@@ -60,7 +62,7 @@ var slotSet = func() map[Slot]struct{} {
 	return m
 }()
 
-// slotNames is the sixteen slot strings, sorted, for remedy prose.
+// slotNames is the fourteen slot strings, sorted, for remedy prose.
 var slotNames = func() []string {
 	out := make([]string, len(allSlots))
 	for i, s := range allSlots {
@@ -75,11 +77,119 @@ func validSlot(key string) bool {
 	return ok
 }
 
-// Slots returns the closed sixteen in canonical §3.3 order, a fresh copy per
+// Slots returns the closed fourteen in canonical §3.3 order, a fresh copy per
 // call — the one order every slot-per-line rendering and emission follows.
 func Slots() []Slot {
 	out := make([]Slot, len(allSlots))
 	copy(out, allSlots)
+	return out
+}
+
+// Role is one dstow-internal rendering role: a package state, check class,
+// severity prefix, or prose role, spelled in CONTEXT.md vocabulary. Callers
+// name roles, never slots and never colors (O3); roleSlot — the stage-2
+// mapping (§7.2), whose one owner is this table — says which generic slot
+// renders each role.
+type Role string
+
+const (
+	RoleStowed          Role = "stowed"
+	RolePartiallyStowed Role = "partially stowed"
+	RoleNotStowed       Role = "not stowed"
+	RoleOccupied        Role = "occupied"
+	RoleDamaged         Role = "damaged"
+	RoleDrifted         Role = "drifted"
+	RoleBroken          Role = "broken"
+	RoleOrphaned        Role = "orphaned"
+	RoleContradicted    Role = "contradicted"
+	RoleNote            Role = "note"
+	RoleWarning         Role = "warning"
+	RoleError           Role = "error"
+	RoleFix             Role = "fix"
+	RoleName            Role = "name"
+	RoleHeading         Role = "heading"
+	RoleMuted           Role = "muted"
+)
+
+// roleSlot is THE stage-2 mapping (§7.2): code-owned, closed in v1 — no
+// per-role override surface — and adjusted only here. Slot-sharing is the
+// point: sameness that was prose discipline (contradicted ≡ damaged,
+// orphaned ≡ partially stowed, fix's prominence) is structural now.
+var roleSlot = map[Role]Slot{
+	RoleHeading:         SlotSection1,
+	RoleName:            SlotName1,
+	RoleMuted:           SlotValue2,
+	RoleError:           SlotError1,
+	RoleWarning:         SlotWarning1,
+	RoleFix:             SlotInfo1, // actionable guidance: info, prominent
+	RoleNote:            SlotInfo2, // FYI commentary: info, quiet
+	RoleStowed:          SlotSuccess2,
+	RolePartiallyStowed: SlotWarning2,
+	RoleNotStowed:       SlotInfo2,
+	RoleOccupied:        SlotInfo1, // CONTEXT: deliberately neutral
+	RoleDamaged:         SlotError1,
+	RoleContradicted:    SlotError1,
+	RoleDrifted:         SlotWarning2,
+	RoleBroken:          SlotError2,
+	RoleOrphaned:        SlotWarning2,
+}
+
+// RoleSlot resolves a role through the stage-2 mapping. An unknown role
+// resolves to the empty slot, which no theme declares — it renders plain.
+func RoleSlot(r Role) Slot {
+	return roleSlot[r]
+}
+
+// slotFamilyTier splits a slot into its family stem and prominence tier
+// ("warning2" -> "warning", 2). The roster is closed and every slot ends in
+// its single-digit tier, so this never fails for a valid slot.
+func slotFamilyTier(s Slot) (family string, tier int) {
+	str := string(s)
+	return str[:len(str)-1], int(str[len(str)-1] - '0')
+}
+
+// stepDown is the tier-derivation step (§7.3): remove bold if present, else
+// add dim. Attribute-only, so it works identically for named ANSI, 256, and
+// hex values.
+func (st Style) stepDown() Style {
+	for i, p := range st.params {
+		if p == color.Bold {
+			out := make([]color.Attribute, 0, len(st.params)-1)
+			out = append(out, st.params[:i]...)
+			out = append(out, st.params[i+1:]...)
+			return Style{params: out}
+		}
+	}
+	out := make([]color.Attribute, 0, len(st.params)+1)
+	out = append(out, color.Faint)
+	out = append(out, st.params...)
+	return Style{params: out}
+}
+
+// DeriveTiers fills every slot still undeclared after the stack composed
+// (§7.3 tier derivation): a missing tier-N slot derives from its family's
+// effective tier-1 by stepping down once per tier gap. A declared value at
+// any layer always beats derivation. The input theme is not mutated. With
+// the default palette in the stack, every slot resolves.
+func DeriveTiers(t Theme) Theme {
+	out := Theme{}
+	for slot, st := range t {
+		out[slot] = st
+	}
+	for _, slot := range allSlots {
+		if _, ok := out[slot]; ok {
+			continue
+		}
+		family, tier := slotFamilyTier(slot)
+		base, ok := out[Slot(family+"1")]
+		if !ok {
+			continue // no family tier-1 anywhere: leave undeclared (renders plain)
+		}
+		for i := 1; i < tier; i++ {
+			base = base.stepDown()
+		}
+		out[slot] = base
+	}
 	return out
 }
 
@@ -298,36 +408,26 @@ func mustStyle(s string) Style {
 	return st
 }
 
-// DefaultPalette returns a fresh copy of the full sixteen-slot default palette
-// (§7.2), emitting only the base ANSI-16 slots — the O4 promise, so the
-// terminal theme rethemes dstow automatically. A fresh map each call keeps
-// callers from mutating shared state.
+// DefaultPalette returns a fresh copy of the default palette (§7.2): the
+// seven tier-1 declarations, every tier-2 left to derivation (DeriveTiers) —
+// the floor that guarantees every slot resolves. All values base ANSI-16 —
+// the O4 promise, so the terminal theme rethemes dstow automatically. A fresh
+// map each call keeps callers from mutating shared state.
 //
-// The prose and severity slots follow Cargo's help styling (clap-cargo
-// style.rs, the de facto cargo-CLI reference): heading = HEADER, name = LITERAL,
-// muted = PLACEHOLDER (the dim sibling of LITERAL, same hue lower weight),
-// error/warning/note = their cargo namesakes, fix = VALID (clap's did-you-mean
-// style — fix lines are things you type, so they share name's color). The nine
-// state slots have no cargo analog and keep dstow's semantic hues; damaged and
-// contradicted follow error (same evidence, two views — §7.2).
+// Prior-art grounding (ruled 2026-07-19/20 — #115): section1 = cargo HEADER,
+// name1 = cargo LITERAL, value1 = a tier-up of cargo PLACEHOLDER, error1 /
+// warning1 / success1 = their cargo namesakes (clap-cargo style.rs, the de
+// facto cargo-CLI reference), info1 = bold brightblue (the blue-for-info
+// convention; fix's historically blue slot).
 func DefaultPalette() Theme {
 	return Theme{
-		SlotStowed:          mustStyle("green"),
-		SlotPartiallyStowed: mustStyle("yellow"),
-		SlotNotStowed:       mustStyle("dim"),
-		SlotOccupied:        mustStyle("magenta"),
-		SlotDamaged:         mustStyle("bold brightred"),
-		SlotDrifted:         mustStyle("cyan"),
-		SlotBroken:          mustStyle("red"),
-		SlotOrphaned:        mustStyle("yellow"),
-		SlotContradicted:    mustStyle("bold brightred"),
-		SlotNote:            mustStyle("brightgreen"),
-		SlotWarning:         mustStyle("bold yellow"),
-		SlotError:           mustStyle("bold brightred"),
-		SlotFix:             mustStyle("bold brightcyan"),
-		SlotName:            mustStyle("bold brightcyan"),
-		SlotHeading:         mustStyle("bold brightgreen"),
-		SlotMuted:           mustStyle("cyan"),
+		SlotSection1: mustStyle("bold brightgreen"),
+		SlotName1:    mustStyle("bold brightcyan"),
+		SlotValue1:   mustStyle("bold cyan"),
+		SlotError1:   mustStyle("bold brightred"),
+		SlotWarning1: mustStyle("bold yellow"),
+		SlotSuccess1: mustStyle("bold green"),
+		SlotInfo1:    mustStyle("bold brightblue"),
 	}
 }
 

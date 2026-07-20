@@ -127,31 +127,23 @@ func TestParseColorValueThirdColorNamesWord(t *testing.T) {
 
 // --- §7.2 default palette ----------------------------------------------------
 
-// The sixteen-slot default, ANSI-16 only (the O4 promise): every expected value
-// is the SGR meaning of the color named in §7.2, not a copy of DefaultPalette's
-// construction.
+// The default palette declares exactly the seven tier-1s (§7.2), ANSI-16 only
+// (the O4 promise): every expected value is the SGR meaning of the color named
+// in §7.2, not a copy of DefaultPalette's construction. Tier-2s are absent by
+// design — they derive (DeriveTiers).
 func TestDefaultPalette(t *testing.T) {
 	want := map[Slot][]color.Attribute{
-		SlotStowed:          {color.FgGreen},               // green
-		SlotPartiallyStowed: {color.FgYellow},              // yellow
-		SlotNotStowed:       {color.Faint},                 // dim
-		SlotOccupied:        {color.FgMagenta},             // magenta
-		SlotDamaged:         {color.Bold, color.FgHiRed},   // bold brightred
-		SlotDrifted:         {color.FgCyan},                // cyan
-		SlotBroken:          {color.FgRed},                 // red
-		SlotOrphaned:        {color.FgYellow},              // yellow
-		SlotContradicted:    {color.Bold, color.FgHiRed},   // bold brightred
-		SlotNote:            {color.FgHiGreen},             // brightgreen
-		SlotWarning:         {color.Bold, color.FgYellow},  // bold yellow
-		SlotError:           {color.Bold, color.FgHiRed},   // bold brightred
-		SlotFix:             {color.Bold, color.FgHiCyan},  // bold brightcyan
-		SlotName:            {color.Bold, color.FgHiCyan},  // bold brightcyan
-		SlotHeading:         {color.Bold, color.FgHiGreen}, // bold brightgreen
-		SlotMuted:           {color.FgCyan},                // cyan
+		SlotSection1: {color.Bold, color.FgHiGreen}, // bold brightgreen (cargo HEADER)
+		SlotName1:    {color.Bold, color.FgHiCyan},  // bold brightcyan (cargo LITERAL)
+		SlotValue1:   {color.Bold, color.FgCyan},    // bold cyan (PLACEHOLDER tier-up)
+		SlotError1:   {color.Bold, color.FgHiRed},   // bold brightred (cargo ERROR)
+		SlotWarning1: {color.Bold, color.FgYellow},  // bold yellow (cargo WARN)
+		SlotSuccess1: {color.Bold, color.FgGreen},   // bold green (cargo GOOD)
+		SlotInfo1:    {color.Bold, color.FgHiBlue},  // bold brightblue (blue-for-info)
 	}
 	pal := DefaultPalette()
-	if len(pal) != 16 {
-		t.Fatalf("DefaultPalette has %d slots, want 16", len(pal))
+	if len(pal) != 7 {
+		t.Fatalf("DefaultPalette declares %d slots, want the 7 tier-1s", len(pal))
 	}
 	for slot, wantParams := range want {
 		st, ok := pal[slot]
@@ -161,6 +153,77 @@ func TestDefaultPalette(t *testing.T) {
 		}
 		if !reflect.DeepEqual(st.params, wantParams) {
 			t.Errorf("DefaultPalette[%q].params = %v, want %v", slot, st.params, wantParams)
+		}
+	}
+}
+
+// --- §7.2 stage-2 mapping + §7.3 tier derivation ------------------------------
+
+// The ruled stage-2 mapping (#115): every role resolves to its ruled generic
+// slot. The table below IS the ruling — asserted role by role, never derived
+// from roleSlot itself.
+func TestRoleSlotMapping(t *testing.T) {
+	want := map[Role]Slot{
+		RoleHeading:         SlotSection1,
+		RoleName:            SlotName1,
+		RoleMuted:           SlotValue2,
+		RoleError:           SlotError1,
+		RoleWarning:         SlotWarning1,
+		RoleFix:             SlotInfo1,
+		RoleNote:            SlotInfo2,
+		RoleStowed:          SlotSuccess2,
+		RolePartiallyStowed: SlotWarning2,
+		RoleNotStowed:       SlotInfo2,
+		RoleOccupied:        SlotInfo1,
+		RoleDamaged:         SlotError1,
+		RoleContradicted:    SlotError1,
+		RoleDrifted:         SlotWarning2,
+		RoleBroken:          SlotError2,
+		RoleOrphaned:        SlotWarning2,
+	}
+	for role, slot := range want {
+		if got := RoleSlot(role); got != slot {
+			t.Errorf("RoleSlot(%q) = %q, want %q", role, got, slot)
+		}
+	}
+}
+
+// Tier derivation (§7.3): an undeclared tier-2 derives from its family's
+// effective tier-1 — remove bold if present, else add dim; a declared tier-2
+// always wins; a family with no tier-1 anywhere stays undeclared.
+func TestDeriveTiers(t *testing.T) {
+	in := Theme{
+		SlotError1:   mustStyle("bold brightred"), // bold present: tier-2 drops it
+		SlotInfo1:    mustStyle("brightblue"),     // no bold: tier-2 adds dim
+		SlotWarning1: mustStyle("bold yellow"),
+		SlotWarning2: mustStyle("magenta"), // declared: beats derivation
+	}
+	got := DeriveTiers(in)
+
+	if !reflect.DeepEqual(got[SlotError2].params, []color.Attribute{color.FgHiRed}) {
+		t.Errorf("error2 = %v, want brightred (bold removed)", got[SlotError2].params)
+	}
+	if !reflect.DeepEqual(got[SlotInfo2].params, []color.Attribute{color.Faint, color.FgHiBlue}) {
+		t.Errorf("info2 = %v, want dim brightblue (dim added)", got[SlotInfo2].params)
+	}
+	if !reflect.DeepEqual(got[SlotWarning2].params, []color.Attribute{color.FgMagenta}) {
+		t.Errorf("warning2 = %v, want the declared magenta", got[SlotWarning2].params)
+	}
+	if _, ok := got[SlotSuccess2]; ok {
+		t.Error("success2 derived with no success1 anywhere; must stay undeclared")
+	}
+	if _, ok := in[SlotError2]; ok {
+		t.Error("DeriveTiers mutated its input")
+	}
+}
+
+// The full stack composed over the default palette resolves every slot: the
+// tier-1 floor guarantees whole-roster coverage after derivation.
+func TestDeriveTiersOverDefaultPaletteIsComplete(t *testing.T) {
+	got := DeriveTiers(DefaultPalette())
+	for _, slot := range Slots() {
+		if _, ok := got[slot]; !ok {
+			t.Errorf("slot %q unresolved over the default palette", slot)
 		}
 	}
 }
@@ -180,9 +243,9 @@ func TestDefaultPaletteIsANSI16(t *testing.T) {
 // DefaultPalette returns a fresh map: mutating one call must not affect another.
 func TestDefaultPaletteIsFresh(t *testing.T) {
 	a := DefaultPalette()
-	delete(a, SlotStowed)
+	delete(a, SlotError1)
 	b := DefaultPalette()
-	if _, ok := b[SlotStowed]; !ok {
+	if _, ok := b[SlotError1]; !ok {
 		t.Error("DefaultPalette shares state across calls")
 	}
 }

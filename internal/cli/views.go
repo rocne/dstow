@@ -70,11 +70,11 @@ func (e *env) renderList(res *ops.ListResult) {
 	case ops.KindRepos:
 		for _, r := range res.Repos {
 			markers := repoMarkers(r)
-			out.Println(out.Style(ui.SlotName, r.Display) + "  " + out.Style(ui.SlotMuted, homeAbbrev(r.Root)) + markers)
+			out.Println(out.Style(ui.RoleName, r.Display) + "  " + out.Style(ui.RoleMuted, homeAbbrev(r.Root)) + markers)
 		}
 	case ops.KindPackages:
 		for _, p := range res.Packages {
-			out.Println(out.Style(ui.SlotName, p.Display))
+			out.Println(out.Style(ui.RoleName, p.Display))
 		}
 	default: // KindPaths
 		for _, p := range res.Paths {
@@ -209,7 +209,7 @@ func (e *env) renderInfo(req ops.InfoRequest, res *ops.InfoResult) {
 
 	for _, scope := range res.Scopes {
 		if multiScope {
-			out.Println(out.Style(ui.SlotHeading, scopeHeading(scope)))
+			out.Println(out.Style(ui.RoleHeading, scopeHeading(scope)))
 		}
 		printable := printableFields(scope)
 		if singleField && len(printable) == 1 {
@@ -217,7 +217,7 @@ func (e *env) renderInfo(req ops.InfoRequest, res *ops.InfoResult) {
 			continue
 		}
 		for _, f := range printable {
-			out.Println("  " + out.Style(ui.SlotMuted, f.Name+":") + " " + formatFieldValue(f, false))
+			out.Println("  " + out.Style(ui.RoleMuted, f.Name+":") + " " + formatFieldValue(f, false))
 		}
 	}
 }
@@ -327,37 +327,37 @@ func (e *env) renderStatus(res *ops.StatusResult) {
 		return
 	}
 	for _, p := range res.Packages {
-		state := out.Style(stateSlot(p.State), p.State.String())
+		state := out.Style(stateRole(p.State), p.State.String())
 		if p.Drifted {
-			state += " " + out.Style(ui.SlotDrifted, "(drifted)")
+			state += " " + out.Style(ui.RoleDrifted, "(drifted)")
 		}
-		out.Println(out.Style(ui.SlotName, p.FQN.String()) + "  " + state)
+		out.Println(out.Style(ui.RoleName, p.FQN.String()) + "  " + state)
 		for _, l := range p.Links {
 			if l.State == ops.LinkStowed {
 				continue // the clean case needs no detail line
 			}
-			out.Println("    " + out.Style(linkStateSlot(l.State), l.State.String()) + "  " + l.Link)
+			out.Println("    " + out.Style(linkStateRole(l.State), l.State.String()) + "  " + l.Link)
 		}
 	}
 	for _, r := range res.Repos {
-		out.Println(out.Style(ui.SlotName, r.FQN.String()) + "  " + repoSyncLine(r))
+		out.Println(out.Style(ui.RoleName, r.FQN.String()) + "  " + repoSyncLine(r))
 	}
 }
 
 // renderPathStatus prints the per-path view (§2.4).
 func (e *env) renderPathStatus(p *ops.PathStatus) {
 	out := e.pr().Out()
-	out.Println(out.Style(ui.SlotName, homeAbbrev(p.Path)) + "  " + p.Kind)
+	out.Println(out.Style(ui.RoleName, homeAbbrev(p.Path)) + "  " + p.Kind)
 	if p.IsSymlink && p.LinkDest != "" {
 		out.Println("  -> " + p.LinkDest)
 	}
 	if p.OwnerKnown {
-		out.Println("  owner: " + out.Style(ui.SlotName, p.Owner.String()))
+		out.Println("  owner: " + out.Style(ui.RoleName, p.Owner.String()))
 	}
 	if len(p.Candidates) > 0 {
 		out.Println("  adoption candidates (ranked):")
 		for _, c := range p.Candidates {
-			out.Println("    " + out.Style(ui.SlotName, c.FQN.String()) + " -> " + c.Source)
+			out.Println("    " + out.Style(ui.RoleName, c.FQN.String()) + " -> " + c.Source)
 		}
 	}
 }

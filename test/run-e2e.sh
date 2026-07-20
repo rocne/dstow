@@ -31,5 +31,6 @@ run_test version.sh
 run_test snippet.sh
 run_test deploy.sh
 run_test exitcodes.sh
+run_test theme.sh
 
 printf '\nAll e2e tests passed.\n'

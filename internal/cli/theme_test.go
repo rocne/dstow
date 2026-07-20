@@ -108,8 +108,9 @@ func TestThemeListUserShadowActive(t *testing.T) {
 	}
 }
 
-// Bare theme show renders the effective stack: sixteen slot lines in
-// canonical §3.3 order, plain under NO_COLOR (O11-style strip stability by
+// Bare theme show renders the effective stack: fourteen slot lines in
+// canonical §3.3 order — tier-2s filled by derivation (§7.3), so the composed
+// truth is complete — plain under NO_COLOR (O11-style strip stability by
 // construction).
 func TestThemeShowEffectiveRendered(t *testing.T) {
 	isolateThemeXDG(t)
@@ -118,10 +119,10 @@ func TestThemeShowEffectiveRendered(t *testing.T) {
 		t.Fatalf("theme show exit = %d", code)
 	}
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
-	if len(lines) != 16 {
-		t.Fatalf("theme show printed %d rows, want 16:\n%s", len(lines), out)
+	if len(lines) != 14 {
+		t.Fatalf("theme show printed %d rows, want 14:\n%s", len(lines), out)
 	}
-	if !strings.HasPrefix(lines[0], "stowed") || !strings.HasPrefix(lines[15], "muted") {
+	if !strings.HasPrefix(lines[0], "section1") || !strings.HasPrefix(lines[13], "info2") {
 		t.Errorf("rows not in canonical §3.3 order:\n%s", out)
 	}
 	if strings.Contains(out, "\x1b[") {
@@ -138,27 +139,27 @@ func TestThemeShowNamed(t *testing.T) {
 		t.Fatalf("theme show cargo exit = %d", code)
 	}
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
-	if len(lines) != 7 {
-		t.Fatalf("cargo declares 7 slots, rendered %d:\n%s", len(lines), out)
+	if len(lines) != 8 {
+		t.Fatalf("cargo declares 8 slots, rendered %d:\n%s", len(lines), out)
 	}
 
 	env, _, code := run(t, "theme", "show", "cargo", "--format", "env")
 	if code != 0 {
 		t.Fatalf("--format env exit = %d", code)
 	}
-	if !strings.Contains(env, "name=bold brightcyan") {
-		t.Errorf("env emission missing cargo's name slot: %q", env)
+	if !strings.Contains(env, "name1=bold brightcyan") {
+		t.Errorf("env emission missing cargo's name1 slot: %q", env)
 	}
 }
 
 // slot=value operands override on top; toml emission carries them.
 func TestThemeShowOverrides(t *testing.T) {
 	isolateThemeXDG(t)
-	out, _, code := run(t, "theme", "show", "cargo", "heading=bold yellow", "--format", "toml")
+	out, _, code := run(t, "theme", "show", "cargo", "section1=bold yellow", "--format", "toml")
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
-	if !strings.Contains(out, "heading = \"bold yellow\"") {
+	if !strings.Contains(out, "section1 = \"bold yellow\"") {
 		t.Errorf("override lost in toml emission:\n%s", out)
 	}
 }
@@ -171,7 +172,7 @@ func TestThemeShowErrors(t *testing.T) {
 	if _, _, code := run(t, "theme", "show", "bogus_slot=red"); code != 2 {
 		t.Errorf("unknown slot exit = %d, want 2", code)
 	}
-	if _, _, code := run(t, "theme", "show", "stowed=notacolor"); code != 2 {
+	if _, _, code := run(t, "theme", "show", "success2=notacolor"); code != 2 {
 		t.Errorf("bad value exit = %d, want 2", code)
 	}
 	if _, _, code := run(t, "theme", "show", "cargo", "catppuccin-mocha"); code != 2 {

@@ -538,7 +538,7 @@ Examples:
   dstow theme show
   dstow theme show catppuccin-mocha
   export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
-  dstow theme show cargo heading='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
+  dstow theme show cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
 ```
 
 *(Ruled 2026-07-19, replacing the `colors` group. `show` bare renders the
@@ -626,12 +626,18 @@ logic).
 
 ### 3.3 Theming keys
 
-- **`[color]` table** (C12): global only; sixteen keys, a closed set — states
-  `stowed` `partially_stowed` `not_stowed` `occupied` `damaged` `drifted`;
-  check classes `broken` `orphaned` `contradicted`; severities `note`
-  `warning` `error` `fix` (bare words — the colon is rendering); prose `name`
-  `heading` `muted`. Values in git's `color.*` grammar. One vocabulary across
-  `[color]` / `DSTOW_COLORS` / theme files.
+- **`[color]` table** (C12, amended 2026-07-20 —
+  [#115](https://github.com/rocne/dstow/issues/115)): global only; fourteen
+  keys, a closed set — the **generic slot roster**, two groups. Content:
+  `section1` `section2` `name1` `name2` `value1` `value2`. Messages: the
+  `error` `warning` `success` `info` families, two tiers each (`error1`
+  `error2` …). Variant numbers are **prominence tiers** — 1 loudest —
+  naturally extendable. dstow's internal vocabulary (package states, check
+  classes, severity prefixes, prose roles) never appears in theming: internals
+  reach slots only through the code-owned stage-2 mapping (§7.2). Values in
+  git's `color.*` grammar. One vocabulary across `[color]` / `DSTOW_COLORS` /
+  theme files. An undeclared tier-2 derives from its family's tier-1 (§7.3
+  derivation).
 - **`theme` key** (C13): name-or-path per the operand rule; the path form
   follows C8.
 
@@ -913,22 +919,39 @@ presentation specifics there are provisional, the rules here bind.*
 
 ### 7.2 Palette, prompts, quiet
 
-- **The semantic palette (ANSI-16)**: stowed green · partially stowed yellow
-  · not stowed dim · occupied magenta · damaged bold brightred · drifted cyan
-  · broken red · orphaned yellow · contradicted bold brightred (same evidence
-  as damaged, two views) · note: brightgreen · warning: bold yellow ·
-  error: bold brightred · fix: bold brightcyan · names bold brightcyan ·
-  heading bold brightgreen · muted cyan.
-  *(names/heading colored, ruled 2026-07-19 with help colorization —
-  [#96](https://github.com/rocne/dstow/issues/96); prior-art defaults ruled
-  2026-07-19: the prose and severity slots follow Cargo's help styling
-  (clap-cargo `style.rs`, the de facto cargo-CLI reference) — heading =
-  HEADER, names = LITERAL, muted = PLACEHOLDER (LITERAL's same-hue,
-  lower-weight sibling), error/warning/note = their cargo namesakes, fix =
-  VALID (clap's did-you-mean style; fix lines are things you type, so they
-  deliberately share names' color). The state slots have no cargo analog and
-  keep dstow's semantic hues; damaged/contradicted follow error. Blue does
-  not appear in the defaults. Bundled themes color all three prose slots.)*
+- **The two-stage vocabulary** (ruled 2026-07-20 —
+  [#115](https://github.com/rocne/dstow/issues/115), replacing the flat
+  internal-term palette): theming speaks the generic roster (§3.3); dstow's
+  internals reach it through a fixed mapping. Semantics first — every
+  internal maps to the semantically proper slot; slots carry sensible values
+  on their own merits.
+  - **Stage 1 — the roster.** Content: `section1`/`section2` (section
+    headings), `name1`/`name2` (canonical names / secondary names and
+    aliases), `value1`/`value2` (literal values and defaults / placeholders
+    and meta). Messages: `error` (breakage), `warning` (attention),
+    `success` (good), `info` (neutral-notable), two prominence tiers each.
+    Slots may ship before any internal consumes them (`section2` `name2`
+    `value1` `success1` in v1) — roster completeness over deferral.
+  - **Stage 2 — the internal mapping**: code-owned, closed in v1 (no
+    per-internal override surface), one owner in code. heading→`section1` ·
+    name→`name1` · muted→`value2` · error:→`error1` · warning:→`warning1` ·
+    fix:→`info1` (actionable guidance, prominent) · note:→`info2` (FYI,
+    quiet) · stowed→`success2` · partially_stowed→`warning2` ·
+    not_stowed→`info2` · occupied→`info1` (CONTEXT: deliberately neutral) ·
+    damaged→`error1` · contradicted→`error1` · drifted→`warning2` ·
+    broken→`error2` · orphaned→`warning2`. Slot-sharing is the point:
+    sameness that was prose discipline (contradicted ≡ damaged, orphaned ≡
+    partially stowed) is now structural.
+  - **Defaults**: the palette declares the seven tier-1s only; every tier-2
+    derives (§7.3). section1 bold brightgreen (cargo HEADER) · name1 bold
+    brightcyan (cargo LITERAL) · value1 bold cyan (tier-up of cargo
+    PLACEHOLDER) · error1 bold brightred (cargo ERROR) · warning1 bold
+    yellow (cargo WARN) · success1 bold green (cargo GOOD) · info1 bold
+    brightblue (blue-for-info convention; fix's historically blue slot —
+    blue re-enters the defaults with the info family). Prior-art grounding
+    per the 2026-07-19 cargo ruling (clap-cargo `style.rs`). The tier-1
+    floor binds the default palette only; themes at any layer may be sparse
+    (the north-star), including sparse-by-provenance bundled presets.
 - **The O4 promise**: dstow's *defaults* emit only the 16 base ANSI slots, so
   the terminal theme rethemes dstow automatically and colorblind/low-vision
   users retheme through terminal preferences (gh's Accessible pattern made
@@ -938,8 +961,8 @@ presentation specifics there are provisional, the rules here bind.*
   bare `--color`, no `--no-color` sugar — NO_COLOR covers the env side (O6).
 - **Help is colorized** (ruled 2026-07-19 —
   [#96](https://github.com/rocne/dstow/issues/96)): help renders through the
-  same stack as everything else — section headings via `heading`, command
-  and flag names via `names`, placeholder/annotation text via `muted` —
+  same stack as everything else — section headings via `section1`, command
+  and flag names via `name1`, placeholder/annotation text via `value2` —
   strictly downstream of the §7.3 enable chain, so piped, `NO_COLOR`, and
   `--color=never` help is plain text. One slot vocabulary: no help-specific
   slots.
@@ -962,7 +985,7 @@ Layered, top wins, all strictly downstream of the enable/disable chain
 theme config can never re-enable color the chain turned off:
 
 1. **`DSTOW_COLORS`** — the only theming env var: packed per-slot overrides,
-   LS_COLORS-family syntax (`damaged=bold red:stowed=#a6e3a1`), values in
+   LS_COLORS-family syntax (`error1=bold red:success2=#a6e3a1`), values in
    git's `color.*` grammar. Populated by hand or by generator:
    `export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)`.
    There is no
@@ -972,7 +995,16 @@ theme config can never re-enable color the chain turned off:
    is a theme *name* (user themes dir first, then bundled presets — TOML
    files embedded via go:embed, one loader); a path form is a theme *file*
    anywhere — including inside a repo, which makes repo-shipped themes free.
-4. **The default ANSI-16 semantic palette.**
+4. **The default palette** (§7.2 — the seven tier-1 declarations, ANSI-16).
+
+**Tier derivation** (ruled 2026-07-20 —
+[#115](https://github.com/rocne/dstow/issues/115)): after the stack composes
+per-slot (top wins), any slot still undeclared derives from its family's
+effective tier-1 by attribute step-down — **remove bold if present, else add
+dim**. Attribute-only, so it works identically for named ANSI, 256, and hex
+values. A declared value at any layer always beats derivation; the default
+palette's tier-1 floor guarantees every slot resolves. Sparse themes get
+whole-family coherence from tier-1 declarations alone.
 
 **North-star invariants (bound in v1)**: a theme file is exactly the bare
 `[color]` schema, no wrapper keys; the packed string, the config table, and

@@ -387,10 +387,12 @@ are no marker files to add, and `mkdir`-and-go stays intact.
 
 ## Theming
 
-dstow colorizes semantic states — `stowed` is green, `damaged` bold red,
-`drifted` cyan, and so on — and every commentary line carries a greppable word
-prefix (`note:`, `warning:`, `error:`, `fix:`) so output stays meaningful with
-color off. Defaults use only the 16 base ANSI colors, so **your terminal theme
+dstow colorizes its output through a **two-stage vocabulary**: themes speak
+fourteen generic slots (`error1`, `success2`, `section1`, …), and dstow's
+internals — package states, severity prefixes, help roles — map onto those
+slots in code, so a theme never needs to know what "orphaned" means. Every
+commentary line carries a greppable word prefix (`note:`, `warning:`,
+`error:`, `fix:`) so output stays meaningful with color off. Defaults use only the 16 base ANSI colors, so **your terminal theme
 re-themes dstow automatically**, and colorblind/low-vision users retheme through
 terminal preferences.
 
@@ -404,7 +406,7 @@ Themes layer, top wins:
    overrides in an `LS_COLORS`-family syntax, values in git's `color.*` grammar:
 
    ```sh
-   export DSTOW_COLORS='damaged=bold red:stowed=#a6e3a1'
+   export DSTOW_COLORS='error1=bold red:success2=#a6e3a1'
    # or generate a whole theme:
    export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
    ```
@@ -413,8 +415,8 @@ Themes layer, top wins:
 
    ```toml
    [color]
-   stowed = "#a6e3a1"
-   damaged = "bold red"
+   success2 = "#a6e3a1"
+   error1 = "bold red"
    ```
 
 3. **The `theme` config key** — a bare string is a theme *name* (your themes dir
@@ -436,9 +438,9 @@ Themes layer, top wins:
    `AnsiColorScheme`). The ports declare only the slots their source
    specifies; the rest falls through this stack.
 
-4. **The default ANSI-16 palette** — itself cargo-derived: the help and
-   diagnostic slots follow Cargo's styling, the state slots keep semantic
-   hues (green stowed, red damaged, …). Because defaults stay within the 16
+4. **The default ANSI-16 palette** — cargo-grounded: it declares the seven
+   tier-1 slots (heading, name, value, and the four message families), and
+   every tier-2 derives automatically. Because defaults stay within the 16
    named ANSI colors, your terminal theme supplies the actual colors.
 
 Discover, inspect, and emit themes with the `theme` group — the packed string,
@@ -450,14 +452,17 @@ dstow theme list                                          # the roster: name, or
 dstow theme show                                          # the effective palette, rendered
 dstow theme show catppuccin-mocha                         # a named theme, rendered
 dstow theme show catppuccin-mocha --format env            # packed DSTOW_COLORS string
-dstow theme show cargo heading='bold yellow' --format toml \
+dstow theme show cargo section1='bold yellow' --format toml \
   > ~/.config/dstow/themes/mine.toml                      # a tweaked theme file
 ```
 
-The color slots are: `stowed` `partially_stowed` `not_stowed` `occupied`
-`damaged` `drifted` (states); `broken` `orphaned` `contradicted` (check
-classes); `note` `warning` `error` `fix` (severities); `name` `heading` `muted`
-(prose). A theme file is exactly the bare `[color]` schema — no wrapper keys.
+The color slots come in two groups. Content: `section1` `section2` (headings),
+`name1` `name2` (names), `value1` `value2` (values and placeholders). Messages:
+`error1` `error2` `warning1` `warning2` `success1` `success2` `info1` `info2` —
+four families, two prominence tiers each (1 is louder). A slot you leave
+undeclared derives from its family's tier-1 (bold is removed, or dim added), so
+a sparse theme stays coherent. A theme file is exactly the bare `[color]`
+schema — no wrapper keys.
 
 ---
 
