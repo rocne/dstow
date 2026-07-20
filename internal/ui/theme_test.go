@@ -13,20 +13,20 @@ import (
 // --- §7.3 DSTOW_COLORS packed string -----------------------------------------
 
 func TestParseDSTOWColors(t *testing.T) {
-	theme, warns := ParseDSTOWColors("damaged=bold red:stowed=#a6e3a1")
+	theme, warns := ParseDSTOWColors("error1=bold red:success2=#a6e3a1")
 	if len(warns) != 0 {
 		t.Fatalf("unexpected warnings: %v", warns)
 	}
-	if got := theme[SlotDamaged].params; !reflect.DeepEqual(got, []color.Attribute{color.Bold, 31}) {
-		t.Errorf("damaged = %v, want bold red", got)
+	if got := theme[SlotError1].params; !reflect.DeepEqual(got, []color.Attribute{color.Bold, 31}) {
+		t.Errorf("error1 = %v, want bold red", got)
 	}
-	if got := theme[SlotStowed].params; !reflect.DeepEqual(got, []color.Attribute{38, 2, 0xa6, 0xe3, 0xa1}) {
-		t.Errorf("stowed = %v, want #a6e3a1", got)
+	if got := theme[SlotSuccess2].params; !reflect.DeepEqual(got, []color.Attribute{38, 2, 0xa6, 0xe3, 0xa1}) {
+		t.Errorf("success2 = %v, want #a6e3a1", got)
 	}
 }
 
 func TestParseDSTOWColorsEmptyEntriesSkipped(t *testing.T) {
-	theme, warns := ParseDSTOWColors(":stowed=green::warning=yellow:")
+	theme, warns := ParseDSTOWColors(":success2=green::warning1=yellow:")
 	if len(warns) != 0 {
 		t.Fatalf("empty entries must be skipped silently, got warnings: %v", warns)
 	}
@@ -38,34 +38,34 @@ func TestParseDSTOWColorsEmptyEntriesSkipped(t *testing.T) {
 // Warn-and-skip (C18): an unknown slot warns with Source DSTOW_COLORS, but the
 // rest of the string still applies.
 func TestParseDSTOWColorsUnknownSlotWarnsAndContinues(t *testing.T) {
-	theme, warns := ParseDSTOWColors("bogus=green:stowed=green")
+	theme, warns := ParseDSTOWColors("bogus=green:success2=green")
 	if len(warns) != 1 {
 		t.Fatalf("want 1 warning, got %d: %v", len(warns), warns)
 	}
 	if warns[0].Source != "DSTOW_COLORS" {
 		t.Errorf("warning Source = %q, want DSTOW_COLORS", warns[0].Source)
 	}
-	if _, ok := theme[SlotStowed]; !ok {
-		t.Error("remainder should still apply: stowed missing")
+	if _, ok := theme[SlotSuccess2]; !ok {
+		t.Error("remainder should still apply: success2 missing")
 	}
 }
 
 // A bad value warns and is skipped; the remainder still applies.
 func TestParseDSTOWColorsBadValueWarnsAndContinues(t *testing.T) {
-	theme, warns := ParseDSTOWColors("stowed=chartreuse:warning=yellow")
+	theme, warns := ParseDSTOWColors("success2=chartreuse:warning1=yellow")
 	if len(warns) != 1 {
 		t.Fatalf("want 1 warning, got %d: %v", len(warns), warns)
 	}
-	if _, ok := theme[SlotStowed]; ok {
-		t.Error("bad value must be skipped, stowed should be absent")
+	if _, ok := theme[SlotSuccess2]; ok {
+		t.Error("bad value must be skipped, success2 should be absent")
 	}
-	if _, ok := theme[SlotWarning]; !ok {
-		t.Error("remainder should still apply: warning missing")
+	if _, ok := theme[SlotWarning1]; !ok {
+		t.Error("remainder should still apply: warning1 missing")
 	}
 }
 
 func TestParseDSTOWColorsMalformedEntryWarns(t *testing.T) {
-	_, warns := ParseDSTOWColors("stowedgreen:warning=yellow")
+	_, warns := ParseDSTOWColors("success2green:warning1=yellow")
 	if len(warns) != 1 {
 		t.Fatalf("want 1 warning for a malformed entry, got %d: %v", len(warns), warns)
 	}
@@ -75,8 +75,8 @@ func TestParseDSTOWColorsMalformedEntryWarns(t *testing.T) {
 
 func TestParseColorTable(t *testing.T) {
 	theme, warns := ParseColorTable(map[string]string{
-		"stowed":  "green",
-		"warning": "yellow",
+		"success2": "green",
+		"warning1": "yellow",
 	})
 	if len(warns) != 0 {
 		t.Fatalf("unexpected warnings: %v", warns)
@@ -88,14 +88,14 @@ func TestParseColorTable(t *testing.T) {
 
 func TestParseColorTableWarnAndSkip(t *testing.T) {
 	theme, warns := ParseColorTable(map[string]string{
-		"stowed":     "green", // valid
+		"success2":   "green", // valid
 		"not_a_slot": "green", // unknown slot
-		"warning":    "bogus", // bad value
+		"warning1":   "bogus", // bad value
 	})
 	if len(warns) != 2 {
 		t.Fatalf("want 2 warnings (unknown slot + bad value), got %d: %v", len(warns), warns)
 	}
-	if _, ok := theme[SlotStowed]; !ok {
+	if _, ok := theme[SlotSuccess2]; !ok {
 		t.Error("valid entry should survive")
 	}
 	if len(theme) != 1 {
@@ -103,9 +103,9 @@ func TestParseColorTableWarnAndSkip(t *testing.T) {
 	}
 }
 
-// The closed sixteen-key set: an empty value is skipped silently.
+// The closed fourteen-key set: an empty value is skipped silently.
 func TestParseColorTableEmptyValueSkipped(t *testing.T) {
-	theme, warns := ParseColorTable(map[string]string{"stowed": ""})
+	theme, warns := ParseColorTable(map[string]string{"success2": ""})
 	if len(warns) != 0 || len(theme) != 0 {
 		t.Errorf("empty value must be skipped silently, got theme=%v warns=%v", theme, warns)
 	}
@@ -114,28 +114,28 @@ func TestParseColorTableEmptyValueSkipped(t *testing.T) {
 // --- §7.3 ComposeTheme: top wins, absent slots fall through ------------------
 
 func TestComposeThemePrecedence(t *testing.T) {
-	env := Theme{SlotStowed: mustStyle("red")}
-	table := Theme{SlotStowed: mustStyle("green"), SlotWarning: mustStyle("green")}
-	theme := Theme{SlotWarning: mustStyle("blue"), SlotError: mustStyle("cyan")}
+	env := Theme{SlotSuccess2: mustStyle("red")}
+	table := Theme{SlotSuccess2: mustStyle("green"), SlotWarning1: mustStyle("green")}
+	theme := Theme{SlotWarning1: mustStyle("blue"), SlotError2: mustStyle("cyan")}
 	def := DefaultPalette()
 
 	got := ComposeTheme(env, table, theme, def)
 
-	// env beats table beats theme for stowed.
-	if !reflect.DeepEqual(got[SlotStowed].params, []color.Attribute{31}) {
-		t.Errorf("stowed = %v, want env's red (31)", got[SlotStowed].params)
+	// env beats table beats theme for success2.
+	if !reflect.DeepEqual(got[SlotSuccess2].params, []color.Attribute{31}) {
+		t.Errorf("success2 = %v, want env's red (31)", got[SlotSuccess2].params)
 	}
-	// table beats theme for warning.
-	if !reflect.DeepEqual(got[SlotWarning].params, []color.Attribute{32}) {
-		t.Errorf("warning = %v, want table's green (32)", got[SlotWarning].params)
+	// table beats theme for warning1.
+	if !reflect.DeepEqual(got[SlotWarning1].params, []color.Attribute{32}) {
+		t.Errorf("warning1 = %v, want table's green (32)", got[SlotWarning1].params)
 	}
 	// theme wins where earlier layers are silent.
-	if !reflect.DeepEqual(got[SlotError].params, []color.Attribute{36}) {
-		t.Errorf("error = %v, want theme's cyan (36)", got[SlotError].params)
+	if !reflect.DeepEqual(got[SlotError2].params, []color.Attribute{36}) {
+		t.Errorf("error2 = %v, want theme's cyan (36)", got[SlotError2].params)
 	}
 	// A slot no layer overrides falls through to the default palette.
-	if !reflect.DeepEqual(got[SlotFix].params, DefaultPalette()[SlotFix].params) {
-		t.Errorf("fix = %v, want default blue", got[SlotFix].params)
+	if !reflect.DeepEqual(got[SlotName1].params, DefaultPalette()[SlotName1].params) {
+		t.Errorf("name1 = %v, want the default palette value", got[SlotName1].params)
 	}
 }
 
@@ -153,7 +153,7 @@ func writeTheme(t *testing.T, dir, name, body string) {
 
 func TestLoadThemeUserHit(t *testing.T) {
 	dir := t.TempDir()
-	writeTheme(t, dir, "mine", "stowed = \"blue\"\n")
+	writeTheme(t, dir, "mine", "success2 = \"blue\"\n")
 	theme, warns, err := LoadTheme("mine", dir)
 	if err != nil {
 		t.Fatal(err)
@@ -161,8 +161,8 @@ func TestLoadThemeUserHit(t *testing.T) {
 	if len(warns) != 0 {
 		t.Fatalf("unexpected warnings: %v", warns)
 	}
-	if !reflect.DeepEqual(theme[SlotStowed].params, []color.Attribute{34}) {
-		t.Errorf("stowed = %v, want blue", theme[SlotStowed].params)
+	if !reflect.DeepEqual(theme[SlotSuccess2].params, []color.Attribute{34}) {
+		t.Errorf("success2 = %v, want blue", theme[SlotSuccess2].params)
 	}
 }
 
@@ -174,22 +174,22 @@ func TestLoadThemeBundledHit(t *testing.T) {
 	if len(warns) != 0 {
 		t.Fatalf("bundled preset must load warning-free, got: %v", warns)
 	}
-	// stowed = "#a6e3a1" per the shipped preset.
-	if !reflect.DeepEqual(theme[SlotStowed].params, []color.Attribute{38, 2, 0xa6, 0xe3, 0xa1}) {
-		t.Errorf("stowed = %v, want #a6e3a1", theme[SlotStowed].params)
+	// success2 = "#a6e3a1" per the shipped preset.
+	if !reflect.DeepEqual(theme[SlotSuccess2].params, []color.Attribute{38, 2, 0xa6, 0xe3, 0xa1}) {
+		t.Errorf("success2 = %v, want #a6e3a1", theme[SlotSuccess2].params)
 	}
 }
 
 // C4: a user preset shadows the bundled one on a name collision.
 func TestLoadThemeUserShadowsBundled(t *testing.T) {
 	dir := t.TempDir()
-	writeTheme(t, dir, "catppuccin-mocha", "stowed = \"red\"\n")
+	writeTheme(t, dir, "catppuccin-mocha", "success2 = \"red\"\n")
 	theme, _, err := LoadTheme("catppuccin-mocha", dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(theme[SlotStowed].params, []color.Attribute{31}) {
-		t.Errorf("stowed = %v, want the user file's red (31), not the bundled hex", theme[SlotStowed].params)
+	if !reflect.DeepEqual(theme[SlotSuccess2].params, []color.Attribute{31}) {
+		t.Errorf("success2 = %v, want the user file's red (31), not the bundled hex", theme[SlotSuccess2].params)
 	}
 }
 
@@ -197,15 +197,15 @@ func TestLoadThemeUserShadowsBundled(t *testing.T) {
 func TestLoadThemePathForm(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "repo-theme.toml")
-	if err := os.WriteFile(path, []byte("heading = \"bold\"\n"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("section1 = \"bold\"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	theme, _, err := LoadTheme(path, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(theme[SlotHeading].params, []color.Attribute{color.Bold}) {
-		t.Errorf("heading = %v, want bold", theme[SlotHeading].params)
+	if !reflect.DeepEqual(theme[SlotSection1].params, []color.Attribute{color.Bold}) {
+		t.Errorf("section1 = %v, want bold", theme[SlotSection1].params)
 	}
 }
 
@@ -217,7 +217,7 @@ func TestLoadThemeUnreadableUserFileSurfaces(t *testing.T) {
 		t.Skip("permission bits do not bind root")
 	}
 	dir := t.TempDir()
-	writeTheme(t, dir, "catppuccin-mocha", "stowed = \"blue\"\n")
+	writeTheme(t, dir, "catppuccin-mocha", "success2 = \"blue\"\n")
 	if err := os.Chmod(filepath.Join(dir, "catppuccin-mocha.toml"), 0); err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestLoadThemeUnreadableUserFileSurfaces(t *testing.T) {
 // both locations, and the available names.
 func TestLoadThemeNotFound(t *testing.T) {
 	dir := t.TempDir()
-	writeTheme(t, dir, "userpreset", "stowed = \"red\"\n")
+	writeTheme(t, dir, "userpreset", "success2 = \"red\"\n")
 	_, _, err := LoadTheme("nope", dir)
 	if err == nil {
 		t.Fatal("want an error for an unresolved name")
@@ -255,7 +255,7 @@ func TestLoadThemeNotFound(t *testing.T) {
 // known slots still apply.
 func TestLoadThemeUnknownKeyWarns(t *testing.T) {
 	dir := t.TempDir()
-	writeTheme(t, dir, "extra", "stowed = \"green\"\nbogus_key = \"red\"\n")
+	writeTheme(t, dir, "extra", "success2 = \"green\"\nbogus_key = \"red\"\n")
 	theme, warns, err := LoadTheme("extra", dir)
 	if err != nil {
 		t.Fatal(err)
@@ -266,7 +266,7 @@ func TestLoadThemeUnknownKeyWarns(t *testing.T) {
 	if !contains(warns[0].Detail, "bogus_key") {
 		t.Errorf("warning should name the unknown key: %q", warns[0].Detail)
 	}
-	if _, ok := theme[SlotStowed]; !ok {
+	if _, ok := theme[SlotSuccess2]; !ok {
 		t.Error("known slot should still apply")
 	}
 }
@@ -274,7 +274,7 @@ func TestLoadThemeUnknownKeyWarns(t *testing.T) {
 // A bad value in a theme file warns and is skipped.
 func TestLoadThemeBadValueWarns(t *testing.T) {
 	dir := t.TempDir()
-	writeTheme(t, dir, "bad", "stowed = \"chartreuse\"\nwarning = \"yellow\"\n")
+	writeTheme(t, dir, "bad", "success2 = \"chartreuse\"\nwarning1 = \"yellow\"\n")
 	theme, warns, err := LoadTheme("bad", dir)
 	if err != nil {
 		t.Fatal(err)
@@ -282,21 +282,21 @@ func TestLoadThemeBadValueWarns(t *testing.T) {
 	if len(warns) != 1 {
 		t.Fatalf("want 1 bad-value warning, got %d: %v", len(warns), warns)
 	}
-	if _, ok := theme[SlotStowed]; ok {
+	if _, ok := theme[SlotSuccess2]; ok {
 		t.Error("bad value should be skipped")
 	}
-	if _, ok := theme[SlotWarning]; !ok {
+	if _, ok := theme[SlotWarning1]; !ok {
 		t.Error("remainder should still apply")
 	}
 }
 
 // Every embedded preset round-trips through the loader and parses
 // warning-free, exercising the same loader path as user files (A5). The four
-// Whiskers-generated catppuccin flavors (#105) declare all sixteen slots; the
+// Whiskers-generated catppuccin flavors (#105) declare all fourteen slots; the
 // hand-vendored prior-art presets (cargo, fang-ansi) declare only the slots
 // their source specifies — absent slots fall through the §7.3 stack by design.
 func TestBundledPresetsRoundTrip(t *testing.T) {
-	minSlots := map[string]int{"cargo": 7, "fang-ansi": 4}
+	minSlots := map[string]int{"cargo": 8, "fang-ansi": 4}
 	for _, name := range BundledThemes() {
 		theme, warns, err := LoadTheme(name, "")
 		if err != nil {
@@ -307,7 +307,7 @@ func TestBundledPresetsRoundTrip(t *testing.T) {
 		}
 		want, partial := minSlots[name]
 		if !partial {
-			want = 16
+			want = 14
 		}
 		if len(theme) != want {
 			t.Errorf("%s has %d slots, want %d", name, len(theme), want)

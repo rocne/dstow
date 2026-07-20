@@ -102,7 +102,7 @@ func (e *env) newThemeListCmd() *cobra.Command {
 			// (O1), dropped by --quiet (O7) — piped stdout stays pure rows.
 			if !e.quiet {
 				head := fmt.Sprintf("%-*s  %s", width, nameHead, sourceHead)
-				e.pr().Err().Printf("%s\n", e.pr().Err().Style(ui.SlotHeading, head))
+				e.pr().Err().Printf("%s\n", e.pr().Err().Style(ui.RoleHeading, head))
 			}
 			for _, row := range res.Rows {
 				origin := "bundled" // origin styling deferred (Rocne, 2026-07-19)
@@ -115,7 +115,7 @@ func (e *env) newThemeListCmd() *cobra.Command {
 				// Pad on the plain name, then style: ANSI bytes must not
 				// count against the column width.
 				out := e.pr().Out()
-				line := out.Style(ui.SlotName, row.Name) + strings.Repeat(" ", width-len(row.Name)) + "  " + origin
+				line := out.Style(ui.RoleName, row.Name) + strings.Repeat(" ", width-len(row.Name)) + "  " + origin
 				if row.Active {
 					line += "  (active)"
 				}

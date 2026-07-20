@@ -72,7 +72,7 @@ type ThemeShowResult struct {
 // path, a user preset, or a bundled preset — and shows the theme AS LOADED
 // (its declared slots); an empty ref shows the effective §7.3 stack, which
 // the caller composes and hands in (cli is the stack's one composition owner;
-// all sixteen slots present). Overrides layer on top, first — the top of the
+// all fourteen slots present). Overrides layer on top, first — the top of the
 // stack, like DSTOW_COLORS. A missing or unreadable theme is a refusal
 // (error); a malformed slot inside a resolvable theme is a warn-and-skip,
 // carried in Warnings.

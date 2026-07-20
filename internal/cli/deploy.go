@@ -141,18 +141,18 @@ func (e *env) renderPackageResult(verb string, p *ops.PackageResult, dryRun bool
 	pr := e.pr()
 	label := deployName(p)
 
-	slot := ui.SlotStowed
+	slot := ui.RoleStowed
 	word := p.Status.String()
 	switch p.Status {
 	case ops.StatusFailed, ops.StatusBlocked:
-		slot = ui.SlotError
+		slot = ui.RoleError
 	case ops.StatusNotFound:
-		slot = ui.SlotWarning
+		slot = ui.RoleWarning
 	}
 	if dryRun && p.Status == ops.StatusSucceeded {
 		word = "planned"
 	}
-	pr.Err().Println(fmt.Sprintf("%s %s %s", verb, pr.Err().Style(ui.SlotName, label), pr.Err().Style(slot, word)))
+	pr.Err().Println(fmt.Sprintf("%s %s %s", verb, pr.Err().Style(ui.RoleName, label), pr.Err().Style(slot, word)))
 
 	for _, note := range p.Notes {
 		pr.Err().Println("    " + note)
@@ -284,7 +284,7 @@ func (e *env) renderCandidates(app *ops.App, file string, warns []ops.Warning) e
 	}
 	pr.Announcef("packages that could adopt %s (ranked):", homeAbbrev(file))
 	for _, c := range cands {
-		pr.Err().Println("    " + pr.Err().Style(ui.SlotName, c.FQN.String()) + "  -> " + c.Source)
+		pr.Err().Println("    " + pr.Err().Style(ui.RoleName, c.FQN.String()) + "  -> " + c.Source)
 	}
 	pr.Fixf("dstow adopt %s <package>   # name one of the above", homeAbbrev(file))
 	return nil
@@ -301,7 +301,7 @@ func (e *env) renderAdopt(res *ops.AdoptResult) {
 		verb = "would adopt"
 	}
 	for _, m := range res.Moves {
-		pr.Err().Println(fmt.Sprintf("%s %s -> %s::%s", verb, homeAbbrev(m.File), pr.Err().Style(ui.SlotName, res.FQN.String()), m.Source))
+		pr.Err().Println(fmt.Sprintf("%s %s -> %s::%s", verb, homeAbbrev(m.File), pr.Err().Style(ui.RoleName, res.FQN.String()), m.Source))
 	}
 	for _, s := range res.Skipped {
 		pr.Notef("skipped %s: %s", homeAbbrev(s.File), s.Reason)

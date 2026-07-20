@@ -11,7 +11,7 @@ import (
 )
 
 // theme show <name> --format env resolves a bundled preset and packs it: a
-// complete preset yields all sixteen slots, ':'-joined, parseable back.
+// complete preset yields all fourteen slots, ':'-joined, parseable back.
 func TestThemeShowEnv(t *testing.T) {
 	app := &ops.App{}
 	res, err := app.ThemeShow("catppuccin-mocha", nil, nil, ops.ColorFormatEnv)
@@ -22,16 +22,16 @@ func TestThemeShowEnv(t *testing.T) {
 		t.Errorf("result metadata = %q/%v", res.Ref, res.Format)
 	}
 	entries := strings.Split(res.Text, ":")
-	if len(entries) != 16 {
-		t.Fatalf("packed theme has %d entries, want 16: %q", len(entries), res.Text)
+	if len(entries) != 14 {
+		t.Fatalf("packed theme has %d entries, want 14: %q", len(entries), res.Text)
 	}
-	// The packed string parses back to a full sixteen-slot theme.
+	// The packed string parses back to a full fourteen-slot theme.
 	theme, warns := ui.ParseDSTOWColors(res.Text)
 	if len(warns) != 0 {
 		t.Fatalf("parsing our own packed output warned: %v", warns)
 	}
-	if len(theme) != 16 {
-		t.Errorf("parsed theme has %d slots, want 16", len(theme))
+	if len(theme) != 14 {
+		t.Errorf("parsed theme has %d slots, want 14", len(theme))
 	}
 }
 
@@ -42,10 +42,10 @@ func TestThemeShowTOML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ThemeShow: %v", err)
 	}
-	if !strings.Contains(res.Text, "stowed = ") || !strings.Contains(res.Text, "muted = ") {
+	if !strings.Contains(res.Text, "section1 = ") || !strings.Contains(res.Text, "info2 = ") {
 		t.Errorf("TOML output missing expected slot lines:\n%s", res.Text)
 	}
-	// Written to a file and reloaded, it is a valid theme resolving to 16 slots.
+	// Written to a file and reloaded, it is a valid theme resolving to 14 slots.
 	dir := t.TempDir()
 	path := filepath.Join(dir, "mine.toml")
 	if err := os.WriteFile(path, []byte(res.Text), 0o644); err != nil {
@@ -58,8 +58,8 @@ func TestThemeShowTOML(t *testing.T) {
 	if len(warns) != 0 {
 		t.Fatalf("reload warned: %v", warns)
 	}
-	if len(theme) != 16 {
-		t.Errorf("reloaded theme has %d slots, want 16", len(theme))
+	if len(theme) != 14 {
+		t.Errorf("reloaded theme has %d slots, want 14", len(theme))
 	}
 }
 
@@ -67,12 +67,12 @@ func TestThemeShowTOML(t *testing.T) {
 // default rendered format serializes no Text (cli styles res.Theme itself).
 func TestThemeShowEffective(t *testing.T) {
 	app := &ops.App{}
-	res, err := app.ThemeShow("", ui.DefaultPalette(), nil, ops.ColorFormatRendered)
+	res, err := app.ThemeShow("", ui.DeriveTiers(ui.DefaultPalette()), nil, ops.ColorFormatRendered)
 	if err != nil {
 		t.Fatalf("ThemeShow: %v", err)
 	}
-	if len(res.Theme) != 16 {
-		t.Errorf("effective theme has %d slots, want 16", len(res.Theme))
+	if len(res.Theme) != 14 {
+		t.Errorf("effective theme has %d slots, want 14", len(res.Theme))
 	}
 	if res.Text != "" {
 		t.Errorf("rendered format must not serialize Text, got %q", res.Text)
@@ -81,7 +81,7 @@ func TestThemeShowEffective(t *testing.T) {
 
 // Overrides layer on top of the resolved base — the top of the stack.
 func TestThemeShowOverrides(t *testing.T) {
-	over, warns := ui.ParseDSTOWColors("stowed=red")
+	over, warns := ui.ParseDSTOWColors("success2=red")
 	if len(warns) != 0 {
 		t.Fatal(warns)
 	}
@@ -90,7 +90,7 @@ func TestThemeShowOverrides(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ThemeShow: %v", err)
 	}
-	if !strings.Contains(res.Text, "stowed=red") {
+	if !strings.Contains(res.Text, "success2=red") {
 		t.Errorf("override lost: %q", res.Text)
 	}
 }

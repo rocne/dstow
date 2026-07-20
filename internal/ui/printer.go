@@ -60,6 +60,9 @@ func New(o Options) *Printer {
 	if theme == nil {
 		theme = DefaultPalette()
 	}
+	// Tier derivation (§7.3) is part of resolving a theme for rendering;
+	// idempotent when the caller already derived (declared always wins).
+	theme = DeriveTiers(theme)
 
 	stdinTTY := resolveTTY(o.StdinTTY, o.Stdin)
 	stdoutTTY := resolveTTY(o.StdoutTTY, o.Stdout)
@@ -126,13 +129,15 @@ func (p *Printer) Err() *Face { return p.err }
 func (f *Face) Printf(format string, a ...any) { fmt.Fprintf(f.w, format, a...) }
 func (f *Face) Println(a ...any)               { fmt.Fprintln(f.w, a...) }
 
-// Style returns text styled for slot iff this face's color is on; otherwise
-// text unchanged. StripANSI(result) == text always (O11).
-func (f *Face) Style(slot Slot, text string) string {
+// Style returns text styled for a role — resolved through the stage-2
+// mapping (§7.2) to its generic slot — iff this face's color is on; otherwise
+// text unchanged. Callers name roles, never slots or colors (O3).
+// StripANSI(result) == text always (O11).
+func (f *Face) Style(role Role, text string) string {
 	if !f.colorOn {
 		return text
 	}
-	st, ok := f.theme[slot]
+	st, ok := f.theme[RoleSlot(role)]
 	if !ok {
 		return text
 	}
@@ -155,17 +160,17 @@ func (f *Face) StyleWith(st Style, text string) string {
 // spec, implemented as specced).
 const severityWidth = len("warning:")
 
-// severity writes one commentary line to stderr: the slot-colored prefix (styled
+// severity writes one commentary line to stderr: the role-colored prefix (styled
 // against the STDERR face's enablement), right-padded to severityWidth, one
 // space, then the plain message. The colored region is only the prefix, so
 // StripANSI(line) == the plain line (O11).
-func (p *Printer) severity(slot Slot, label, format string, a ...any) {
+func (p *Printer) severity(role Role, label, format string, a ...any) {
 	prefix := label + ":"
 	pad := severityWidth - len(prefix)
 	if pad < 0 {
 		pad = 0
 	}
-	line := p.err.Style(slot, prefix) + strings.Repeat(" ", pad) + " " + fmt.Sprintf(format, a...)
+	line := p.err.Style(role, prefix) + strings.Repeat(" ", pad) + " " + fmt.Sprintf(format, a...)
 	fmt.Fprintln(p.err.w, line)
 }
 
@@ -174,27 +179,27 @@ func (p *Printer) Notef(format string, a ...any) {
 	if p.quiet {
 		return
 	}
-	p.severity(SlotNote, "note", format, a...)
+	p.severity(RoleNote, "note", format, a...)
 }
 
 // Announcef is a note:-prefixed announcement — surprise-class, so it SURVIVES
 // --quiet (O7: "announcements always survive").
 func (p *Printer) Announcef(format string, a ...any) {
-	p.severity(SlotNote, "note", format, a...)
+	p.severity(RoleNote, "note", format, a...)
 }
 
 // Warningf survives --quiet.
 func (p *Printer) Warningf(format string, a ...any) {
-	p.severity(SlotWarning, "warning", format, a...)
+	p.severity(RoleWarning, "warning", format, a...)
 }
 
 // Errorf survives --quiet.
 func (p *Printer) Errorf(format string, a ...any) {
-	p.severity(SlotError, "error", format, a...)
+	p.severity(RoleError, "error", format, a...)
 }
 
-// Fixf survives --quiet; fix: is blue, not green — a fix appears precisely when
-// nothing succeeded (O2).
+// Fixf survives --quiet; fix: appears precisely when nothing succeeded, so it
+// never renders through the success family (O2) — it is prominent info.
 func (p *Printer) Fixf(format string, a ...any) {
-	p.severity(SlotFix, "fix", format, a...)
+	p.severity(RoleFix, "fix", format, a...)
 }

@@ -59,7 +59,7 @@ func styleHelp(f *ui.Face, text string) string {
 			continue
 		case headingRe.MatchString(ln):
 			section = ln
-			lines[i] = f.Style(ui.SlotHeading, ln)
+			lines[i] = f.Style(ui.RoleHeading, ln)
 		default:
 			lines[i] = styleLine(f, ln, section)
 		}
@@ -72,21 +72,21 @@ func styleLine(f *ui.Face, ln, section string) string {
 	switch section {
 	case "Usage:":
 		return placeholderRe.ReplaceAllStringFunc(ln, func(ph string) string {
-			return f.Style(ui.SlotMuted, ph)
+			return f.Style(ui.RoleMuted, ph)
 		})
 	case "Flags:", "Global Flags:":
 		if m := flagRe.FindStringSubmatch(ln); m != nil {
 			valueName := m[3]
 			if valueName != "" {
-				valueName = f.Style(ui.SlotMuted, valueName)
+				valueName = f.Style(ui.RoleMuted, valueName)
 			}
-			return m[1] + f.Style(ui.SlotName, m[2]) + valueName + m[4]
+			return m[1] + f.Style(ui.RoleName, m[2]) + valueName + m[4]
 		}
 		return ln
 	case "Examples:":
 		return commentRe.ReplaceAllStringFunc(ln, func(c string) string {
 			gap := c[:1]
-			return gap + f.Style(ui.SlotMuted, c[1:])
+			return gap + f.Style(ui.RoleMuted, c[1:])
 		})
 	case "":
 		// Long prose before the first heading stays unstyled.
@@ -96,7 +96,7 @@ func styleLine(f *ui.Face, ln, section string) string {
 		// Commands) and entry-shaped content sections (Environment:, Exit
 		// status:): the name column gets the name slot.
 		if m := entryRe.FindStringSubmatch(ln); m != nil {
-			return m[1] + f.Style(ui.SlotName, m[2]) + m[3]
+			return m[1] + f.Style(ui.RoleName, m[2]) + m[3]
 		}
 		return ln
 	}

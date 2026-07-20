@@ -214,5 +214,5 @@ const (
 // heavy commands recompose the full §7.3 stack once global config is loaded.
 func baseTheme() ui.Theme {
 	env, _ := ui.ParseDSTOWColors(dstowColorsEnv())
-	return ui.ComposeTheme(env, ui.DefaultPalette())
+	return ui.DeriveTiers(ui.ComposeTheme(env, ui.DefaultPalette()))
 }

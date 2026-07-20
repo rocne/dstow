@@ -127,7 +127,7 @@ func (e *env) composeStack(global *config.GlobalLevel, warnings *[]ops.Warning) 
 		}
 	}
 
-	return ui.ComposeTheme(envTheme, tableTheme, keyTheme, ui.DefaultPalette())
+	return ui.DeriveTiers(ui.ComposeTheme(envTheme, tableTheme, keyTheme, ui.DefaultPalette()))
 }
 
 // upgradeTheme recomposes the printer with the full §7.3 theming stack. Color

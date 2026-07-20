@@ -203,7 +203,7 @@ const themeExample = `  dstow theme list
   dstow theme show
   dstow theme show catppuccin-mocha
   export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
-  dstow theme show cargo heading='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml`
+  dstow theme show cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml`
 
 // themeListShort and themeShowShort are the verb descriptions in the §2.4
 // theme block.

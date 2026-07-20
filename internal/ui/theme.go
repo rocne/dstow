@@ -112,51 +112,47 @@ func ParseDSTOWColors(packed string) (Theme, []Warning) {
 }
 
 // ParseColorTable parses the [color] TOML table (values pre-extracted by
-// config) over the closed sixteen-key set (§3.3), warn-and-skip per key.
+// config) over the closed fourteen-key set (§3.3), warn-and-skip per key.
 func ParseColorTable(values map[string]string) (Theme, []Warning) {
 	return applyValues("[color] table", values)
 }
 
 // themeFile is the bare [color] schema of a theme file (§7.3 north-star): the
-// sixteen slot keys at TOML top level, no wrapper table. Decoding into this
-// struct lets md.Undecoded() surface any unknown keys.
+// fourteen generic slot keys at TOML top level, no wrapper table. Decoding
+// into this struct lets md.Undecoded() surface any unknown keys.
 type themeFile struct {
-	Stowed          string `toml:"stowed"`
-	PartiallyStowed string `toml:"partially_stowed"`
-	NotStowed       string `toml:"not_stowed"`
-	Occupied        string `toml:"occupied"`
-	Damaged         string `toml:"damaged"`
-	Drifted         string `toml:"drifted"`
-	Broken          string `toml:"broken"`
-	Orphaned        string `toml:"orphaned"`
-	Contradicted    string `toml:"contradicted"`
-	Note            string `toml:"note"`
-	Warning         string `toml:"warning"`
-	Error           string `toml:"error"`
-	Fix             string `toml:"fix"`
-	Name            string `toml:"name"`
-	Heading         string `toml:"heading"`
-	Muted           string `toml:"muted"`
+	Section1 string `toml:"section1"`
+	Section2 string `toml:"section2"`
+	Name1    string `toml:"name1"`
+	Name2    string `toml:"name2"`
+	Value1   string `toml:"value1"`
+	Value2   string `toml:"value2"`
+	Error1   string `toml:"error1"`
+	Error2   string `toml:"error2"`
+	Warning1 string `toml:"warning1"`
+	Warning2 string `toml:"warning2"`
+	Success1 string `toml:"success1"`
+	Success2 string `toml:"success2"`
+	Info1    string `toml:"info1"`
+	Info2    string `toml:"info2"`
 }
 
 func (tf themeFile) toMap() map[string]string {
 	return map[string]string{
-		string(SlotStowed):          tf.Stowed,
-		string(SlotPartiallyStowed): tf.PartiallyStowed,
-		string(SlotNotStowed):       tf.NotStowed,
-		string(SlotOccupied):        tf.Occupied,
-		string(SlotDamaged):         tf.Damaged,
-		string(SlotDrifted):         tf.Drifted,
-		string(SlotBroken):          tf.Broken,
-		string(SlotOrphaned):        tf.Orphaned,
-		string(SlotContradicted):    tf.Contradicted,
-		string(SlotNote):            tf.Note,
-		string(SlotWarning):         tf.Warning,
-		string(SlotError):           tf.Error,
-		string(SlotFix):             tf.Fix,
-		string(SlotName):            tf.Name,
-		string(SlotHeading):         tf.Heading,
-		string(SlotMuted):           tf.Muted,
+		string(SlotSection1): tf.Section1,
+		string(SlotSection2): tf.Section2,
+		string(SlotName1):    tf.Name1,
+		string(SlotName2):    tf.Name2,
+		string(SlotValue1):   tf.Value1,
+		string(SlotValue2):   tf.Value2,
+		string(SlotError1):   tf.Error1,
+		string(SlotError2):   tf.Error2,
+		string(SlotWarning1): tf.Warning1,
+		string(SlotWarning2): tf.Warning2,
+		string(SlotSuccess1): tf.Success1,
+		string(SlotSuccess2): tf.Success2,
+		string(SlotInfo1):    tf.Info1,
+		string(SlotInfo2):    tf.Info2,
 	}
 }
 
@@ -170,11 +166,11 @@ func parseThemeContent(source string, content []byte) (Theme, []Warning, error) 
 		return nil, nil, fmt.Errorf("theme %q is not valid TOML: %w", source, err)
 	}
 	t, warns := applyValues(source, tf.toMap())
-	// Unknown top-level keys: a theme file is the bare sixteen-slot schema.
+	// Unknown top-level keys: a theme file is the bare fourteen-slot schema.
 	for _, key := range md.Undecoded() {
 		warns = append(warns, Warning{
 			Source: source,
-			Detail: fmt.Sprintf("unknown key %q; a theme file uses only the sixteen color slots (this key is skipped, the rest still applies)", key.String()),
+			Detail: fmt.Sprintf("unknown key %q; a theme file uses only the fourteen color slots (this key is skipped, the rest still applies)", key.String()),
 		})
 	}
 	return t, warns, nil

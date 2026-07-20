@@ -188,7 +188,7 @@ func TestEmitThemeTOML(t *testing.T) {
 
 // TestEmitThemeTOMLDeclaredOnly emits only the slots the theme declares.
 func TestEmitThemeTOMLDeclaredOnly(t *testing.T) {
-	partial := Theme{SlotStowed: mustStyle("green"), SlotError: mustStyle("bold red")}
+	partial := Theme{SlotName1: mustStyle("green"), SlotInfo2: mustStyle("bold red")}
 	doc, err := EmitThemeTOML(partial)
 	if err != nil {
 		t.Fatal(err)
@@ -197,8 +197,8 @@ func TestEmitThemeTOMLDeclaredOnly(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("partial theme emitted %d lines, want 2: %q", len(lines), doc)
 	}
-	// Canonical §3.3 order: "stowed" (first state) precedes "error" (output role).
-	if !strings.HasPrefix(lines[0], "stowed = ") || !strings.HasPrefix(lines[1], "error = ") {
+	// Canonical §3.3 order: content ("name1") precedes the message families ("info2").
+	if !strings.HasPrefix(lines[0], "name1 = ") || !strings.HasPrefix(lines[1], "info2 = ") {
 		t.Errorf("declared slots not in canonical §3.3 order: %q", doc)
 	}
 }

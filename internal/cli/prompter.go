@@ -53,7 +53,7 @@ func (p *prompter) Confirm(question string, defaultYes bool) (bool, error) {
 	}
 	// The prompt is commentary: stderr, styled with the note slot (O1/O2).
 	err := p.printer.Err()
-	err.Printf("%s %s ", err.Style(ui.SlotNote, question), suffix)
+	err.Printf("%s %s ", err.Style(ui.RoleNote, question), suffix)
 
 	line, rerr := p.reader.ReadString('\n')
 	if rerr != nil && line == "" {

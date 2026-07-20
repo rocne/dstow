@@ -9,7 +9,7 @@ package ui
 //
 // PackDSTOWColors and EmitThemeTOML build on EmitColorValue to serialize a
 // whole Theme — the two shapes the colors command emits (§2.4): a packed
-// DSTOW_COLORS string and a sixteen-slot theme file. Both emit the theme AS
+// DSTOW_COLORS string and a fourteen-slot theme file. Both emit the theme AS
 // LOADED (its declared slots) in the canonical §3.3 slot order (allSlots), so a
 // generated theme file reads like the hand-authored presets (§7.3 north-star),
 // not alphabetized.
@@ -127,7 +127,7 @@ func decodeColor(p []color.Attribute, i int) (tok string, n int, isBG bool, ok b
 // PackDSTOWColors serializes a theme as a packed DSTOW_COLORS string:
 // slot=value entries in canonical §3.3 slot order, joined by ':', over the
 // theme's declared slots (§2.4 colors, default format). A complete preset
-// yields all sixteen entries. It is the inverse shape of ParseDSTOWColors.
+// yields all fourteen entries. It is the inverse shape of ParseDSTOWColors.
 func PackDSTOWColors(t Theme) string {
 	var parts []string
 	for _, s := range allSlots {

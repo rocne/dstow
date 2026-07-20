@@ -92,26 +92,26 @@ func TestFaceStyleOnOff(t *testing.T) {
 	off := New(Options{Stdout: &bytes.Buffer{}, Stderr: &bytes.Buffer{}, Mode: ColorNever})
 
 	const text = "payload"
-	styled := on.Out().Style(SlotStowed, text)
+	styled := on.Out().Style(RoleStowed, text)
 	if styled == text {
 		t.Error("color-on face should style the text")
 	}
 	if StripANSI(styled) != text {
 		t.Errorf("StripANSI(styled) = %q, want %q", StripANSI(styled), text)
 	}
-	if plain := off.Out().Style(SlotStowed, text); plain != text {
+	if plain := off.Out().Style(RoleStowed, text); plain != text {
 		t.Errorf("color-off face should return plain text, got %q", plain)
 	}
 }
 
-// An unknown slot on a color-on face renders plain (no crash, no styling).
+// A role whose slot has no theme entry renders plain (no crash, no styling).
 func TestFaceStyleUnknownSlotPlain(t *testing.T) {
 	clearColorEnv(t)
 	p := New(Options{
 		Stdout: &bytes.Buffer{}, Stderr: &bytes.Buffer{}, Mode: ColorAlways,
 		Theme: Theme{}, // empty theme: no slots
 	})
-	if got := p.Out().Style(SlotStowed, "x"); got != "x" {
+	if got := p.Out().Style(RoleStowed, "x"); got != "x" {
 		t.Errorf("unknown slot should render plain, got %q", got)
 	}
 }
@@ -206,16 +206,17 @@ func TestSeverityStyledPrefixPlainMessage(t *testing.T) {
 	}
 }
 
-// fix: is blue (34), not green — a fix appears when nothing succeeded (O2).
+// fix: renders via info1 — bold brightblue in the defaults — never through the
+// success family: a fix appears when nothing succeeded (O2).
 func TestFixStyledPerPalette(t *testing.T) {
 	p, _, errb := newBuffered(t, ColorAlways, false)
 	p.Fixf("run this")
 	line := errb.String()
-	if !strings.Contains(line, "\x1b[1;96m") {
-		t.Errorf("fix prefix should be bold brightcyan (SGR 1;96, §7.2), got %q", line)
+	if !strings.Contains(line, "\x1b[1;94m") {
+		t.Errorf("fix prefix should be bold brightblue (SGR 1;94, §7.2), got %q", line)
 	}
-	if strings.Contains(line, "\x1b[32m") {
-		t.Error("fix prefix must not be green (SGR 32)")
+	if strings.Contains(line, "\x1b[32m") || strings.Contains(line, "\x1b[1;32m") {
+		t.Error("fix prefix must not render through the success family (green)")
 	}
 }
 
@@ -256,7 +257,7 @@ func TestInteractiveMatrix(t *testing.T) {
 func TestNewNilThemeUsesDefault(t *testing.T) {
 	clearColorEnv(t)
 	p := New(Options{Stdout: &bytes.Buffer{}, Stderr: &bytes.Buffer{}, Mode: ColorAlways})
-	styled := p.Out().Style(SlotStowed, "x")
+	styled := p.Out().Style(RoleStowed, "x")
 	if StripANSI(styled) != "x" || styled == "x" {
 		t.Errorf("nil theme should style via the default palette, got %q", styled)
 	}
