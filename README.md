@@ -16,7 +16,10 @@ never depends on the directory you happen to be standing in.
 
 ```
 github:rocne/dotfiles::zsh
-└─ scheme ┘└ coordinate ┘  └ package
+└─┬──┘ └─────┬──────┘  └┬┘
+  │          │          package
+  │          coordinate
+  scheme
 ```
 
 That fully-qualified name (FQN) is a package's stable identity. You rarely type
@@ -72,6 +75,31 @@ otherwise it installs it (no implied force). The install dir is tunable
 default the snippet relies on. Downloads are checksum-verified always, and
 cosign-verified when cosign is available. See `install.sh --help` for the
 full surface.
+
+### Linux packages (dnf / apt)
+
+Signed `.rpm` and `.deb` packages are published to a hosted repo, so dstow
+installs by name and stays current through your normal system upgrades. Add the
+repo once, then install:
+
+```sh
+# Fedora, RHEL, CentOS Stream, openSUSE, … (dnf/yum)
+curl -1sLf 'https://dl.cloudsmith.io/public/rocne/releases/setup.rpm.sh' | sudo -E bash
+sudo dnf install dstow
+```
+
+```sh
+# Debian, Ubuntu, … (apt)
+curl -1sLf 'https://dl.cloudsmith.io/public/rocne/releases/setup.deb.sh' | sudo -E bash
+sudo apt install dstow
+```
+
+The setup script drops a repo file into `/etc/yum.repos.d` (or
+`/etc/apt/sources.list.d`) and imports the repo's index-signing key, so
+`dnf upgrade` / `apt upgrade` pick up new dstow releases automatically. The
+packages themselves are GPG-signed by a separate key (fingerprint `64894FE3…`),
+whose public half is attached to every GitHub release as
+`dstow-signing-key.asc` if you want to verify a download by hand.
 
 ### With Go
 
