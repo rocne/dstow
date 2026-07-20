@@ -270,15 +270,7 @@ func (c *classifier) computeExpected(fqn name.FQN) expectedSet {
 			"package %s: effective target unresolvable (%v); cannot decide whether its links are orphaned", fqn, terr)})
 		return expectedSet{answerable: false}
 	}
-	op := engine.Op{
-		Dir:                  rc.stowDir(),
-		Target:               target,
-		Package:              fqn.Package,
-		Fold:                 eff.FoldTrees(),
-		TranslateDotPrefixes: eff.TranslateDotPrefixes(),
-		Ignores:              eff.Ignores(),
-	}
-	exp, eerr := engine.Expected(op)
+	exp, eerr := engine.Expected(engineOp(rc, eff, target, fqn.Package))
 	if eerr != nil {
 		c.warn(Warning{Source: rc.pkgRoot(fqn.Package), Detail: fmt.Sprintf(
 			"package %s: cannot compute its expected links (%v); leaving them unclassified", fqn, eerr)})

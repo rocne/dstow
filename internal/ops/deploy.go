@@ -165,7 +165,9 @@ type prepared struct {
 // per-package outcome is a PackageResult.
 func (a *App) Deploy(req DeployRequest) (*DeployResult, error) {
 	if req.Adopt && req.Verb == engine.VerbUnstow {
-		return nil, fmt.Errorf("--adopt does not compose with unstow (D15: it pre-accepts stow's occupied-path refusal)")
+		// D15: adoption pre-accepts stow's occupied-path refusal, which
+		// unstow never raises.
+		return nil, fmt.Errorf("--adopt applies only to stow and restow: adoption resolves an occupied path on deployment, and unstow deploys nothing")
 	}
 
 	works, preResults, warns, err := a.selectWork(req.Names)
@@ -269,15 +271,8 @@ func (a *App) prepare(req DeployRequest, works []work) []prepared {
 			continue
 		}
 		p.target = target
-		p.op = engine.Op{
-			Dir:                  w.rc.stowDir(),
-			Target:               target,
-			Package:              w.pkg.FQN.Package,
-			Fold:                 eff.FoldTrees(),
-			TranslateDotPrefixes: eff.TranslateDotPrefixes(),
-			Adopt:                req.Adopt && req.Verb != engine.VerbUnstow,
-			Ignores:              eff.Ignores(),
-		}
+		p.op = engineOp(w.rc, eff, target, w.pkg.FQN.Package)
+		p.op.Adopt = req.Adopt && req.Verb != engine.VerbUnstow
 
 		targetExists := true
 		if _, serr := os.Stat(target); os.IsNotExist(serr) {
@@ -464,14 +459,15 @@ func (a *App) execute(req DeployRequest, preps []prepared, res *DeployResult) er
 				reconcile := req.Verb == engine.VerbRestow
 
 				if p.acting {
+					// A failed pre hook blocks its whole scope (§9.1.4).
 					switch {
 					case globalBlocked:
 						p.status = StatusBlocked
-						p.err = fmt.Errorf("blocked: a global pre-%s hook failed (§9.1.4)", hookAction(req.Verb))
+						p.err = fmt.Errorf("blocked: a global pre-%s hook failed", hookAction(req.Verb))
 						continue
 					case repoBlocked[repoKey]:
 						p.status = StatusBlocked
-						p.err = fmt.Errorf("blocked: a repo pre-%s hook failed (§9.1.4)", hookAction(req.Verb))
+						p.err = fmt.Errorf("blocked: a repo pre-%s hook failed", hookAction(req.Verb))
 						continue
 					}
 

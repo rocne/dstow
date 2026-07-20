@@ -92,19 +92,8 @@ func (e *env) newThemeListCmd() *cobra.Command {
 				return err
 			}
 			res := (&ops.App{Global: global}).ThemeList()
-			const nameHead, sourceHead = "Theme Name", "Source"
-			width := len(nameHead)
-			for _, row := range res.Rows {
-				if len(row.Name) > width {
-					width = len(row.Name)
-				}
-			}
-			// The header is commentary, not data: heading-styled, on stderr
-			// (O1), dropped by --quiet (O7) — piped stdout stays pure rows.
-			if !e.quiet {
-				head := fmt.Sprintf("%-*s  %s", width, nameHead, sourceHead)
-				e.pr().Err().Printf("%s\n", e.pr().Err().Style(ui.RoleHeading, head))
-			}
+			out := e.pr().Out()
+			rows := make([]tableRow, 0, len(res.Rows))
 			for _, row := range res.Rows {
 				origin := "bundled" // origin styling deferred (Rocne, 2026-07-19)
 				switch {
@@ -113,15 +102,12 @@ func (e *env) newThemeListCmd() *cobra.Command {
 				case row.User:
 					origin = "user"
 				}
-				// Pad on the plain name, then style: ANSI bytes must not
-				// count against the column width.
-				out := e.pr().Out()
-				line := out.Style(ui.RoleName, row.Name) + strings.Repeat(" ", width-len(row.Name)) + "  " + origin
 				if row.Active {
-					line += "  (active)"
+					origin += "  (active)"
 				}
-				out.Println(line)
+				rows = append(rows, tableRow{name: row.Name, styled: out.Style(ui.RoleName, row.Name), rest: origin})
 			}
+			e.renderNameTable("Theme Name", "Source", rows)
 			return nil
 		},
 	}
@@ -156,27 +142,14 @@ func (e *env) newThemeSlotsCmd() *cobra.Command {
 				return e.writeJSON(slotsJSON(res))
 			}
 
-			// The two-column header is commentary: heading-styled, on stderr
-			// (O1), dropped by --quiet (O7) — piped stdout stays pure rows.
-			const slotHead, descHead = "Slot", "Description"
-			width := len(slotHead)
-			for _, row := range res.Rows {
-				if len(row.Slot) > width {
-					width = len(row.Slot)
-				}
-			}
-			if !e.quiet {
-				head := fmt.Sprintf("%-*s  %s", width, slotHead, descHead)
-				e.pr().Err().Printf("%s\n", e.pr().Err().Style(ui.RoleHeading, head))
-			}
-			// Pad on the plain slot name, then style: ANSI bytes must not count
-			// against the column width (the theme list precedent).
+			// Each slot name renders in its own effective style — a live swatch.
 			out := e.pr().Out()
+			rows := make([]tableRow, 0, len(res.Rows))
 			for _, row := range res.Rows {
 				st := effective[ui.Slot(row.Slot)]
-				name := out.StyleWith(st, row.Slot)
-				out.Println(name + strings.Repeat(" ", width-len(row.Slot)) + "  " + row.Description)
+				rows = append(rows, tableRow{name: row.Slot, styled: out.StyleWith(st, row.Slot), rest: row.Description})
 			}
+			e.renderNameTable("Slot", "Description", rows)
 			return nil
 		},
 	}

@@ -141,18 +141,18 @@ func (e *env) renderPackageResult(verb string, p *ops.PackageResult, dryRun bool
 	pr := e.pr()
 	label := deployName(p)
 
-	slot := ui.RoleStowed
+	role := ui.RoleStowed
 	word := p.Status.String()
 	switch p.Status {
 	case ops.StatusFailed, ops.StatusBlocked:
-		slot = ui.RoleError
+		role = ui.RoleError
 	case ops.StatusNotFound:
-		slot = ui.RoleWarning
+		role = ui.RoleWarning
 	}
 	if dryRun && p.Status == ops.StatusSucceeded {
 		word = "planned"
 	}
-	pr.Err().Println(fmt.Sprintf("%s %s %s", verb, pr.Err().Style(ui.RoleName, label), pr.Err().Style(slot, word)))
+	pr.Err().Println(fmt.Sprintf("%s %s %s", verb, pr.Err().Style(ui.RoleName, label), pr.Err().Style(role, word)))
 
 	for _, note := range p.Notes {
 		pr.Err().Println("    " + note)

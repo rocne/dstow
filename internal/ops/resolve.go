@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/rocne/dstow/internal/config"
+	"github.com/rocne/dstow/internal/engine"
 	"github.com/rocne/dstow/internal/name"
 	"github.com/rocne/dstow/internal/repo"
 )
@@ -70,6 +71,22 @@ func (a *App) eff(w work) config.Effective {
 		rl = w.rc.level
 	}
 	return config.Effective{Global: a.Global, Repo: rl, Package: w.pkgLevel}
+}
+
+// engineOp is the one place an Effective chain becomes an engine.Op, so every
+// observer (status, check) and deployer (stow/unstow/restow, adopt)
+// parameterizes the engine identically and can never disagree about what a
+// package means. Verb-specific fields (Adopt, Simulate) are the caller's to
+// set on the returned value.
+func engineOp(rc *repoCtx, eff config.Effective, target, pkg string) engine.Op {
+	return engine.Op{
+		Dir:                  rc.stowDir(),
+		Target:               target,
+		Package:              pkg,
+		Fold:                 eff.FoldTrees(),
+		TranslateDotPrefixes: eff.TranslateDotPrefixes(),
+		Ignores:              eff.Ignores(),
+	}
 }
 
 // AmbiguousNameError reports an operand matching more than one entity

@@ -78,14 +78,7 @@ func (a *App) Adopt(req AdoptRequest) (*AdoptResult, error) {
 	if terr != nil {
 		return nil, terr
 	}
-	op := engine.Op{
-		Dir:                  w.rc.stowDir(),
-		Target:               target,
-		Package:              w.pkg.FQN.Package,
-		Fold:                 eff.FoldTrees(),
-		TranslateDotPrefixes: eff.TranslateDotPrefixes(),
-		Ignores:              eff.Ignores(),
-	}
+	op := engineOp(w.rc, eff, target, w.pkg.FQN.Package)
 
 	var moves []AdoptMove
 	if req.Occupied {
