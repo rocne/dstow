@@ -76,6 +76,14 @@ default the snippet relies on. Downloads are checksum-verified always, and
 cosign-verified when cosign is available. See `install.sh --help` for the
 full surface.
 
+To pass any of these flags when piping, hand them to `sh` after `-s --` —
+everything past `--` becomes the script's arguments:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh -s -- --force
+curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh -s -- --version v0.4.0
+```
+
 ### Linux packages (dnf / apt)
 
 Signed `.rpm` and `.deb` packages are published to a hosted repo, so dstow
