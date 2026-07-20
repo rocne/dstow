@@ -15,14 +15,17 @@ never depends on the directory you happen to be standing in.
   config can point elsewhere.
 
 ```
-github:rocne/dotfiles::zsh
-└─ scheme ┘└ coordinate ┘  └ package
+github:yourname/dotfiles::starship
+└─┬──┘ └───────┬───────┘  └──┬───┘
+  │            │             package
+  │            coordinate
+  scheme
 ```
 
 That fully-qualified name (FQN) is a package's stable identity. You rarely type
-the whole thing — **any unambiguous suffix works** (`zsh`, `dotfiles::zsh`,
-`rocne/dotfiles::zsh`), and **the working directory never changes what a
-command does.**
+the whole thing — **any unambiguous suffix works** (`starship`,
+`dotfiles::starship`, `yourname/dotfiles::starship`), and **the working
+directory never changes what a command does.**
 
 ---
 
@@ -59,7 +62,7 @@ prints the text to stdout for you to redirect. On a fresh machine where dstow is
 not yet installed, run the snippet's install line directly:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh -s --
 ```
 
 The installer drops `dstow` into `~/.local/bin`. It is idempotent: run against a
@@ -72,6 +75,38 @@ otherwise it installs it (no implied force). The install dir is tunable
 default the snippet relies on. Downloads are checksum-verified always, and
 cosign-verified when cosign is available. See `install.sh --help` for the
 full surface.
+
+Add installer args right after the `--`, such as `--force` or
+`--version <version>`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh -s -- --force
+```
+
+### Linux packages (dnf / apt)
+
+Signed `.rpm` and `.deb` packages are published to a hosted repo, so dstow
+installs by name and stays current through your normal system upgrades. Add the
+repo once, then install:
+
+```sh
+# Fedora, RHEL, CentOS Stream, openSUSE, … (dnf/yum)
+curl -1sLf 'https://dl.cloudsmith.io/public/rocne/releases/setup.rpm.sh' | sudo -E bash
+sudo dnf install dstow
+```
+
+```sh
+# Debian, Ubuntu, … (apt)
+curl -1sLf 'https://dl.cloudsmith.io/public/rocne/releases/setup.deb.sh' | sudo -E bash
+sudo apt install dstow
+```
+
+The setup script drops a repo file into `/etc/yum.repos.d` (or
+`/etc/apt/sources.list.d`) and imports the repo's index-signing key, so
+`dnf upgrade` / `apt upgrade` pick up new dstow releases automatically. The
+packages themselves are GPG-signed by a separate key (fingerprint `64894FE3…`),
+whose public half is attached to every GitHub release as
+`dstow-signing-key.asc` if you want to verify a download by hand.
 
 ### With Go
 
