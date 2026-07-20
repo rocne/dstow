@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/rocne/dstow/compare/v0.4.0...v0.5.0) (2026-07-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **theme:** dstow theme show is gone; the command is dstow theme emit (same operands and flags, no alias).
+
+### Features
+
+* **theme:** slots reference surface, show renamed to emit ([#120](https://github.com/rocne/dstow/issues/120)) ([2157bea](https://github.com/rocne/dstow/commit/2157bea69922ef403b8f972073548d00e267540b))
+
+
+### Bug Fixes
+
+* audit follow-ups - hermetic xdg tests, single-owner engineOp and KindOf, error prose ([#123](https://github.com/rocne/dstow/issues/123)) ([fa4c930](https://github.com/rocne/dstow/commit/fa4c930406cc1e77e058543c982737e84fed4506))
+
 ## [0.4.0](https://github.com/rocne/dstow/compare/v0.3.0...v0.4.0) (2026-07-19)
 
 
