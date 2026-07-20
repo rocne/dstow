@@ -6,25 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/adrg/xdg"
 )
-
-// isolateThemeXDG is isolateXDG plus an xdg cache reload (the paths_test.go
-// pattern): the theme verbs resolve real paths through adrg/xdg, which
-// snapshots the environment, so t.Setenv alone would leave them pointed at
-// the developer's real config.
-func isolateThemeXDG(t *testing.T) {
-	t.Helper()
-	isolateXDG(t)
-	xdg.Reload()
-	t.Cleanup(xdg.Reload)
-}
 
 // theme list enumerates the six bundled presets, all origin "bundled", none
 // active in a fresh HOME.
 func TestThemeList(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	out, errs, code := run(t, "theme", "list")
 	if code != 0 {
 		t.Fatalf("theme list exit = %d", code)
@@ -73,7 +60,7 @@ func TestThemeList(t *testing.T) {
 // A user theme file appears in the roster; a name collision reads as shadowing
 // (C4); the global theme key marks its row active.
 func TestThemeListUserShadowActive(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	cfgDir := filepath.Join(os.Getenv("XDG_CONFIG_HOME"), "dstow")
 	themesDir := filepath.Join(cfgDir, "themes")
 	if err := os.MkdirAll(themesDir, 0o755); err != nil {
@@ -114,7 +101,7 @@ func TestThemeListUserShadowActive(t *testing.T) {
 // truth is complete — plain under NO_COLOR (O11-style strip stability by
 // construction).
 func TestThemeEmitEffectiveRendered(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	out, _, code := run(t, "theme", "emit")
 	if code != 0 {
 		t.Fatalf("theme emit exit = %d", code)
@@ -134,7 +121,7 @@ func TestThemeEmitEffectiveRendered(t *testing.T) {
 // theme emit <name> shows the theme as loaded (declared slots only), and the
 // env emission round-trips the old converter path.
 func TestThemeEmitNamed(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	out, _, code := run(t, "theme", "emit", "cargo")
 	if code != 0 {
 		t.Fatalf("theme emit cargo exit = %d", code)
@@ -155,7 +142,7 @@ func TestThemeEmitNamed(t *testing.T) {
 
 // slot=value operands override on top; toml emission carries them.
 func TestThemeEmitOverrides(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	out, _, code := run(t, "theme", "emit", "cargo", "section1=bold yellow", "--format", "toml")
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
@@ -169,7 +156,7 @@ func TestThemeEmitOverrides(t *testing.T) {
 // bare refs. An unknown theme is a not-found refusal (exit 1, per the #47
 // ruling: exit 2 is reserved for malformed invocation).
 func TestThemeEmitErrors(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	if _, _, code := run(t, "theme", "emit", "bogus_slot=red"); code != 2 {
 		t.Errorf("unknown slot exit = %d, want 2", code)
 	}
@@ -188,7 +175,7 @@ func TestThemeEmitErrors(t *testing.T) {
 // descriptions sourced from the code-owned Role mapping. The column header is
 // commentary: stderr, never stdout (O1).
 func TestThemeSlots(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	out, errs, code := run(t, "theme", "slots")
 	if code != 0 {
 		t.Fatalf("theme slots exit = %d", code)
@@ -228,7 +215,7 @@ func TestThemeSlots(t *testing.T) {
 
 // --quiet drops the header (O7); the fourteen data rows survive unchanged.
 func TestThemeSlotsQuiet(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	out, _, _ := run(t, "theme", "slots")
 	qout, qerrs, code := run(t, "-q", "theme", "slots")
 	if code != 0 {
@@ -245,7 +232,7 @@ func TestThemeSlotsQuiet(t *testing.T) {
 // The slot names render through their own effective style when color is forced:
 // section1's default is bold brightgreen, so its name is styled 1;92.
 func TestThemeSlotsColorized(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	cout, _, code := run(t, "--color", "always", "theme", "slots")
 	if code != 0 {
 		t.Fatalf("theme slots exit = %d", code)
@@ -259,7 +246,7 @@ func TestThemeSlotsColorized(t *testing.T) {
 // consumer list; all fourteen present, error1 carries its state consumers, and
 // a slot no internal consumes carries an empty consumers array.
 func TestThemeSlotsJSON(t *testing.T) {
-	isolateThemeXDG(t)
+	isolateXDG(t)
 	out, _, code := run(t, "theme", "slots", "--json")
 	if code != 0 {
 		t.Fatalf("theme slots --json exit = %d", code)

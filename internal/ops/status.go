@@ -193,7 +193,7 @@ func (a *App) statusPath(path string) (*StatusResult, error) {
 				ps.LinkDest = dest
 			}
 		} else {
-			ps.Kind = kindOfMode(info)
+			ps.Kind = ledger.KindOf(info)
 		}
 	case os.IsNotExist(lerr):
 		ps.Kind = "nothing"

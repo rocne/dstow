@@ -151,7 +151,7 @@ func (e Entry) Contradicted(targetRoot string) (bool, string) {
 		return false, ""
 	}
 	if info.Mode()&fs.ModeSymlink == 0 {
-		return true, fmt.Sprintf("the ledger records a link at %s pointing to %q, but that path holds a %s, not a symlink", linkPath, e.Destination, kindOf(info))
+		return true, fmt.Sprintf("the ledger records a link at %s pointing to %q, but that path holds a %s, not a symlink", linkPath, e.Destination, KindOf(info))
 	}
 
 	actual, err := os.Readlink(linkPath)
@@ -164,9 +164,9 @@ func (e Entry) Contradicted(targetRoot string) (bool, string) {
 	return false, ""
 }
 
-// kindOf names what disk holds at a non-symlink path, for Contradicted's
-// evidence prose.
-func kindOf(info fs.FileInfo) string {
+// KindOf names what disk holds at a non-symlink path — the one spelling every
+// evidence line uses (Contradicted here, status's per-link verdicts in ops).
+func KindOf(info fs.FileInfo) string {
 	switch {
 	case info.IsDir():
 		return "directory"

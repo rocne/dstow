@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,6 +9,35 @@ import (
 	"github.com/rocne/dstow/internal/ops"
 	"github.com/rocne/dstow/internal/ui"
 )
+
+// tableRow is one row of a two-column name table: the plain first cell (which
+// decides the column width), its styled rendering, and the rest of the line.
+type tableRow struct {
+	name   string
+	styled string
+	rest   string
+}
+
+// renderNameTable prints a two-column table: a heading-styled header on stderr
+// (commentary, O1 — dropped by --quiet, O7, so piped stdout stays pure rows),
+// then the rows on stdout. Padding is computed on the plain first cell, never
+// the styled one: ANSI bytes must not count against the column width.
+func (e *env) renderNameTable(head1, head2 string, rows []tableRow) {
+	width := len(head1)
+	for _, r := range rows {
+		if len(r.name) > width {
+			width = len(r.name)
+		}
+	}
+	if !e.quiet {
+		head := fmt.Sprintf("%-*s  %s", width, head1, head2)
+		e.pr().Err().Printf("%s\n", e.pr().Err().Style(ui.RoleHeading, head))
+	}
+	out := e.pr().Out()
+	for _, r := range rows {
+		out.Println(r.styled + strings.Repeat(" ", width-len(r.name)) + "  " + r.rest)
+	}
+}
 
 // renderWarnings prints diagnostics-as-data (A4) to stderr: one warning: line
 // per warning (surviving --quiet, O7), followed by a fix: line where the

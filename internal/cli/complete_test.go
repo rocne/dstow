@@ -10,12 +10,7 @@ import (
 // candidates (the two scheme prefixes) and never a diagnostic or panic. It is a
 // pure resolver read — no hooks, no network.
 func TestCompleteBestEffortSilent(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("XDG_STATE_HOME", filepath.Join(home, ".local", "state"))
-	t.Setenv("XDG_DATA_HOME", filepath.Join(home, ".local", "share"))
-	t.Setenv("DSTOW_PATH", "")
+	isolateXDG(t)
 
 	// Empty prefix: at least the two scheme prefixes, no panic.
 	got := completeEntities("", false)
@@ -38,13 +33,9 @@ func TestCompleteBestEffortSilent(t *testing.T) {
 // TestCompleteSessionRepo asserts the completer resolves package and repo names
 // from a real repo contributed via DSTOW_PATH (the resolver path, no network).
 func TestCompleteSessionRepo(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, ".config"))
-	t.Setenv("XDG_STATE_HOME", filepath.Join(home, ".local", "state"))
-	t.Setenv("XDG_DATA_HOME", filepath.Join(home, ".local", "share"))
+	isolateXDG(t)
 
-	repoDir := filepath.Join(home, "dots")
+	repoDir := filepath.Join(os.Getenv("HOME"), "dots")
 	mkdirs(t, filepath.Join(repoDir, "zsh"), filepath.Join(repoDir, "git"))
 	t.Setenv("DSTOW_PATH", repoDir)
 

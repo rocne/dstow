@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/adrg/xdg"
+
 	"github.com/rocne/dstow/internal/ui"
 )
 
@@ -33,6 +35,10 @@ func isolateXDG(t *testing.T) {
 	t.Setenv("DSTOW_PATH", "")
 	t.Setenv("DSTOW_COLORS", "")
 	t.Setenv("NO_COLOR", "1") // deterministic, uncolored output for assertions
+	// adrg/xdg snapshots the environment at init, so t.Setenv alone would
+	// leave xdg-derived paths pointed at the developer's real config.
+	xdg.Reload()
+	t.Cleanup(xdg.Reload)
 }
 
 // TestTopLevelHelpContent asserts `dstow --help` carries DESIGN.md §2.3's

@@ -125,14 +125,7 @@ func (a *App) classifyPackage(c *repoCtx, pkg string, led ledger.Ledger) Package
 		res.State = StateNotStowed
 		return res
 	}
-	op := engine.Op{
-		Dir:                  c.stowDir(),
-		Target:               target,
-		Package:              pkg,
-		Fold:                 eff.FoldTrees(),
-		TranslateDotPrefixes: eff.TranslateDotPrefixes(),
-		Ignores:              eff.Ignores(),
-	}
+	op := engineOp(c, eff, target, pkg)
 	expected, eerr := engine.Expected(op)
 	if eerr != nil {
 		res.Warnings = append(res.Warnings, Warning{
@@ -226,7 +219,7 @@ func (a *App) classifyLink(dir, target, link, pkg string) (LinkState, string) {
 		return LinkOccupied, fmt.Sprintf("cannot observe %s: %v", linkPath, err)
 	}
 	if info.Mode()&fs.ModeSymlink == 0 {
-		return LinkOccupied, fmt.Sprintf("%s holds a real %s, not this package's link", linkPath, kindOfMode(info))
+		return LinkOccupied, fmt.Sprintf("%s holds a real %s, not this package's link", linkPath, ledger.KindOf(info))
 	}
 	owner, owned, oerr := engine.Owner(dir, linkPath)
 	if oerr != nil {
@@ -264,18 +257,6 @@ func packageState(damaged bool, total, stowed, occupied int) PackageState {
 		return StatePartiallyStowed
 	}
 	return StateNotStowed
-}
-
-// kindOfMode names what a non-symlink FileInfo holds, for evidence prose.
-func kindOfMode(info fs.FileInfo) string {
-	switch {
-	case info.IsDir():
-		return "directory"
-	case info.Mode().IsRegular():
-		return "regular file"
-	default:
-		return "non-symlink file"
-	}
 }
 
 // sortedKeys returns a map's keys in lexical order.
