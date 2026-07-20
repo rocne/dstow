@@ -35,7 +35,7 @@ func TestParseColorMode(t *testing.T) {
 	}
 }
 
-// TestParseColorFormat asserts the theme show --format resolution (rendered
+// TestParseColorFormat asserts the theme emit --format resolution (rendered
 // default, env, toml, error otherwise) — a format flag never changes the
 // concept.
 func TestParseColorFormat(t *testing.T) {

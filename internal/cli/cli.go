@@ -31,7 +31,7 @@ var shorts = map[string]string{
 
 	"repo":    "Manage repos: add, remove, update, upgrade",
 	"snippet": "Print canned shell snippets: rc bootstrap",
-	"theme":   "Theming: list themes; show, tweak, and emit colors",
+	"theme":   "Theming: list themes, describe slots, emit colors",
 
 	"version": "Print version",
 }

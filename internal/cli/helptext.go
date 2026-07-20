@@ -197,16 +197,51 @@ const snippetExample = `  dstow snippet rc >> ~/.bashrc`
 // snippetRCShort is the rc entry's description in the §2.4 snippet block.
 const snippetRCShort = "The shell-rc bootstrap: installs dstow iff absent — silent and network-free whenever dstow is already present"
 
-const themeLong = `Theming: list the available themes; show, tweak, and emit colors.`
+const themeLong = `Theming: list themes, describe slots, emit colors.`
 
 const themeExample = `  dstow theme list
-  dstow theme show
-  dstow theme show catppuccin-mocha
-  export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
-  dstow theme show cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml`
+  dstow theme slots
+  dstow theme emit
+  export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)
+  dstow theme emit cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml`
 
-// themeListShort and themeShowShort are the verb descriptions in the §2.4
-// theme block.
+// slotsLong is the §2.4 theme slots block: the slot reference intro plus the
+// value-grammar enumeration (git's color.* grammar), kept compact and in the
+// help-text voice of the other commands.
+const slotsLong = `Every generic slot and what it colors, each name shown in its own effective
+style. dstow's internals — package states, check classes, severity prefixes,
+prose roles — reach these slots through a fixed code-owned mapping (§7.2); each
+description names the slot's consumers.
+
+Slot values use git's color.* grammar: whitespace-separated words, in any
+order. The first color word is the foreground, the second the background, a
+third is an error. Color words are the 8 basics (black red green yellow blue
+magenta cyan white), their bright* variants, an integer 0-255 (256-color), or
+#RRGGBB hex. Write 'normal red' to set a background without touching the
+foreground. Attributes, any number: bold dim italic ul blink reverse strike,
+each negatable with no or no- (a negation renders as nothing — a themed slot
+replaces its default wholesale); 'reset' comes first.
+
+normal leaves a channel to the TERMINAL, not to dstow's default: a slot set to
+normal replaces its default wholesale (§7.3 top-wins) and renders plain — the
+only way to keep dstow's default for a slot is to leave it undeclared. default
+differs: it emits the terminal-default code (SGR 39/49) rather than nothing.`
+
+const emitLong = `Emit a theme's colors — the effective palette (no name), a named theme, or
+either with slot=value tweaks layered on top. The default view renders each
+slot's value in its own style; --format env|toml emits for machines.
+
+Values use git's color.* grammar — see 'dstow theme slots --help'.`
+
+const emitExample = `  dstow theme emit
+  dstow theme emit catppuccin-mocha
+  export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)
+  dstow theme emit cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml`
+
+// themeListShort, themeSlotsShort, and themeEmitShort are the verb descriptions
+// in the §2.4 theme block.
 const themeListShort = "List the available themes: bundled presets and your themes dir, active theme marked"
 
-const themeShowShort = "Show colors, each value in its own style: the effective palette (bare), a named theme, slot=value tweaks on top; --format env|toml emits for machines"
+const themeSlotsShort = "Describe every color slot: what it colors and its consumers, plus the value grammar"
+
+const themeEmitShort = "Emit a theme's colors, each value in its own style: the effective palette (bare), a named theme, slot=value tweaks on top; --format env|toml for machines"

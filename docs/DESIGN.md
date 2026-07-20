@@ -132,12 +132,18 @@ operand/subcommand collision is impossible by construction. Groups are nouns
 names (`list`, `info`, `status`).
 
 - Groups: `repo` {add, remove, update, upgrade} · `snippet` {rc} ·
-  `theme` {list, show} · hidden `name` {encode, decode}.
+  `theme` {list, slots, emit} · hidden `name` {encode, decode}.
   *(`theme` replaces the `colors` group — ruled 2026-07-19 with the
   prior-art defaults: a command's noun is the noun of its output, and
   `colors theme` emitted themes while showing no colors. `theme list`
-  discovers the roster; `theme show` outputs colors — the effective stack,
-  a named theme, or either with slot=value tweaks.)*
+  discovers the roster; `theme slots` describes the slot vocabulary; `theme
+  emit` outputs colors — the effective stack, a named theme, or either with
+  slot=value tweaks. `emit` was `show` (renamed 2026-07-20 —
+  [#117](https://github.com/rocne/dstow/issues/117): the noun matches the
+  output — the machine formats are the emission path and the rendered view is
+  one facet of it; clean rename, no alias); `theme slots` added the same day
+  ([#116](https://github.com/rocne/dstow/issues/116): the slot reference
+  surface).)*
 - Leaves: `stow` `unstow` `restow` `adopt` · `list` `info` `status` ·
   `check` `clean` `rebuild` · `completion` `version`.
 - **Root `--version` flag** (ruled at
@@ -157,7 +163,7 @@ names (`list`, `info`, `status`).
 - **No CLI flag twins for config knobs** (D12): no `--target`,
   `--no-folding`, `--ignore` flags; refusals name the knob and its file.
   *(Scope ruled 2026-07-19: D12 binds deployment-behavior knobs; parameters
-  of an emission — `theme show`'s slot=value operands — are outside it.)*
+  of an emission — `theme emit`'s slot=value operands — are outside it.)*
 - **No config-mutation commands**: declare by editing the metadata file (like
   every knob); write commands are deferred to the v2 property store, where
   they can arrive as a designed family.
@@ -202,7 +208,7 @@ Maintain:
 Groups:
   repo        Manage repos: add, remove, update, upgrade
   snippet     Print canned shell snippets: rc bootstrap
-  theme       Theming: list themes; show, tweak, and emit colors
+  theme       Theming: list themes, describe slots, emit colors
 
 Also:
   completion  Generate shell completion (bash, zsh, fish, powershell)
@@ -521,7 +527,7 @@ Examples:
 #### theme (group)
 
 ```
-Theming: list the available themes; show, tweak, and emit colors.
+Theming: list themes, describe slots, emit colors.
 
 Usage:
   dstow theme <command>
@@ -529,19 +535,71 @@ Usage:
 Commands:
   list          List the available themes: bundled presets and your themes
                 dir, active theme marked
-  show          Show colors, each value in its own style: the effective
-                palette (bare), a named theme, slot=value tweaks on top;
-                --format env|toml emits for machines
+  slots         Describe every color slot: what it colors and its consumers,
+                plus the value grammar
+  emit          Emit a theme's colors, each value in its own style: the
+                effective palette (bare), a named theme, slot=value tweaks on
+                top; --format env|toml for machines
 
 Examples:
   dstow theme list
-  dstow theme show
-  dstow theme show catppuccin-mocha
-  export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
-  dstow theme show cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
+  dstow theme slots
+  dstow theme emit
+  export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)
+  dstow theme emit cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
 ```
 
-*(Ruled 2026-07-19, replacing the `colors` group. `show` bare renders the
+```
+Every generic slot and what it colors, each name shown in its own effective
+style. dstow's internals — package states, check classes, severity prefixes,
+prose roles — reach these slots through a fixed code-owned mapping (§7.2); each
+description names the slot's consumers.
+
+Slot values use git's color.* grammar: whitespace-separated words, in any
+order. The first color word is the foreground, the second the background, a
+third is an error. Color words are the 8 basics (black red green yellow blue
+magenta cyan white), their bright* variants, an integer 0-255 (256-color), or
+#RRGGBB hex. Write 'normal red' to set a background without touching the
+foreground. Attributes, any number: bold dim italic ul blink reverse strike,
+each negatable with no or no- (a negation renders as nothing — a themed slot
+replaces its default wholesale); 'reset' comes first.
+
+normal leaves a channel to the TERMINAL, not to dstow's default: a slot set to
+normal replaces its default wholesale (§7.3 top-wins) and renders plain — the
+only way to keep dstow's default for a slot is to leave it undeclared. default
+differs: it emits the terminal-default code (SGR 39/49) rather than nothing.
+
+Usage:
+  dstow theme slots [flags]
+
+Flags:
+      --json   Machine-readable slot reference
+```
+
+```
+Emit a theme's colors — the effective palette (no name), a named theme, or
+either with slot=value tweaks layered on top. The default view renders each
+slot's value in its own style; --format env|toml emits for machines.
+
+Values use git's color.* grammar — see 'dstow theme slots --help'.
+
+Usage:
+  dstow theme emit [theme] [slot=value ...] [flags]
+
+Flags:
+      --format <fmt>   Emit for machines: env (packed DSTOW_COLORS) or toml
+                       (theme file); default is the rendered view
+
+Examples:
+  dstow theme emit
+  dstow theme emit catppuccin-mocha
+  export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)
+  dstow theme emit cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
+```
+
+*(Ruled 2026-07-19, replacing the `colors` group; `emit` was `show` and
+`slots` was added 2026-07-20 — [#117](https://github.com/rocne/dstow/issues/117),
+[#116](https://github.com/rocne/dstow/issues/116). `emit` bare renders the
 effective §7.3 stack — the composed truth of what dstow is using; a ref
 renders that theme AS LOADED (its declared slots); `slot=value` operands
 layer on top, the top of the stack. Overrides are **operands, not per-slot
@@ -550,8 +608,14 @@ of deployment-behavior knobs; parameters of an emission are not that), and
 operands reuse the one slot=value grammar besides. `--format env|toml` —
 exact flag spelling is implementation detail; a format flag doesn't change
 the concept, per the `--json` precedent. The default output is the rendered
-view; the machine formats are the emission path, so `theme show` absorbs the
-old `colors theme` converter whole.)*
+view; the machine formats are the emission path, so `theme emit` absorbs the
+old `colors theme` converter whole. `theme slots` is the slot-vocabulary
+reference — the noun matches its output (each slot, what it colors); it renders
+each slot name in its own effective style (the swatch precedent), enumerates
+the stage-2 consumers from the same code-owned Role mapping the styles use
+(§7.2, so the reference cannot drift), and carries the full value-grammar
+enumeration in its long help. The name renaming carries no alias — pre-1.0,
+clean break.)*
 
 ## 3. Configuration
 
@@ -987,7 +1051,7 @@ theme config can never re-enable color the chain turned off:
 1. **`DSTOW_COLORS`** — the only theming env var: packed per-slot overrides,
    LS_COLORS-family syntax (`error1=bold red:success2=#a6e3a1`), values in
    git's `color.*` grammar. Populated by hand or by generator:
-   `export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)`.
+   `export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)`.
    There is no
    `DSTOW_THEME`.
 2. **`[color]` TOML table** — global config, one key per slot, same grammar.
@@ -1010,8 +1074,9 @@ whole-family coherence from tier-1 declarations alone.
 `[color]` schema, no wrapper keys; the packed string, the config table, and
 theme files share one slot vocabulary and one value grammar — losslessly
 convertible between representations, forever. v1 ships
-`dstow theme show [<name>] [slot=value ...] [--format env|toml]` (the
-emission path) and `dstow theme list` (the roster).
+`dstow theme emit [<name>] [slot=value ...] [--format env|toml]` (the
+emission path), `dstow theme slots` (the slot-vocabulary reference), and
+`dstow theme list` (the roster).
 
 ## 8. Go architecture
 
