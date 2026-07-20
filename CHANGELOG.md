@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/rocne/dstow/compare/v0.3.0...v0.4.0) (2026-07-19)
+
+
+### Features
+
+* theme group (list, show) replaces colors — nouns match outputs ([#111](https://github.com/rocne/dstow/issues/111)) ([3e99a06](https://github.com/rocne/dstow/commit/3e99a064aa7b1125fa78f2a08b7e77a6326479ef))
+* **theme:** colorized list — name-slot names, heading header on stderr ([#113](https://github.com/rocne/dstow/issues/113)) ([451cf52](https://github.com/rocne/dstow/commit/451cf521157e03dc8154f289809879b8de6e4964))
+
 ## [0.3.0](https://github.com/rocne/dstow/compare/v0.2.0...v0.3.0) (2026-07-19)
 
 
