@@ -62,7 +62,7 @@ prints the text to stdout for you to redirect. On a fresh machine where dstow is
 not yet installed, run the snippet's install line directly:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh -s --
 ```
 
 The installer drops `dstow` into `~/.local/bin`. It is idempotent: run against a
@@ -76,12 +76,11 @@ default the snippet relies on. Downloads are checksum-verified always, and
 cosign-verified when cosign is available. See `install.sh --help` for the
 full surface.
 
-To pass any of these flags when piping, hand them to `sh` after `-s --` —
-everything past `--` becomes the script's arguments:
+Add installer args right after the `--`, such as `--force` or
+`--version <version>`:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh -s -- --force
-curl -fsSL https://raw.githubusercontent.com/rocne/dstow/main/install.sh | sh -s -- --version v0.4.0
 ```
 
 ### Linux packages (dnf / apt)
