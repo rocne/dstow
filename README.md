@@ -15,16 +15,16 @@ never depends on the directory you happen to be standing in.
   config can point elsewhere.
 
 ```
-github:rocne/dotfiles::zsh
-└─┬──┘ └─────┬──────┘  └┬┘
-  │          │          package
-  │          coordinate
+github:yourname/dotfiles::zsh
+└─┬──┘ └───────┬───────┘  └┬┘
+  │            │           package
+  │            coordinate
   scheme
 ```
 
 That fully-qualified name (FQN) is a package's stable identity. You rarely type
 the whole thing — **any unambiguous suffix works** (`zsh`, `dotfiles::zsh`,
-`rocne/dotfiles::zsh`), and **the working directory never changes what a
+`yourname/dotfiles::zsh`), and **the working directory never changes what a
 command does.**
 
 ---
