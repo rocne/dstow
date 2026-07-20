@@ -102,7 +102,7 @@ func (e *env) loadGlobal() (*config.GlobalLevel, []ops.Warning, error) {
 
 // composeStack composes the full §7.3 theming stack — DSTOW_COLORS over the
 // [color] table over the theme key over the default palette — the one
-// composition owner both the printer upgrade and theme show's effective view
+// composition owner both the printer upgrade and theme emit's effective view
 // use. A theme-load failure degrades to a warning, never a refusal.
 func (e *env) composeStack(global *config.GlobalLevel, warnings *[]ops.Warning) ui.Theme {
 	envTheme, ewarns := ui.ParseDSTOWColors(dstowColorsEnv())

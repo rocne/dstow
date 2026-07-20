@@ -140,6 +140,111 @@ func RoleSlot(r Role) Slot {
 	return roleSlot[r]
 }
 
+// slotGloss is the prose half of the theme slots reference (§3.3, #116): what
+// each generic slot colors, in CONTEXT vocabulary. It lives beside roleSlot so
+// the other half — each slot's consumer roles, inverted from that same map —
+// can never drift from the mapping it documents. Every slot has an entry; the
+// four slots no internal consumes in v1 (section2, name2, value1, success1) say
+// so. The tier-derivation note (§7.3) is appended by SlotReference for tier-2
+// slots, not repeated here.
+var slotGloss = map[Slot]string{
+	SlotSection1: "section headings",
+	SlotSection2: "secondary section headings (no internal consumes it in v1)",
+	SlotName1:    "canonical names — packages, repos, fields",
+	SlotName2:    "secondary names and aliases (no internal consumes it in v1)",
+	SlotValue1:   "literal values and defaults (no internal consumes it in v1)",
+	SlotValue2:   "muted, secondary text — placeholders and metadata",
+	SlotError1:   "fatal, blocking errors",
+	SlotError2:   "lesser breakage",
+	SlotWarning1: "warnings that want attention",
+	SlotWarning2: "lower-prominence attention",
+	SlotSuccess1: "good outcomes (no internal consumes it in v1)",
+	SlotSuccess2: "quieter good outcomes",
+	SlotInfo1:    "neutral-notable, prominent — actionable guidance",
+	SlotInfo2:    "neutral-notable, quiet — FYI commentary",
+}
+
+// rolesInSlotOrder lists every stage-2 Role in a stable order for inverting
+// roleSlot: package states, then check classes, then the severity prefixes and
+// prose roles. SlotReference walks it so each slot's consumer list is
+// deterministic (package states and classes come first, so the descriptions
+// read like #116's example: "error1 — fatal, blocking errors; states: damaged,
+// contradicted").
+var rolesInSlotOrder = []Role{
+	RoleStowed, RolePartiallyStowed, RoleNotStowed, RoleOccupied, RoleDamaged, RoleDrifted,
+	RoleBroken, RoleOrphaned, RoleContradicted,
+	RoleError, RoleWarning, RoleFix, RoleNote,
+	RoleName, RoleHeading, RoleMuted,
+}
+
+// conditionRole reports whether a role is a package state or check class — the
+// "conditions" a slot description enumerates after its gloss. The severity
+// prefixes and prose roles are the slot's primary meaning and stay folded into
+// the gloss; the states and classes that share the slot are what the "states:"
+// clause lists (#116).
+var conditionRole = map[Role]bool{
+	RoleStowed: true, RolePartiallyStowed: true, RoleNotStowed: true,
+	RoleOccupied: true, RoleDamaged: true, RoleDrifted: true,
+	RoleBroken: true, RoleOrphaned: true, RoleContradicted: true,
+}
+
+// SlotDoc is one row of the theme slots reference (§3.3, #116): a generic slot,
+// the prose of what it colors, and every stage-2 role (§7.2) that renders
+// through it. Both Description and Consumers derive from roleSlot and slotGloss
+// beside them, so the reference can never drift from the mapping it documents.
+type SlotDoc struct {
+	Slot        Slot
+	Description string
+	Consumers   []Role
+}
+
+// SlotReference returns the fourteen slots in canonical §3.3 order, each with
+// its description and its derived consumer roles — the data behind theme slots
+// (#116). The description is the slot's gloss, then its state/class consumers
+// enumerated ("states: ..."), then the tier-derivation note for a tier-2 slot
+// (§7.3: tier 2 derives from tier 1 when undeclared). Consumers is the complete
+// inverted-roleSlot list for the slot, empty for a slot no internal consumes.
+func SlotReference() []SlotDoc {
+	byslot := map[Slot][]Role{}
+	for _, r := range rolesInSlotOrder {
+		s := roleSlot[r]
+		byslot[s] = append(byslot[s], r)
+	}
+	out := make([]SlotDoc, 0, len(allSlots))
+	for _, s := range allSlots {
+		consumers := byslot[s]
+		if consumers == nil {
+			consumers = []Role{}
+		}
+		out = append(out, SlotDoc{
+			Slot:        s,
+			Description: slotDescription(s, consumers),
+			Consumers:   consumers,
+		})
+	}
+	return out
+}
+
+// slotDescription composes one slot's reference prose: its gloss, the
+// state/class consumers it shares (labeled "states:", #116's format), and — for
+// a tier-2 slot — the derivation note (§7.3).
+func slotDescription(s Slot, consumers []Role) string {
+	desc := slotGloss[s]
+	var conds []string
+	for _, r := range consumers {
+		if conditionRole[r] {
+			conds = append(conds, string(r))
+		}
+	}
+	if len(conds) > 0 {
+		desc += "; states: " + strings.Join(conds, ", ")
+	}
+	if family, tier := slotFamilyTier(s); tier == 2 {
+		desc += fmt.Sprintf("; tier 2 — derives from %s1 when undeclared", family)
+	}
+	return desc
+}
+
 // slotFamilyTier splits a slot into its family stem and prominence tier
 // ("warning2" -> "warning", 2). The roster is closed and every slot ends in
 // its single-digit tier, so this never fails for a valid slot.
@@ -193,7 +298,7 @@ func DeriveTiers(t Theme) Theme {
 	return out
 }
 
-// ParseSlotAssignment parses one slot=value operand (the theme show override
+// ParseSlotAssignment parses one slot=value operand (the theme emit override
 // grammar). Unlike the env/table/file paths this is a hard error, never
 // warn-and-skip: the user typed the assignment on this very command line, so
 // a bad one is a usage mistake with nothing else to salvage.

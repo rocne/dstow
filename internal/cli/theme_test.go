@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,19 +109,19 @@ func TestThemeListUserShadowActive(t *testing.T) {
 	}
 }
 
-// Bare theme show renders the effective stack: fourteen slot lines in
+// Bare theme emit renders the effective stack: fourteen slot lines in
 // canonical §3.3 order — tier-2s filled by derivation (§7.3), so the composed
 // truth is complete — plain under NO_COLOR (O11-style strip stability by
 // construction).
-func TestThemeShowEffectiveRendered(t *testing.T) {
+func TestThemeEmitEffectiveRendered(t *testing.T) {
 	isolateThemeXDG(t)
-	out, _, code := run(t, "theme", "show")
+	out, _, code := run(t, "theme", "emit")
 	if code != 0 {
-		t.Fatalf("theme show exit = %d", code)
+		t.Fatalf("theme emit exit = %d", code)
 	}
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
 	if len(lines) != 14 {
-		t.Fatalf("theme show printed %d rows, want 14:\n%s", len(lines), out)
+		t.Fatalf("theme emit printed %d rows, want 14:\n%s", len(lines), out)
 	}
 	if !strings.HasPrefix(lines[0], "section1") || !strings.HasPrefix(lines[13], "info2") {
 		t.Errorf("rows not in canonical §3.3 order:\n%s", out)
@@ -130,20 +131,20 @@ func TestThemeShowEffectiveRendered(t *testing.T) {
 	}
 }
 
-// theme show <name> shows the theme as loaded (declared slots only), and the
+// theme emit <name> shows the theme as loaded (declared slots only), and the
 // env emission round-trips the old converter path.
-func TestThemeShowNamed(t *testing.T) {
+func TestThemeEmitNamed(t *testing.T) {
 	isolateThemeXDG(t)
-	out, _, code := run(t, "theme", "show", "cargo")
+	out, _, code := run(t, "theme", "emit", "cargo")
 	if code != 0 {
-		t.Fatalf("theme show cargo exit = %d", code)
+		t.Fatalf("theme emit cargo exit = %d", code)
 	}
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
 	if len(lines) != 8 {
 		t.Fatalf("cargo declares 8 slots, rendered %d:\n%s", len(lines), out)
 	}
 
-	env, _, code := run(t, "theme", "show", "cargo", "--format", "env")
+	env, _, code := run(t, "theme", "emit", "cargo", "--format", "env")
 	if code != 0 {
 		t.Fatalf("--format env exit = %d", code)
 	}
@@ -153,9 +154,9 @@ func TestThemeShowNamed(t *testing.T) {
 }
 
 // slot=value operands override on top; toml emission carries them.
-func TestThemeShowOverrides(t *testing.T) {
+func TestThemeEmitOverrides(t *testing.T) {
 	isolateThemeXDG(t)
-	out, _, code := run(t, "theme", "show", "cargo", "section1=bold yellow", "--format", "toml")
+	out, _, code := run(t, "theme", "emit", "cargo", "section1=bold yellow", "--format", "toml")
 	if code != 0 {
 		t.Fatalf("exit = %d", code)
 	}
@@ -167,18 +168,126 @@ func TestThemeShowOverrides(t *testing.T) {
 // Operand mistakes are usage errors (exit 2): a bad slot, a bad value, two
 // bare refs. An unknown theme is a not-found refusal (exit 1, per the #47
 // ruling: exit 2 is reserved for malformed invocation).
-func TestThemeShowErrors(t *testing.T) {
+func TestThemeEmitErrors(t *testing.T) {
 	isolateThemeXDG(t)
-	if _, _, code := run(t, "theme", "show", "bogus_slot=red"); code != 2 {
+	if _, _, code := run(t, "theme", "emit", "bogus_slot=red"); code != 2 {
 		t.Errorf("unknown slot exit = %d, want 2", code)
 	}
-	if _, _, code := run(t, "theme", "show", "success2=notacolor"); code != 2 {
+	if _, _, code := run(t, "theme", "emit", "success2=notacolor"); code != 2 {
 		t.Errorf("bad value exit = %d, want 2", code)
 	}
-	if _, _, code := run(t, "theme", "show", "cargo", "catppuccin-mocha"); code != 2 {
+	if _, _, code := run(t, "theme", "emit", "cargo", "catppuccin-mocha"); code != 2 {
 		t.Errorf("two refs exit = %d, want 2", code)
 	}
-	if _, errs, code := run(t, "theme", "show", "no-such-theme"); code != 1 {
+	if _, errs, code := run(t, "theme", "emit", "no-such-theme"); code != 1 {
 		t.Errorf("unknown theme exit = %d, want 1 (stderr: %s)", code, errs)
+	}
+}
+
+// theme slots prints all fourteen slots in canonical §3.3 order on stdout, with
+// descriptions sourced from the code-owned Role mapping. The column header is
+// commentary: stderr, never stdout (O1).
+func TestThemeSlots(t *testing.T) {
+	isolateThemeXDG(t)
+	out, errs, code := run(t, "theme", "slots")
+	if code != 0 {
+		t.Fatalf("theme slots exit = %d", code)
+	}
+	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	if len(lines) != 14 {
+		t.Fatalf("theme slots printed %d rows, want 14:\n%s", len(lines), out)
+	}
+	want := []string{
+		"section1", "section2", "name1", "name2", "value1", "value2",
+		"error1", "error2", "warning1", "warning2", "success1", "success2", "info1", "info2",
+	}
+	for i, w := range want {
+		if !strings.HasPrefix(lines[i], w) {
+			t.Errorf("row %d = %q, want the %q slot (canonical §3.3 order)", i, lines[i], w)
+		}
+	}
+	// The description enumerates the slot's state consumers, from the mapping.
+	var error1Line string
+	for _, ln := range lines {
+		if strings.HasPrefix(ln, "error1") {
+			error1Line = ln
+		}
+	}
+	if !strings.Contains(error1Line, "damaged") || !strings.Contains(error1Line, "contradicted") {
+		t.Errorf("error1 row omits its state consumers: %q", error1Line)
+	}
+
+	// The header is commentary: stderr, never stdout (O1).
+	if !strings.Contains(errs, "Slot") || !strings.Contains(errs, "Description") {
+		t.Errorf("stderr missing the two-column header: %q", errs)
+	}
+	if strings.Contains(out, "Description") {
+		t.Errorf("header leaked onto stdout:\n%s", out)
+	}
+}
+
+// --quiet drops the header (O7); the fourteen data rows survive unchanged.
+func TestThemeSlotsQuiet(t *testing.T) {
+	isolateThemeXDG(t)
+	out, _, _ := run(t, "theme", "slots")
+	qout, qerrs, code := run(t, "-q", "theme", "slots")
+	if code != 0 {
+		t.Fatalf("theme slots -q exit = %d", code)
+	}
+	if strings.Contains(qerrs, "Slot") {
+		t.Errorf("--quiet should drop the header: %q", qerrs)
+	}
+	if qout != out {
+		t.Errorf("--quiet changed the data rows")
+	}
+}
+
+// The slot names render through their own effective style when color is forced:
+// section1's default is bold brightgreen, so its name is styled 1;92.
+func TestThemeSlotsColorized(t *testing.T) {
+	isolateThemeXDG(t)
+	cout, _, code := run(t, "--color", "always", "theme", "slots")
+	if code != 0 {
+		t.Fatalf("theme slots exit = %d", code)
+	}
+	if !strings.Contains(cout, "\x1b[1;92msection1\x1b[") {
+		t.Errorf("section1 name missing its own-style swatch:\n%q", cout)
+	}
+}
+
+// --json emits a per-slot object array: slot, description, and the derived
+// consumer list; all fourteen present, error1 carries its state consumers, and
+// a slot no internal consumes carries an empty consumers array.
+func TestThemeSlotsJSON(t *testing.T) {
+	isolateThemeXDG(t)
+	out, _, code := run(t, "theme", "slots", "--json")
+	if code != 0 {
+		t.Fatalf("theme slots --json exit = %d", code)
+	}
+	var rows []struct {
+		Slot        string   `json:"slot"`
+		Description string   `json:"description"`
+		Consumers   []string `json:"consumers"`
+	}
+	if err := json.Unmarshal([]byte(out), &rows); err != nil {
+		t.Fatalf("theme slots --json is not valid JSON: %v\n%s", err, out)
+	}
+	if len(rows) != 14 {
+		t.Fatalf("--json has %d slots, want 14", len(rows))
+	}
+	byName := map[string][]string{}
+	for _, r := range rows {
+		byName[r.Slot] = r.Consumers
+		if r.Consumers == nil {
+			t.Errorf("slot %q consumers marshaled as null, want []", r.Slot)
+		}
+	}
+	for _, want := range []string{"damaged", "contradicted", "error"} {
+		if !contains(byName["error1"], want) {
+			t.Errorf("error1 consumers %v missing %q", byName["error1"], want)
+		}
+	}
+	if len(byName["section2"]) != 0 {
+		t.Errorf("section2 consumers = %v, want empty", byName["section2"])
 	}
 }

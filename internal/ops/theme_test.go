@@ -10,13 +10,13 @@ import (
 	"github.com/rocne/dstow/internal/ui"
 )
 
-// theme show <name> --format env resolves a bundled preset and packs it: a
+// theme emit <name> --format env resolves a bundled preset and packs it: a
 // complete preset yields all fourteen slots, ':'-joined, parseable back.
-func TestThemeShowEnv(t *testing.T) {
+func TestThemeEmitEnv(t *testing.T) {
 	app := &ops.App{}
-	res, err := app.ThemeShow("catppuccin-mocha", nil, nil, ops.ColorFormatEnv)
+	res, err := app.ThemeEmit("catppuccin-mocha", nil, nil, ops.ColorFormatEnv)
 	if err != nil {
-		t.Fatalf("ThemeShow: %v", err)
+		t.Fatalf("ThemeEmit: %v", err)
 	}
 	if res.Ref != "catppuccin-mocha" || res.Format != ops.ColorFormatEnv {
 		t.Errorf("result metadata = %q/%v", res.Ref, res.Format)
@@ -35,12 +35,12 @@ func TestThemeShowEnv(t *testing.T) {
 	}
 }
 
-// theme show <name> --format toml emits the theme-file schema, reloadable.
-func TestThemeShowTOML(t *testing.T) {
+// theme emit <name> --format toml emits the theme-file schema, reloadable.
+func TestThemeEmitTOML(t *testing.T) {
 	app := &ops.App{}
-	res, err := app.ThemeShow("catppuccin-mocha", nil, nil, ops.ColorFormatTOML)
+	res, err := app.ThemeEmit("catppuccin-mocha", nil, nil, ops.ColorFormatTOML)
 	if err != nil {
-		t.Fatalf("ThemeShow: %v", err)
+		t.Fatalf("ThemeEmit: %v", err)
 	}
 	if !strings.Contains(res.Text, "section1 = ") || !strings.Contains(res.Text, "info2 = ") {
 		t.Errorf("TOML output missing expected slot lines:\n%s", res.Text)
@@ -63,13 +63,13 @@ func TestThemeShowTOML(t *testing.T) {
 	}
 }
 
-// A bare theme show renders the effective stack the caller composed; the
+// A bare theme emit renders the effective stack the caller composed; the
 // default rendered format serializes no Text (cli styles res.Theme itself).
-func TestThemeShowEffective(t *testing.T) {
+func TestThemeEmitEffective(t *testing.T) {
 	app := &ops.App{}
-	res, err := app.ThemeShow("", ui.DeriveTiers(ui.DefaultPalette()), nil, ops.ColorFormatRendered)
+	res, err := app.ThemeEmit("", ui.DeriveTiers(ui.DefaultPalette()), nil, ops.ColorFormatRendered)
 	if err != nil {
-		t.Fatalf("ThemeShow: %v", err)
+		t.Fatalf("ThemeEmit: %v", err)
 	}
 	if len(res.Theme) != 14 {
 		t.Errorf("effective theme has %d slots, want 14", len(res.Theme))
@@ -80,15 +80,15 @@ func TestThemeShowEffective(t *testing.T) {
 }
 
 // Overrides layer on top of the resolved base — the top of the stack.
-func TestThemeShowOverrides(t *testing.T) {
+func TestThemeEmitOverrides(t *testing.T) {
 	over, warns := ui.ParseDSTOWColors("success2=red")
 	if len(warns) != 0 {
 		t.Fatal(warns)
 	}
 	app := &ops.App{}
-	res, err := app.ThemeShow("catppuccin-mocha", nil, over, ops.ColorFormatEnv)
+	res, err := app.ThemeEmit("catppuccin-mocha", nil, over, ops.ColorFormatEnv)
 	if err != nil {
-		t.Fatalf("ThemeShow: %v", err)
+		t.Fatalf("ThemeEmit: %v", err)
 	}
 	if !strings.Contains(res.Text, "success2=red") {
 		t.Errorf("override lost: %q", res.Text)
@@ -96,11 +96,68 @@ func TestThemeShowOverrides(t *testing.T) {
 }
 
 // An unresolvable theme name refuses (error), naming the remedy in ui's terms.
-func TestThemeShowNotFound(t *testing.T) {
+func TestThemeEmitNotFound(t *testing.T) {
 	app := &ops.App{}
-	if _, err := app.ThemeShow("no-such-theme", nil, nil, ops.ColorFormatEnv); err == nil {
+	if _, err := app.ThemeEmit("no-such-theme", nil, nil, ops.ColorFormatEnv); err == nil {
 		t.Fatal("expected an error for an unknown theme")
 	}
+}
+
+// ThemeSlots returns all fourteen slots in canonical §3.3 order, each with its
+// derived consumer list. The consumers come from ui's code-owned Role mapping,
+// so error1 must carry damaged and contradicted (the states that share it) and
+// section1 must carry no state (heading is a prose role, folded into the gloss).
+func TestThemeSlots(t *testing.T) {
+	app := &ops.App{}
+	res := app.ThemeSlots()
+	if len(res.Rows) != 14 {
+		t.Fatalf("slot reference has %d rows, want 14", len(res.Rows))
+	}
+	want := []string{
+		"section1", "section2", "name1", "name2", "value1", "value2",
+		"error1", "error2", "warning1", "warning2", "success1", "success2", "info1", "info2",
+	}
+	for i, w := range want {
+		if res.Rows[i].Slot != w {
+			t.Errorf("row %d = %q, want %q (canonical §3.3 order)", i, res.Rows[i].Slot, w)
+		}
+	}
+
+	byName := map[string]ops.ThemeSlotRow{}
+	for _, r := range res.Rows {
+		byName[r.Slot] = r
+	}
+	// error1's consumers are derived from roleSlot: error, damaged, contradicted.
+	if !hasAll(byName["error1"].Consumers, "damaged", "contradicted", "error") {
+		t.Errorf("error1 consumers = %v, want error/damaged/contradicted", byName["error1"].Consumers)
+	}
+	// The description enumerates the state/class consumers verbatim.
+	if !strings.Contains(byName["error1"].Description, "damaged") ||
+		!strings.Contains(byName["error1"].Description, "contradicted") {
+		t.Errorf("error1 description omits its state consumers: %q", byName["error1"].Description)
+	}
+	// A slot no internal consumes has an empty consumer list, never nil.
+	if s2 := byName["section2"]; len(s2.Consumers) != 0 || s2.Consumers == nil {
+		t.Errorf("section2 consumers = %#v, want an empty non-nil slice", s2.Consumers)
+	}
+	// A tier-2 slot notes its derivation (§7.3).
+	if !strings.Contains(byName["error2"].Description, "derives from error1") {
+		t.Errorf("error2 description omits the tier-derivation note: %q", byName["error2"].Description)
+	}
+}
+
+// hasAll reports whether every want string is present in got.
+func hasAll(got []string, want ...string) bool {
+	set := map[string]bool{}
+	for _, g := range got {
+		set[g] = true
+	}
+	for _, w := range want {
+		if !set[w] {
+			return false
+		}
+	}
+	return true
 }
 
 // ThemeList enumerates the bundled roster with origins; no Global means no

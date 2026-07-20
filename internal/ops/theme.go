@@ -5,7 +5,7 @@ import (
 	"github.com/rocne/dstow/internal/ui"
 )
 
-// ColorFormat selects how ThemeShow serializes its result (§2.4 theme). The
+// ColorFormat selects how ThemeEmit serializes its result (§2.4 theme). The
 // zero value is the rendered human view (cli styles each slot from the result
 // theme); a format flag never changes the concept (the --json precedent), so
 // cli spells the flag and hands the choice in.
@@ -55,11 +55,11 @@ func (a *App) ThemeList() *ThemeListResult {
 	return &ThemeListResult{Rows: rows}
 }
 
-// ThemeShowResult is a theme's colors as data (A4): the ref asked for ("" =
+// ThemeEmitResult is a theme's colors as data (A4): the ref asked for ("" =
 // the effective stack), the format chosen, the resulting slot→style map (what
 // cli renders for the default view), the serialized text for the machine
 // formats, and any warn-and-skip diagnostics the theme load raised.
-type ThemeShowResult struct {
+type ThemeEmitResult struct {
 	Ref      string
 	Format   ColorFormat
 	Theme    ui.Theme
@@ -67,7 +67,7 @@ type ThemeShowResult struct {
 	Warnings []Warning
 }
 
-// ThemeShow resolves the colors to show (§2.4 theme show, A5) and serializes
+// ThemeEmit resolves the colors to emit (§2.4 theme emit, A5) and serializes
 // them per format. A named ref loads through ui's single theme loader — a
 // path, a user preset, or a bundled preset — and shows the theme AS LOADED
 // (its declared slots); an empty ref shows the effective §7.3 stack, which
@@ -76,9 +76,9 @@ type ThemeShowResult struct {
 // stack, like DSTOW_COLORS. A missing or unreadable theme is a refusal
 // (error); a malformed slot inside a resolvable theme is a warn-and-skip,
 // carried in Warnings.
-func (a *App) ThemeShow(ref string, effective ui.Theme, overrides ui.Theme, format ColorFormat) (*ThemeShowResult, error) {
+func (a *App) ThemeEmit(ref string, effective ui.Theme, overrides ui.Theme, format ColorFormat) (*ThemeEmitResult, error) {
 	base := effective
-	res := &ThemeShowResult{Ref: ref, Format: format}
+	res := &ThemeEmitResult{Ref: ref, Format: format}
 	if ref != "" {
 		theme, warns, err := ui.LoadTheme(ref, config.UserThemesDir())
 		if err != nil {
@@ -100,6 +100,39 @@ func (a *App) ThemeShow(ref string, effective ui.Theme, overrides ui.Theme, form
 		res.Text = ui.PackDSTOWColors(res.Theme)
 	}
 	return res, nil
+}
+
+// ThemeSlotRow is one slot in the theme slots reference (#116): the slot name,
+// what it colors, and the stage-2 roles that render through it. cli styles Name
+// in the slot's own effective style — the name doubles as a live swatch (the
+// theme list precedent).
+type ThemeSlotRow struct {
+	Slot        string
+	Description string
+	Consumers   []string
+}
+
+// ThemeSlotsResult is the slot reference as data (A4): all fourteen slots in
+// canonical §3.3 order.
+type ThemeSlotsResult struct {
+	Rows []ThemeSlotRow
+}
+
+// ThemeSlots returns the fourteen-slot vocabulary reference (§2.4 theme slots,
+// #116): each generic slot, what it colors, and its consumers — sourced from
+// ui's code-owned Role mapping so the reference cannot drift from it. It is pure
+// vocabulary; no config or repo set is needed.
+func (a *App) ThemeSlots() *ThemeSlotsResult {
+	docs := ui.SlotReference()
+	rows := make([]ThemeSlotRow, len(docs))
+	for i, d := range docs {
+		cons := make([]string, len(d.Consumers))
+		for j, r := range d.Consumers {
+			cons[j] = string(r)
+		}
+		rows[i] = ThemeSlotRow{Slot: string(d.Slot), Description: d.Description, Consumers: cons}
+	}
+	return &ThemeSlotsResult{Rows: rows}
 }
 
 // warnUI converts ui warnings (Source + Detail, no Fix) into ops warnings.

@@ -221,6 +221,26 @@ type jsonFinding struct {
 	Evidence    string `json:"evidence"`
 }
 
+// --- theme slots ---
+
+type jsonSlot struct {
+	Slot        string   `json:"slot"`
+	Description string   `json:"description"`
+	Consumers   []string `json:"consumers"`
+}
+
+func slotsJSON(res *ops.ThemeSlotsResult) any {
+	rows := make([]jsonSlot, 0, len(res.Rows))
+	for _, r := range res.Rows {
+		cons := r.Consumers
+		if cons == nil {
+			cons = []string{}
+		}
+		rows = append(rows, jsonSlot{Slot: r.Slot, Description: r.Description, Consumers: cons})
+	}
+	return rows
+}
+
 func checkJSON(rep *ops.CheckReport) any {
 	fs := make([]jsonFinding, 0, len(rep.Findings))
 	for _, f := range rep.Findings {

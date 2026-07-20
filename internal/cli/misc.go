@@ -58,9 +58,10 @@ func (e *env) newSnippetCmd() *cobra.Command {
 	return cmd
 }
 
-// newThemeCmd builds the theme group (§2.4): list enumerates the roster, show
-// renders colors — the effective stack bare, a named theme by ref, slot=value
-// overrides on top — and emits them for machines via --format env|toml.
+// newThemeCmd builds the theme group (§2.4): list enumerates the roster, slots
+// describes the vocabulary, emit renders colors — the effective stack bare, a
+// named theme by ref, slot=value overrides on top — and emits them for machines
+// via --format env|toml.
 func (e *env) newThemeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "theme",
@@ -73,7 +74,7 @@ func (e *env) newThemeCmd() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	cmd.AddCommand(e.newThemeListCmd(), e.newThemeShowCmd())
+	cmd.AddCommand(e.newThemeListCmd(), e.newThemeSlotsCmd(), e.newThemeEmitCmd())
 	return cmd
 }
 
@@ -126,18 +127,76 @@ func (e *env) newThemeListCmd() *cobra.Command {
 	}
 }
 
-// newThemeShowCmd builds theme show. Operands: at most one bare ref (a theme
+// newThemeSlotsCmd builds theme slots: the slot vocabulary reference (#116) —
+// all fourteen generic slots in canonical §3.3 order, each name rendered in its
+// own effective style (a live swatch), with what it colors and its stage-2
+// consumers. The long help carries the value-grammar enumeration; --json emits
+// the reference for machines.
+func (e *env) newThemeSlotsCmd() *cobra.Command {
+	var asJSON bool
+	cmd := &cobra.Command{
+		Use:   "slots",
+		Short: themeSlotsShort,
+		Long:  slotsLong,
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// The slot names render in their own effective style, so the full
+			// §7.3 stack is composed just as the bare emit view does.
+			global, warnings, err := e.loadGlobal()
+			if err != nil {
+				e.renderWarnings(warnings)
+				return err
+			}
+			effective := e.composeStack(global, &warnings)
+			e.renderWarnings(warnings)
+
+			res := (&ops.App{}).ThemeSlots()
+
+			if asJSON {
+				return e.writeJSON(slotsJSON(res))
+			}
+
+			// The two-column header is commentary: heading-styled, on stderr
+			// (O1), dropped by --quiet (O7) — piped stdout stays pure rows.
+			const slotHead, descHead = "Slot", "Description"
+			width := len(slotHead)
+			for _, row := range res.Rows {
+				if len(row.Slot) > width {
+					width = len(row.Slot)
+				}
+			}
+			if !e.quiet {
+				head := fmt.Sprintf("%-*s  %s", width, slotHead, descHead)
+				e.pr().Err().Printf("%s\n", e.pr().Err().Style(ui.RoleHeading, head))
+			}
+			// Pad on the plain slot name, then style: ANSI bytes must not count
+			// against the column width (the theme list precedent).
+			out := e.pr().Out()
+			for _, row := range res.Rows {
+				st := effective[ui.Slot(row.Slot)]
+				name := out.StyleWith(st, row.Slot)
+				out.Println(name + strings.Repeat(" ", width-len(row.Slot)) + "  " + row.Description)
+			}
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Machine-readable slot reference")
+	return cmd
+}
+
+// newThemeEmitCmd builds theme emit. Operands: at most one bare ref (a theme
 // name or path; absent = the effective §7.3 stack) plus any number of
 // slot=value overrides, layered on top. The default output renders each slot's
 // value in its own style; --format env|toml emits for machines.
-func (e *env) newThemeShowCmd() *cobra.Command {
+func (e *env) newThemeEmitCmd() *cobra.Command {
 	var format string
 	cmd := &cobra.Command{
-		Use:               "show [theme] [slot=value ...]",
-		Short:             themeShowShort,
-		Example:           themeExample,
+		Use:               "emit [theme] [slot=value ...]",
+		Short:             themeEmitShort,
+		Long:              emitLong,
+		Example:           emitExample,
 		Args:              cobra.ArbitraryArgs,
-		ValidArgsFunction: completeThemeShow,
+		ValidArgsFunction: completeThemeEmit,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			f, err := parseColorFormat(format)
 			if err != nil {
@@ -172,7 +231,7 @@ func (e *env) newThemeShowCmd() *cobra.Command {
 				effective = e.composeStack(global, &warnings)
 			}
 
-			res, err := (&ops.App{}).ThemeShow(ref, effective, overrides, f)
+			res, err := (&ops.App{}).ThemeEmit(ref, effective, overrides, f)
 			if err != nil {
 				e.renderWarnings(warnings)
 				return err
@@ -209,10 +268,10 @@ func (e *env) newThemeShowCmd() *cobra.Command {
 	return cmd
 }
 
-// completeThemeShow completes theme show operands (A20, best-effort-silent):
+// completeThemeEmit completes theme emit operands (A20, best-effort-silent):
 // theme names (only while no bare ref is present yet) and slot= override
 // stems.
-func completeThemeShow(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeThemeEmit(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	var out []string
 	hasRef := false
 	for _, a := range args {

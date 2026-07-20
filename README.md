@@ -258,7 +258,8 @@ dstow repo upgrade [<repo>…]         # fast-forward clean clones to what updat
 
 dstow snippet rc                     # print the shell-rc bootstrap snippet
 dstow theme list                     # list available themes
-dstow theme show [<name>] [slot=value ...] [--format env|toml]   # show / emit colors
+dstow theme slots                    # describe every color slot and the value grammar
+dstow theme emit [<name>] [slot=value ...] [--format env|toml]   # render / emit colors
 ```
 
 - **`repo update` and `repo upgrade` are two explicit phases; neither runs on
@@ -408,7 +409,7 @@ Themes layer, top wins:
    ```sh
    export DSTOW_COLORS='error1=bold red:success2=#a6e3a1'
    # or generate a whole theme:
-   export DSTOW_COLORS=$(dstow theme show catppuccin-mocha --format env)
+   export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)
    ```
 
 2. **The `[color]` table** in global config — one key per slot, same grammar:
@@ -449,10 +450,11 @@ grammar, so they are losslessly convertible:
 
 ```sh
 dstow theme list                                          # the roster: name, origin, active
-dstow theme show                                          # the effective palette, rendered
-dstow theme show catppuccin-mocha                         # a named theme, rendered
-dstow theme show catppuccin-mocha --format env            # packed DSTOW_COLORS string
-dstow theme show cargo section1='bold yellow' --format toml \
+dstow theme slots                                         # every slot, what it colors, its consumers
+dstow theme emit                                          # the effective palette, rendered
+dstow theme emit catppuccin-mocha                         # a named theme, rendered
+dstow theme emit catppuccin-mocha --format env            # packed DSTOW_COLORS string
+dstow theme emit cargo section1='bold yellow' --format toml \
   > ~/.config/dstow/themes/mine.toml                      # a tweaked theme file
 ```
 
@@ -462,7 +464,38 @@ The color slots come in two groups. Content: `section1` `section2` (headings),
 four families, two prominence tiers each (1 is louder). A slot you leave
 undeclared derives from its family's tier-1 (bold is removed, or dim added), so
 a sparse theme stays coherent. A theme file is exactly the bare `[color]`
-schema — no wrapper keys.
+schema — no wrapper keys. `dstow theme slots` prints the whole vocabulary with
+each slot's consumers, and its `--help` carries the full value grammar.
+
+### Color values
+
+Slot values are git's `color.*` grammar — whitespace-separated words, in any
+order:
+
+| Form | Words | Notes |
+|---|---|---|
+| Foreground / background | a color word | first color is the foreground, the second the background; a third is an error |
+| Basic colors | `black` `red` `green` `yellow` `blue` `magenta` `cyan` `white` | plus their `bright*` variants (`brightred`, …) |
+| 256-color | an integer `0`–`255` | |
+| True color | `#RRGGBB` hex | |
+| `normal` | leaves a channel to the **terminal** | see below |
+| `default` | resets a channel to the terminal default | emits `SGR 39/49` |
+| Attributes | `bold` `dim` `italic` `ul` `blink` `reverse` `strike` | any number; each negatable with `no`/`no-` (`nobold`), which renders as nothing |
+| `reset` | clears first | |
+
+Background without touching the foreground: put `normal` in the foreground slot
+— `normal red` is a red background, foreground left alone.
+
+`normal` and `default` are not the same, and neither means "dstow's default":
+
+- **`normal`** leaves the channel to the terminal and emits no code. A slot you
+  declare `normal` is a declaration like any other — it **replaces** dstow's
+  default for that slot wholesale (themes are top-wins), so the slot renders
+  plain.
+- **`default`** actively emits the terminal-default code (`SGR 39/49`) rather
+  than nothing.
+- The only way to keep **dstow's** default for a slot is to leave it
+  undeclared, so it falls through the stack to the default palette.
 
 ---
 
