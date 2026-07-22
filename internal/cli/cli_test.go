@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -151,6 +152,31 @@ func TestNameGroup(t *testing.T) {
 		if !strings.Contains(h, "Examples:") || !strings.Contains(h, "dstow name "+leaf) {
 			t.Errorf("name %s help carries no example:\n%s", leaf, h)
 		}
+	}
+}
+
+// TestListReposHumanRowTerse guards audit finding A3: the human `list --repos`
+// row is the repo's name, its (~-abbreviated) path, and status markers — not
+// the source/scheme the flag help and list.md once promised. `list` enumerates;
+// `info` reports fields, and source/scheme live there and in --json. If the row
+// ever grows a scheme-qualified column, the FQN prefix ("local:") reappears here
+// and this fails, forcing the docs to be updated alongside it.
+func TestListReposHumanRowTerse(t *testing.T) {
+	isolateXDG(t)
+	repoDir := filepath.Join(os.Getenv("HOME"), "dots")
+	mkdirs(t, filepath.Join(repoDir, "zsh"))
+	t.Setenv("DSTOW_PATH", repoDir)
+
+	out, _, code := run(t, "list", "--repos")
+	if code != 0 {
+		t.Fatalf("list --repos exit = %d", code)
+	}
+	if got := normWS(out); got != "dots ~/dots (session)" {
+		t.Errorf("human repo row = %q, want %q", got, "dots ~/dots (session)")
+	}
+	// The scheme-qualified FQN is a --json / info concern, never the human row.
+	if strings.Contains(out, "local:") {
+		t.Errorf("human list --repos row leaked the scheme-qualified FQN: %q", out)
 	}
 }
 
