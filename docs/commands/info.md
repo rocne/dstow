@@ -11,8 +11,8 @@ status's job). The scope is the global installation (named by no operand),
 a repo, or a package.
 
 With no name, details the global scope. Fields come in two groups: inherent
-facts of the thing as it exists (version and paths; a package's repo, source,
-scheme, managed path, qualified name) — permanently read-only — and
+facts of the thing as it exists (version and paths; a package's repo, scheme,
+managed path, qualified name) — permanently read-only — and
 configured values from the config chain (effective target, dot-translation,
 fold, ignores). The full human view prints the inherent group first, then
 the configured group.
@@ -27,6 +27,6 @@ Exit status:
 <!-- dstow:examples -->
   dstow info                       # the global scope
   dstow info zsh
-  dstow info dotfiles -f source -f scheme
+  dstow info dotfiles -f qualified-name -f scheme
   dstow info -r -f target          # target across every scope
 <!-- /dstow:examples -->
