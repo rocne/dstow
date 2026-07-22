@@ -209,3 +209,20 @@ The never-stowed, dstow-claimed directory carrying a scope's metadata:
 XDG config directory. Auto-ignored by the engine at package roots — its
 contents are never deployed. Its top level is reserved territory: dstow claims
 the names inside it; unknown entries draw warnings, never refusals.
+
+### Manual
+
+dstow's user-facing documentation, embedded in the binary and reachable as
+commands: the tracked `docs/` tree mirrored into a hidden `manual` group, one
+node per file. A *topic* is one node — a directory (whose `index.md` is both
+its table of contents and its content) or a markdown leaf. Filenames are
+command spellings exactly.
+
+The manual is the single owner of user-facing prose, help text included: a
+command's page under `docs/commands/` is simultaneously its manual page and
+the source of its `--help`, extracted from tagged regions, so the two cannot
+disagree. Prose outside those regions is manual-only.
+
+"Manual" is the whole tree; "help" is what cobra renders for one command.
+Internal documents — design, requirements, ADRs, agent workflow — are not the
+manual and live in `dev/`.

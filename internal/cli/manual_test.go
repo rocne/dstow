@@ -262,6 +262,75 @@ func TestManualHiddenEntryPoint(t *testing.T) {
 	}
 }
 
+// TestManualNodesNameTheirChildren asserts the navigability property the tree
+// exists for: a node's index.md is its directory's table of contents as well as
+// its content (§2.1's carve-out), so a topic the parent never names is a topic
+// only tab completion can find — and the requirement is that dstow be learnable
+// from the command line, which means learnable by reading.
+//
+// It asserts mention, not format. Whether a parent lists its children as a
+// bulleted "## Topics" section, a table, or a sentence is a prose decision with
+// no mechanical consequence — the same property the help tags buy per-command.
+// The gate is only that the name appears at all.
+func TestManualNodesNameTheirChildren(t *testing.T) {
+	err := fs.WalkDir(dstow.Manual, manualDir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || !d.IsDir() {
+			return err
+		}
+		index, err := fs.ReadFile(dstow.Manual, path.Join(p, manualIndex))
+		if err != nil {
+			return err // the missing-index.md case is TestManualMirrorsEmbeddedTree's
+		}
+		entries, err := fs.ReadDir(dstow.Manual, p)
+		if err != nil {
+			return err
+		}
+		for _, entry := range entries {
+			child := strings.TrimSuffix(entry.Name(), manualExt)
+			if child == strings.TrimSuffix(manualIndex, manualExt) {
+				continue
+			}
+			if !mentions(string(index), child) {
+				t.Errorf("%s never names its child topic %q: a reader of the parent cannot find it",
+					path.Join(p, manualIndex), child)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk embedded docs/: %v", err)
+	}
+}
+
+// mentions reports whether text names word as a whole word — so a topic called
+// "list" is not satisfied by the word "listing", and one called "keys" is not
+// satisfied by "monkeys".
+func mentions(text, word string) bool {
+	for i := 0; ; {
+		j := strings.Index(text[i:], word)
+		if j < 0 {
+			return false
+		}
+		start := i + j
+		end := start + len(word)
+		if !isWordByte(text, start-1) && !isWordByte(text, end) {
+			return true
+		}
+		i = start + 1
+	}
+}
+
+// isWordByte reports whether the byte at i is part of a word (so a match
+// touching it is a substring of something longer). Out-of-range is not.
+func isWordByte(s string, i int) bool {
+	if i < 0 || i >= len(s) {
+		return false
+	}
+	c := s[i]
+	return c == '_' || c == '-' ||
+		('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9')
+}
+
 // walkCommands visits cmd and every descendant, passing each one's full command
 // path ("manual commands repo add").
 func walkCommands(cmd *cobra.Command, prefix string, visit func(*cobra.Command, string)) {

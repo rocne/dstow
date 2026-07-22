@@ -81,4 +81,42 @@ if [ "$code" != "2" ]; then
   exit 1
 fi
 
+# The five topics an agent cannot learn from the binary any other way (#131).
+# Asserted as reachable command paths, never by their prose: the requirement is
+# that dstow be fully learnable from the command line alone, and reachability is
+# exactly what that requires of the tree. What each page SAYS is the authors',
+# and this exerciser stays out of it.
+for topic in \
+  'reference exit-codes' \
+  'configuration keys' \
+  'reference environment' \
+  'hooks context' \
+  'concepts states'
+do
+  # shellcheck disable=SC2086
+  page=$(dstow manual $topic) || {
+    printf 'FAIL: dstow manual %s exited nonzero; the topic is unreachable\n' "$topic"
+    exit 1
+  }
+  case $page in
+    '#'*) ;;
+    *) printf 'FAIL: dstow manual %s did not print its markdown page\n' "$topic"; exit 1 ;;
+  esac
+done
+
+# Each of those is reachable by walking from the root, not only by knowing the
+# path: a parent completes the child that follows it. This is the navigational
+# claim docs/index.md makes ("run dstow manual <topic>, then follow what it
+# lists"), checked at the surface an agent actually uses.
+for parent in reference configuration hooks concepts commands; do
+  if ! dstow __complete manual "$parent" 2>/dev/null | grep -q "^$parent"; then
+    printf 'FAIL: dstow manual <TAB> does not offer the topic %s\n' "$parent"
+    exit 1
+  fi
+  if ! dstow __complete manual "$parent" '' >/dev/null 2>&1; then
+    printf 'FAIL: dstow manual %s <TAB> does not complete its children\n' "$parent"
+    exit 1
+  fi
+done
+
 printf 'PASS: the manual tree is reachable, raw, and hidden from the top level\n'
