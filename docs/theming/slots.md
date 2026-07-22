@@ -56,12 +56,16 @@ code-owned mapping sends each internal concept to a slot:
 
 | Slot | dstow concepts that render in it |
 |---|---|
-| `error1` | `damaged`, `contradicted` |
+| `section1` | `heading` |
+| `name1` | `name` |
+| `value2` | `muted` |
+| `error1` | `damaged`, `contradicted`, `error` |
 | `error2` | `broken` |
+| `warning1` | `warning` |
 | `warning2` | `partially stowed`, `drifted`, `orphaned` |
 | `success2` | `stowed` |
-| `info1` | `occupied` |
-| `info2` | `not stowed` |
+| `info1` | `occupied`, `fix` |
+| `info2` | `not stowed`, `note` |
 
 Two identities in that table are structural rather than incidental:
 
