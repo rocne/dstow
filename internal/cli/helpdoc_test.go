@@ -3,6 +3,7 @@ package cli
 import (
 	"io"
 	"io/fs"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -144,6 +145,68 @@ func TestParseHelpDocIgnoresForeignComments(t *testing.T) {
 	if doc.Short != "kept" {
 		t.Errorf("Short = %q", doc.Short)
 	}
+}
+
+// internalRefs are the spellings that name a document the reader does not have.
+// dstow's internal documents live in dev/ and never ship; shipped help that
+// cites them sends the reader somewhere they cannot go.
+//
+// The list is explicit rather than a pattern over dev/: a bare "dev/" also
+// matches /dev/null, which is legitimate content in a hooks example.
+var internalRefs = []*regexp.Regexp{
+	regexp.MustCompile(`§`),                                     // DESIGN/REQUIREMENTS section marks
+	regexp.MustCompile(`\b(DESIGN|REQUIREMENTS|CONTEXT)\.md\b`), // the documents themselves
+	regexp.MustCompile(`\bdev/`),                                // any path into the internal tree
+	regexp.MustCompile(`\b[ABCDHMO][0-9]{1,2}\b`),               // the resolution-ledger codes (A3, C7, M8, H2…)
+}
+
+// TestHelpTextCitesNothingInternal asserts the rule ruled at #131: shipped
+// user-facing text never cites an internal document. The manual ships inside
+// the binary, so a cross-reference has a resolvable form available to it —
+// "dstow manual theming values" — and a §-number does not.
+//
+// This is NOT a resurrection of the designBlock coupling #132 deleted. That
+// asserted help against DESIGN's wording, which made a derivation assert itself
+// against its own source. This asserts a property of the *audience*: whatever
+// the text says, it may not point the reader at a document they do not have.
+// Wording stays entirely the authors'.
+//
+// It gates the tagged regions specifically, because those render into --help,
+// where a dangling reference costs the most. The untagged manual-only prose
+// carries the same rule (docs/ is user-facing since #129) but is the author's
+// to keep — see #141, which authors it across all 26 pages.
+func TestHelpTextCitesNothingInternal(t *testing.T) {
+	isolateXDG(t)
+	e := &env{version: "v1.2.3", stdin: strings.NewReader(""), stdout: io.Discard, stderr: io.Discard}
+	root := e.newRootCmd()
+	if err := applyHelpDocs(dstow.Manual, root); err != nil {
+		t.Fatalf("apply help docs: %v", err)
+	}
+
+	var walk func(cmd *cobra.Command)
+	walk = func(cmd *cobra.Command) {
+		regions := map[string]string{
+			"dstow:short":    cmd.Short,
+			"dstow:long":     cmd.Long,
+			"dstow:examples": cmd.Example,
+		}
+		for region, text := range regions {
+			for _, re := range internalRefs {
+				if hit := re.FindString(text); hit != "" {
+					t.Errorf("%s: %s region cites %q — an internal document the reader does not have; "+
+						"cite the manual instead (e.g. 'dstow manual concepts states')",
+						helpDocPath(cmd), region, hit)
+				}
+			}
+		}
+		for _, child := range cmd.Commands() {
+			if helpDocExempt[child.Name()] {
+				continue
+			}
+			walk(child)
+		}
+	}
+	walk(root)
 }
 
 // TestHelpDocsCoverTheCommandTree asserts the bijection between the live cobra
