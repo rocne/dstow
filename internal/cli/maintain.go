@@ -64,9 +64,10 @@ func (e *env) renderCheck(rep *ops.CheckReport) {
 func (e *env) newCleanCmd() *cobra.Command {
 	var force bool
 	cmd := &cobra.Command{
-		Use:     "clean",
-		GroupID: groupMaintain,
-		Args:    cobra.NoArgs,
+		Use:         "clean",
+		GroupID:     groupMaintain,
+		Annotations: writeCommand(), // H7: refuses from inside a hook
+		Args:        cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runClean(force)
 		},
@@ -130,9 +131,10 @@ func (e *env) renderClean(res *ops.CleanResult) {
 // walk. Its output is commentary (stderr).
 func (e *env) newRebuildCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "rebuild",
-		GroupID: groupMaintain,
-		Args:    cobra.NoArgs,
+		Use:         "rebuild",
+		GroupID:     groupMaintain,
+		Annotations: writeCommand(), // H7: refuses from inside a hook
+		Args:        cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRebuild()
 		},

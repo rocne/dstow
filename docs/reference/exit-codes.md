@@ -60,6 +60,8 @@ changes.
 - **A corrupt ledger**, or one written by a newer dstow than the one running.
   The `fix:` line names `dstow rebuild` for the former.
 - **Lock contention** — another dstow holds the ledger lock.
+- **A write command run from inside a hook.** Reads work from inside one; the
+  write set refuses. See `dstow manual hooks`.
 - **Guards refusing.** `repo remove` on a repo with stowed links; a managed
   clone holding work not present at its source; a fold conflict.
 - **Git-side refusals.** git not installed; a diverged clone that
