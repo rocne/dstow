@@ -66,8 +66,17 @@ changes.
   clone holding work not present at its source; a fold conflict.
 - **Git-side refusals.** git not installed; a diverged clone that
   `repo upgrade` will not fast-forward.
-- **A declined confirmation** at an interactive prompt, where declining means
-  the operation does not happen.
+- **A declined guard or ambiguity prompt** — the two prompts where saying no
+  *is* the refusal: the `repo remove` still-stowed guard (also covered above)
+  and the `repo add` source-interpretation prompt. dstow asked because it could
+  not safely proceed on its own, so declining leaves it unable to act.
+
+Declining any *other* prompt is exit `0`, not `3`. The bulk deploy gate
+("stow every package of every registered repo?"), a `clean` orphan, and an
+`adopt` overwrite of differing content are optional confirmations: say no and
+dstow does nothing and reports success, because doing nothing on request is a
+valid answer, not a refusal. Only the two guard/ambiguity prompts above turn a
+"no" into exit `3`.
 
 ## Scripting patterns
 
