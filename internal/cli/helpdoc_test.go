@@ -1,8 +1,14 @@
 package cli
 
 import (
+	"io"
+	"io/fs"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
+
+	"github.com/rocne/dstow"
 )
 
 // The extractor is asserted on the properties the tag design exists to buy:
@@ -137,5 +143,91 @@ func TestParseHelpDocIgnoresForeignComments(t *testing.T) {
 	}
 	if doc.Short != "kept" {
 		t.Errorf("Short = %q", doc.Short)
+	}
+}
+
+// TestHelpDocsCoverTheCommandTree asserts the bijection between the live cobra
+// tree and docs/commands/: every dstow-defined command has a page, every page
+// is some command's page, and every page carries the regions help needs. This
+// is the whole completeness gate — it runs here rather than at startup, because
+// a docs tree that has drifted from the command tree is a repo defect, and
+// checking it in a built binary would only ship users the breakage.
+//
+// Nothing about prose is asserted. Headings, ordering, and wording are the
+// authors' (issue #131); the coupling this replaces asserted all three, which
+// is what made it fragile.
+func TestHelpDocsCoverTheCommandTree(t *testing.T) {
+	isolateXDG(t)
+	e := &env{version: "v1.2.3", stdin: strings.NewReader(""), stdout: io.Discard, stderr: io.Discard}
+	root := e.newRootCmd()
+
+	// Every command resolves to a page that exists and parses: applyHelpDocs is
+	// the production path, so its error is the assertion — the runtime ignores
+	// it precisely because this test does not.
+	if err := applyHelpDocs(dstow.Manual, root); err != nil {
+		t.Fatalf("docs/commands/ does not cover the live command tree: %v", err)
+	}
+
+	reached := map[string]bool{}
+	var walk func(cmd *cobra.Command)
+	walk = func(cmd *cobra.Command) {
+		page := helpDocPath(cmd)
+		reached[page] = true
+		// Both regions are required of every page. A command whose help is a
+		// bare Short renders nothing under `--help` but its usage, which is the
+		// surface being replaced, not an acceptable outcome of replacing it.
+		if cmd.Short == "" {
+			t.Errorf("%s: %q has an empty dstow:short region", page, cmd.CommandPath())
+		}
+		if cmd.Long == "" {
+			t.Errorf("%s: %q has an empty dstow:long region", page, cmd.CommandPath())
+		}
+		for _, child := range cmd.Commands() {
+			if helpDocExempt[child.Name()] {
+				continue
+			}
+			walk(child)
+		}
+	}
+	walk(root)
+
+	// And no page is an orphan. A page left behind by a deleted or renamed
+	// command is help text nothing renders — drift in the direction the
+	// per-command lookup could never have caught, since it only ever asked for
+	// the pages it already knew about.
+	if err := fs.WalkDir(dstow.Manual, commandsDir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		if !reached[p] {
+			t.Errorf("%s belongs to no command: every page under %s is one command's help", p, commandsDir)
+		}
+		return nil
+	}); err != nil {
+		t.Fatalf("walk %s: %v", commandsDir, err)
+	}
+}
+
+// TestHelpDocPathMirrorsTheCommandTree pins the mapping itself: a group takes
+// its directory's index.md — the same file the manual prints for that node —
+// and a leaf takes a file named for it, at any depth.
+func TestHelpDocPathMirrorsTheCommandTree(t *testing.T) {
+	root := &cobra.Command{Use: "dstow"}
+	leaf := &cobra.Command{Use: "stow <name>..."}
+	group := &cobra.Command{Use: "repo"}
+	nested := &cobra.Command{Use: "add <source>"}
+	group.AddCommand(nested)
+	root.AddCommand(leaf, group)
+
+	cases := map[*cobra.Command]string{
+		root:   "docs/commands/index.md",
+		leaf:   "docs/commands/stow.md",
+		group:  "docs/commands/repo/index.md",
+		nested: "docs/commands/repo/add.md",
+	}
+	for cmd, want := range cases {
+		if got := helpDocPath(cmd); got != want {
+			t.Errorf("helpDocPath(%q) = %q, want %q", cmd.CommandPath(), got, want)
+		}
 	}
 }

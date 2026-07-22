@@ -13,8 +13,6 @@ import (
 func (e *env) newRepoCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "repo",
-		Short:   shorts["repo"],
-		Long:    repoLong,
 		GroupID: groupGroups,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,11 +34,8 @@ func (e *env) newRepoCmd() *cobra.Command {
 func (e *env) newRepoAddCmd() *cobra.Command {
 	var stow bool
 	cmd := &cobra.Command{
-		Use:     "add <source>",
-		Short:   "Register a repo from a source (path, URL, github:owner/name)",
-		Long:    repoAddLong,
-		Example: repoAddExample,
-		Args:    cobra.ExactArgs(1),
+		Use:  "add <source>",
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoAdd(args[0], stow)
 		},
@@ -98,8 +93,6 @@ func (e *env) newRepoRemoveCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "remove <repo>",
-		Short:             "Unregister a repo (deletes managed clones only)",
-		Long:              repoRemoveLong,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: e.completeRepos,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -137,15 +130,8 @@ func (e *env) runRepoRemove(repoName string, unstow, force bool) error {
 // newRepoSyncCmd builds repo update or repo upgrade (§2.4): optional repo
 // operands; empty means every remote repo. A per-repo failure is exit 1.
 func (e *env) newRepoSyncCmd(cmdName string) *cobra.Command {
-	short := "Download remote repo changes; touch nothing on disk"
-	if cmdName == "upgrade" {
-		short = "Fast-forward clean clones to what update downloaded"
-	}
 	cmd := &cobra.Command{
 		Use:               cmdName + " [<repo>...]",
-		Short:             short,
-		Long:              repoSyncLong,
-		Example:           repoSyncExample,
 		ValidArgsFunction: e.completeRepos,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoSync(cmdName, args)

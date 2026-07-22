@@ -111,17 +111,19 @@ by the dependency removal, doorway kept at synthesis.)*
 ## 2. CLI surface
 
 *Resolution: [CLI surface: commands, flags, help text (#22)](https://github.com/rocne/dstow/issues/22);
-full decision ledger D1–D16 there. Help text below is the approved canonical
-content (prototype v2 as amended through 2026-07-16).*
+full decision ledger D1–D16 there. The help content approved there (prototype
+v2 as amended through 2026-07-16) now lives in `docs/commands/`.*
 
-**The §2.3/§2.4 blocks bind content, not bytes** (ruled 2026-07-19 —
-[#96](https://github.com/rocne/dstow/issues/96)): the command inventory, the
-wording of descriptions and prose, the flag roster with its descriptions, and
-the examples are canonical — they are the material *fed into* help
-generation. Layout and rendering belong to cobra's help pipeline (A2 as
-amended): approving the help prototype approved what help *says*, never a
-hand-rendered bypass of the generator. Tests assert content presence against
-these blocks, never byte equality.
+**Help content is owned by the pages under `docs/commands/`**, not by this
+document (ruled 2026-07-22 —
+[Help text derives from docs/commands/ (#132)](https://github.com/rocne/dstow/issues/132)).
+What help *says* — the wording of every description, prose block, and example —
+is the pages'; layout and rendering stay cobra's (A2 as amended —
+[#96](https://github.com/rocne/dstow/issues/96)), and the flag roster stays the
+flag definitions'. DESIGN keeps the shape rule (§2.1), the standing principles
+(§2.2), and the derivation mechanism (§2.3/§2.4). Two owners of the same
+sentence is the condition the ruling removes: prose blocks here would be the
+second one.
 
 ### 2.1 The shape rule
 
@@ -163,13 +165,23 @@ names (`list`, `info`, `status`).
   non-requirement, provided the information is present and reachable. Root
   help carries one footer line naming `dstow manual` — the sole discovery
   affordance, and load-bearing: without it the requirement is unmet.
+- **Two `Short`s, two sources** (ruled 2026-07-22 —
+  [Help text derives from docs/commands/ (#132)](https://github.com/rocne/dstow/issues/132)):
+  a docs node's `Short` is its file's first H1 — the line `dstow manual <TAB>`
+  shows beside each candidate ([#130](https://github.com/rocne/dstow/issues/130)) —
+  while a command's `Short` is its page's `dstow:short` region, the line
+  `dstow --help` lists it by. Same word, two consumers, two sources: a page's
+  H1 names the *page* (`# dstow repo add`) and its `dstow:short` describes the
+  *command*. This is why the `manual` tree is exempt from §2.4's completeness
+  walk — requiring `docs/commands/manual.md` would hand those nodes a second
+  source for a `Short` they already derive.
 - **Root `--version` flag** (ruled at
   [#81](https://github.com/rocne/dstow/issues/81), 2026-07-19): prints
   exactly what `dstow version` prints — one source of truth, two spellings.
   Exists to satisfy the release-ci D30 parse rule (the installer's
   ensure-check and the release smoke parse `dstow --version` line 1); the
-  `version` subcommand remains the canonical spelling and the one §2.3
-  advertises.
+  `version` subcommand remains the canonical spelling and the one the root
+  command listing advertises.
 
 ### 2.2 Standing principles
 
@@ -198,422 +210,87 @@ names (`list`, `info`, `status`).
 - `restow` on a not-stowed package just stows — the unstow phase no-ops;
   restow is the idempotent refresh verb (D16).
 
-### 2.3 Top-level help (canonical)
-
-```
-dstow — deploy dotfiles and configuration as symlinks, from packages in repos
-
-Usage:
-  dstow <command> [args] [flags]
-
-Deploy:
-  stow        Link packages into their targets
-  unstow      Remove packages' links from their targets
-  restow      Unstow, then stow again (refresh links)
-  adopt       Import an existing file into a package, leaving a link behind
-
-Inspect:
-  list        What is configured: repos, packages, targets (never reads disk)
-  info        Everything dstow knows about one repo or package
-  status      What is deployed: live state of packages against their targets
-
-Maintain:
-  check       Verify every link in the ledger; classify broken and orphaned
-  clean       Execute exactly what check reported (broken freely, orphans ask)
-  rebuild     Reconstruct a lost ledger by walking configured targets (rare)
-
-Groups:
-  repo        Manage repos: add, remove, update, upgrade
-  snippet     Print canned shell snippets: rc bootstrap
-  theme       Theming: list themes, describe slots, emit colors
-
-Also:
-  completion  Generate shell completion (bash, zsh, fish, powershell)
-  version     Print version
-
-Global flags:
-      --color <when>   Colorize output: auto (default), always, never
-  -q, --quiet          Suppress informational output (announcements survive)
-  -y, --yes            Assume "yes" at confirmation prompts
-  -h, --help           Help for dstow or any command
-
-Name packages and repos by any unambiguous suffix of their qualified name
-(github:rocne/dotfiles::zsh). The working directory never changes what a
-command does. See 'dstow <command> --help' for details and examples.
-Run 'dstow manual' for the full documentation.
-```
-
-*(The `snippet` line reads "rc bootstrap" only and the `colors` group
-appears, per the dependency removal ([#28](https://github.com/rocne/dstow/issues/28) B8)
-and the Output design surface addition ([#26](https://github.com/rocne/dstow/issues/26)).)*
-
-### 2.4 Per-command help (canonical)
-
-#### stow / unstow / restow (leaves)
-
-```
-Link packages into their targets.
-
-Usage:
-  dstow stow <name>... [flags]
-  dstow stow --all
-
-Names are packages or repos, by any unambiguous suffix of the qualified
-name; naming a repo stows all of its packages. With no names, dstow asks
-before stowing everything — in scripts that is an error: pass --all.
-
-Each package succeeds or fails on its own; the run continues past failures
-and exits nonzero if any package failed. Explicitly naming a package or
-repo overrides its exclude-from-bulk setting.
-
-Flags:
-      --all       Every package of every registered repo, without asking
-      --adopt     Where an expected path holds a real file, adopt it into
-                  the package instead of refusing (adopt rules apply:
-                  plan shown, confirmation on differing content)
-  -n, --dry-run   Show the plan; change nothing
-
-Examples:
-  dstow stow zsh git tmux
-  dstow stow dotfiles              # a repo: all of its packages
-  dstow stow dots::zsh             # qualified just enough to be unique
-  dstow stow --all --adopt         # first run on a machine with live files
-```
-
-`unstow` and `restow` are identical in shape; bare `unstow` confirms with the
-same care — it is the destructive one. `restow` on a package that is not
-stowed simply stows it (the unstow phase no-ops); `--adopt` composes with
-stow and restow.
-
-#### adopt (leaf)
-
-```
-Import an existing real file into a package; a link takes its place.
-Live content always wins — adopt never destroys running configuration.
-
-Usage:
-  dstow adopt <file> [<package>] [flags]
-  dstow adopt --occupied <package>
-
-With a package: shows its plan and asks before overwriting differing
-package content. Without a package: lists the packages that could adopt
-the file, ranked, and asks you to pick (in scripts: an error that lists
-the candidates as remedies). --occupied adopts every occupied path of the
-named package.
-
-Flags:
-      --occupied   All occupied paths of the named package
-  -n, --dry-run    Show the plan; change nothing
-      --force      Overwrite differing package content without asking
-
-Examples:
-  dstow adopt ~/.zshrc zsh
-  dstow adopt ~/.config/foo/foo.toml     # no package: pick from candidates
-```
-
-#### repo (group)
-
-```
-Manage repos — where packages come from.
-
-Usage:
-  dstow repo <command>
-
-Commands:
-  add       Register a repo from a source (path, URL, github:owner/name)
-  remove    Unregister a repo (deletes managed clones only)
-  update    Download remote repo changes; touch nothing on disk
-  upgrade   Fast-forward clean clones to what update downloaded
-
-Environment:
-  DSTOW_PATH   Colon-separated directories registered as session repos —
-               additions to the repo set for this shell only; no priority
-```
-
-```
-Register a repo — where packages come from.
-
-Usage:
-  dstow repo add <source> [flags]
-
-Sources: a local directory path, a full URL/ssh form, or a qualified source
-like github:owner/name (bare owner/name asks first; in scripts, qualify).
-Remote sources clone into the managed directory; local paths are registered
-in place and never modified.
-
-Adding stows nothing: dstow announces the repo's packages and any bare
-names that now need qualification. If the path would need percent-encoding
-in name expressions, dstow shows the encoded form and asks whether to
-continue or rename first. Re-adding a present repo is a safe, announced
-no-op.
-
-Flags:
-      --stow   After adding, stow this repo's packages (exclusions apply)
-
-Examples:
-  dstow repo add ~/dotfiles
-  dstow repo add github:rocne/dotfiles
-  dstow repo add rocne/dotfiles --stow
-```
-
-```
-Unregister a repo. Managed clones are deleted; local-path repos are only
-forgotten — your directory is never touched.
-
-Usage:
-  dstow repo remove <repo> [flags]
-
-Refuses while the repo still has stowed links (offers unstow-then-remove),
-and refuses to delete a managed clone holding work not present at its
-source. Every refusal names its remedy.
-
-Flags:
-      --unstow   Unstow the repo's packages first, without prompting
-      --force    Override both guards (unsaved work will be lost)
-```
-
-```
-Sync remote repos in two explicit phases. Neither ever runs on its own.
-
-Usage:
-  dstow repo update [<repo>...]     Download changes; alter nothing on disk
-  dstow repo upgrade [<repo>...]    Fast-forward clean clones; report old -> new
-
-With no repos named, both act on every remote repo. update touches the
-network and nothing else — afterwards, status reports behind/ahead.
-upgrade is fast-forward only: divergence or local work refuses loudly,
-with no stash, merge, or rebase negotiation. upgrade never re-stows;
-structural drift shows up in status. Linked files change the moment
-upgrade moves them — update first, review, then upgrade.
-
-Examples:
-  dstow repo update
-  dstow status
-  dstow repo upgrade rocne/dotfiles
-```
-
-#### list (leaf)
-
-```
-What is configured — repos, packages, targets, exclusions, sources.
-Reads only configuration: instant, side-effect free, never inspects disk.
-Deployment truth lives in 'dstow status'.
-
-Usage:
-  dstow list [<name>] [flags]
-
-Bare list shows repos (the global scope's content); naming a repo lists its
-packages; naming a package lists its paths, relative to the package
-directory.
-
-Flags:
-      --repos      Repos only (source, scheme, bulk-exclusion)
-      --packages   Packages only (repo-attributed; same-named entries shown
-                   with qualified names)
-      --json       Machine-readable listing
-```
-
-*(The scope operand is the info resolution's restatement — list enumerates a
-scope's content; package content is raw paths, no translation flags: the
-translated view belongs to `-n/--dry-run`, reality to `status`.)*
-
-#### info (leaf)
-
-```
-One scope's fields — the facts and effective config dstow holds about it,
-from configuration and metadata, never by inspecting targets (that is
-status's job). The scope is the global installation (named by no operand),
-a repo, or a package.
-
-Usage:
-  dstow info [<name>] [flags]
-
-With no name, details the global scope. Fields come in two groups: inherent
-facts of the thing as it exists (version and paths; a package's repo, source,
-scheme, managed path, qualified name) — permanently read-only — and
-configured values from the config chain (effective target, dot-translation,
-fold, ignores). The full human view prints the inherent group first, then
-the configured group.
-
-Flags:
-  -f, --field <field>   Only the named field(s); repeatable. One field prints
-                        its bare value; several print labeled lines
-  -r, --recurse         Visit every applicable scope in turn, per-scope
-                        attributed; scopes a named field does not apply to are
-                        silently skipped
-      --json            Machine-readable: a flat object keyed by field name
-                        (an array of scope objects under --recurse)
-
-Exit status:
-  0   the requested field(s) carry a value
-  1   applicable but unset or empty (shown as (unset) or [])
-  2   unknown field, or a field illegal for the scope (names a suggestion)
-  3   global refusal
-
-Examples:
-  dstow info                       # the global scope
-  dstow info zsh
-  dstow info dotfiles -f source -f scheme
-  dstow info -r -f target          # target across every scope
-```
-
-#### status (leaf)
-
-```
-What is deployed — expected links against what targets actually hold.
-
-Usage:
-  dstow status [<name>...] [flags]
-  dstow status <path>
-
-Names scope to packages or whole repos. Package states: stowed, partially
-stowed, not stowed, occupied, damaged — plus a drifted marker when the
-deployed shape differs from what current config would produce. damaged is
-only ever claimed with ledger evidence. Remote repos also show
-behind/ahead as of the last update.
-
-For a path: what occupies it, who owns it (per the ledger), and — if
-occupied — the packages that could adopt it, ranked.
-
-Flags:
-      --json   Machine-readable status
-
-Examples:
-  dstow status
-  dstow status zsh
-  dstow status ~/.zshrc      # the per-path view, adoption candidates incl.
-```
-
-#### check / clean / rebuild (leaves)
-
-```
-Verify every ledgered link — instant, no tree walk.
-
-Usage:
-  dstow check [flags]
-
-Classifies stale links: broken (destination gone) and orphaned (resolves
-into a known repo, but no current package config would produce it). clean
-executes exactly this report — the two can never disagree.
-
-Flags:
-      --json   Machine-readable report
-```
-
-```
-Execute exactly what check reported.
-
-Usage:
-  dstow clean [flags]
-
-Broken links are removed freely. Orphans are shown and confirmed (--yes
-removes them without asking). Nothing else is ever touched.
-
-Flags:
-      --force   Remove orphans without confirmation in any context
-```
-
-```
-Reconstruct a lost ledger by scanning configured targets for links into
-known repos. The only full tree walk dstow has; explicit and rare.
-
-Usage:
-  dstow rebuild
-```
+### 2.3 Top-level help
+
+`docs/commands/index.md` owns the root command's help: its `dstow:short`
+region is the one-line description, its `dstow:long` region is the prose
+`dstow --help` opens with — the title line, the naming reminder, and the
+`dstow manual` footer §2.1 makes load-bearing. Everything else on that page is
+manual content and never reaches help.
+
+**The tag vocabulary.** A page's help text is extracted by namespaced HTML
+comment, each region opened and closed explicitly:
+
+| Region | cobra field | Renders as |
+| --- | --- | --- |
+| `dstow:short` | `Short` | the one-line description, in the parent's command listing |
+| `dstow:long` | `Long` | the prose body of `<command> --help` |
+| `dstow:examples` | `Example` | the `Examples:` block, interior indentation intact |
+| untagged | — | manual only; help never sees it |
+
+- **Tags, never section names or positions.** An implicit boundary — the
+  section titled "Overview", everything until the next heading — would make
+  every heading a mechanical commitment and every restructuring a silent
+  breakage. With tags, a page's prose structure is a pure authoring decision
+  with no mechanical consequence.
+- **Closes are explicit.** A region ends where its close tag says, never where
+  the next thing happens to start.
+- **An unknown `dstow:` tag is an error.** A silent no-op on a typo would drop
+  a command's help text with nothing to notice it; the namespace exists
+  precisely so these are greppable.
+- **Tags are not stripped from manual output.** The manual prints its file
+  verbatim (§2.1), and the tags stay visible — self-describing to the agent
+  audience the manual exists for.
+- **Flags stay cobra's.** The flag roster is generated from the flag
+  definitions, already single-owner in code; a page that restated it would be
+  the second owner all over again.
+- **The root listing's sections are cobra command groups**, owned in code and
+  carrying §2.1's inventory in its order: `Deploy:` `Inspect:` `Maintain:`
+  `Groups:` `Also:`. They are the listing's structure, not any command's help
+  text, so no page carries them.
+
+*(Ruled 2026-07-22 — [Help text derives from docs/commands/ (#132)](https://github.com/rocne/dstow/issues/132).)*
+
+### 2.4 Per-command help
+
+`docs/commands/` mirrors the command tree, by identity on command names: a
+leaf's page is a file named for it, and a group's page is its directory's
+`index.md` — the same file the manual prints for that node (§2.1's carve-out).
+`docs/commands/repo/add.md` is `dstow repo add`, `docs/commands/repo/index.md`
+is `dstow repo`, and `docs/commands/index.md` is `dstow` itself.
+
+- **Every dstow-defined command has a page, and every page has a command.**
+  Each page is simultaneously the command's manual page and the source of its
+  help text: `dstow manual commands repo add` and `dstow repo add --help` are
+  the same content, which is what makes the page the single owner rather than
+  one more copy of the wording.
+- **cobra's built-ins (`completion`, `help`) and the `manual` tree are exempt**,
+  skipped whole. The built-ins carry cobra's own text, and manual nodes already
+  derive their `Short` from their H1 (§2.1's two-`Short`s rule).
+- **Completeness is gated at test time**, by a walk over the live command tree
+  and the embedded pages: a page missing, orphaned, or malformed fails the
+  suite. Never at startup — a docs tree that has drifted from the command tree
+  is a repo defect, and refusing to start over it would ship users the breakage
+  in exchange for nothing.
+
+*(Ruled 2026-07-22 — [Help text derives from docs/commands/ (#132)](https://github.com/rocne/dstow/issues/132).)*
+
+Design notes the pages do not carry, kept here because they are decisions
+rather than help text:
+
+*(`unstow` and `restow` are identical to `stow` in shape; bare `unstow`
+confirms with the same care — it is the destructive one. `restow` on a package
+that is not stowed simply stows it, the unstow phase no-ops (D16); `--adopt`
+composes with stow and restow, never with unstow.)*
+
+*(`list`'s scope operand is the info resolution's restatement — list
+enumerates a scope's content; package content is raw paths, no translation
+flags: the translated view belongs to `-n/--dry-run`, reality to `status`.)*
 
 *(check additionally reports **contradicted** entries — ledger evidence disk
-disagrees with; clean prunes those entries only, never touching disk. The
-help wording above names the two disk-acting classes; the full contract is
+disagrees with; clean prunes those entries only, never touching disk. Help
+names the two disk-acting classes; the full contract is
 [§6.4](#64-command-contracts).)*
-
-#### snippet (group)
-
-```
-Print canned POSIX-sh snippets to stdout. dstow never edits rc files.
-
-Usage:
-  dstow snippet <command>
-
-Commands:
-  rc            The shell-rc bootstrap: installs dstow iff absent — silent
-                and network-free whenever dstow is already present
-
-Examples:
-  dstow snippet rc >> ~/.bashrc
-```
-
-#### theme (group)
-
-```
-Theming: list themes, describe slots, emit colors.
-
-Usage:
-  dstow theme <command>
-
-Commands:
-  list          List the available themes: bundled presets and your themes
-                dir, active theme marked
-  slots         Describe every color slot: what it colors and its consumers,
-                plus the value grammar
-  emit          Emit a theme's colors, each value in its own style: the
-                effective palette (bare), a named theme, slot=value tweaks on
-                top; --format env|toml for machines
-
-Examples:
-  dstow theme list
-  dstow theme slots
-  dstow theme emit
-  export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)
-  dstow theme emit cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
-```
-
-```
-Every generic slot and what it colors, each name shown in its own effective
-style. dstow's internals — package states, check classes, severity prefixes,
-prose roles — reach these slots through a fixed code-owned mapping (§7.2); each
-description names the slot's consumers.
-
-Slot values use git's color.* grammar: whitespace-separated words, in any
-order. The first color word is the foreground, the second the background, a
-third is an error. Color words are the 8 basics (black red green yellow blue
-magenta cyan white), their bright* variants, an integer 0-255 (256-color), or
-#RRGGBB hex. Write 'normal red' to set a background without touching the
-foreground. Attributes, any number: bold dim italic ul blink reverse strike,
-each negatable with no or no- (a negation renders as nothing — a themed slot
-replaces its default wholesale); 'reset' comes first.
-
-normal leaves a channel to the TERMINAL, not to dstow's default: a slot set to
-normal replaces its default wholesale (§7.3 top-wins) and renders plain — the
-only way to keep dstow's default for a slot is to leave it undeclared. default
-differs: it emits the terminal-default code (SGR 39/49) rather than nothing.
-
-Usage:
-  dstow theme slots [flags]
-
-Flags:
-      --json   Machine-readable slot reference
-```
-
-```
-Emit a theme's colors — the effective palette (no name), a named theme, or
-either with slot=value tweaks layered on top. The default view renders each
-slot's value in its own style; --format env|toml emits for machines.
-
-Values use git's color.* grammar — see 'dstow theme slots --help'.
-
-Usage:
-  dstow theme emit [theme] [slot=value ...] [flags]
-
-Flags:
-      --format <fmt>   Emit for machines: env (packed DSTOW_COLORS) or toml
-                       (theme file); default is the rendered view
-
-Examples:
-  dstow theme emit
-  dstow theme emit catppuccin-mocha
-  export DSTOW_COLORS=$(dstow theme emit catppuccin-mocha --format env)
-  dstow theme emit cargo section1='bold yellow' --format toml > ~/.config/dstow/themes/mine.toml
-```
 
 *(Ruled 2026-07-19, replacing the `colors` group; `emit` was `show` and
 `slots` was added 2026-07-20 — [#117](https://github.com/rocne/dstow/issues/117),
@@ -1118,11 +795,11 @@ gostow-consumption seams; ephemeral internals are implementation's.*
   (help *is* the requested data) (A2). **Help is cobra-generated** (A2,
   amended per the content-not-bytes ruling —
   [#96](https://github.com/rocne/dstow/issues/96), 2026-07-19): every
-  command carries its Short/Long/Example and flag usage strings sourced from
-  the §2.3/§2.4 content; the root's command sections are cobra command
-  groups. No bespoke help renderer, no verbatim byte-pinning — the parser
-  surface and the help surface share one definition, so a flag appears in
-  help by construction. Help renders themed through `ui` (§7.2), strictly
+  command carries its Short/Long/Example derived from its `docs/commands/`
+  page (§2.3/§2.4) and its flag usage strings from its own flag definitions;
+  the root's command sections are cobra command groups. No bespoke help
+  renderer, no verbatim byte-pinning — the parser surface and the help
+  surface share one definition, so a flag appears in help by construction. Help renders themed through `ui` (§7.2), strictly
   downstream of the §7.3 enable chain; disabled color emits plain text (O11
   strip contract).
 - **Exit-code map** (A3), mapped in exactly one place in `cli`:
@@ -1290,7 +967,7 @@ reservation* in v1; none ships semantics.
 | `DSTOW_HOOK_*` namespace | absent-not-empty contract (H2) | scheme-specific variables (maybe-v2) |
 | `packages_dir` kind-first convention | `"packages"` documented convention (M3) | repo aggregator sibling room (maybe-v2) |
 | `snippet` group | `rc` only (B8) | `snippet hook <name>` skeletons — candidate v1.1 |
-| Interactive selection | ranked candidate & ambiguity lists named as `fix:` remedies; no interactive picker ships, in any context ([§2.4](#24-per-command-help-canonical) adopt, [§1.2](#12-encoding)) | a terminal picker that reads the choice interactively (maybe-v2) |
+| Interactive selection | ranked candidate & ambiguity lists named as `fix:` remedies; no interactive picker ships, in any context ([§2.4](#24-per-command-help) adopt, [§1.2](#12-encoding)) | a terminal picker that reads the choice interactively (maybe-v2) |
 
 ADRs: [0001 — the ledger is a current-state index](adr/0001-ledger-is-a-current-state-index.md);
 [0002 — no dependency concept](adr/0002-no-dependency-concept.md) (superseded

@@ -2,8 +2,13 @@ package cli
 
 import (
 	"fmt"
+	"io/fs"
+	"path"
 	"regexp"
+	"slices"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
 // This file extracts help text from the manual's markdown. A command's page in
@@ -92,4 +97,68 @@ func parseHelpDoc(source, text string) (helpDoc, error) {
 		Long:     found[tagLong],
 		Examples: found[tagExamples],
 	}, nil
+}
+
+// commandsDir is the docs/ subtree that mirrors the command tree (§2.4): the
+// page a command derives its help from is the page the manual prints for it.
+const commandsDir = manualDir + "/commands"
+
+// helpDocExempt names the subtrees the derivation skips whole. cobra's
+// built-ins carry cobra's own text, and every node of the manual tree takes its
+// Short from its file's first H1 (§2.1's two-Shorts rule) — demanding pages for
+// those would hand them a second source, which is the condition this design
+// removes.
+var helpDocExempt = map[string]bool{"completion": true, "help": true, "manual": true}
+
+// helpDocPath is the page a command's help comes from: its position in the
+// command tree, mirrored into docs/commands/. A command with subcommands takes
+// its directory's index.md — the same file the manual prints for a directory
+// node — and a leaf takes a file named for it. Command names map to path
+// segments by identity, so the file behind any help text is readable straight
+// off the command line.
+func helpDocPath(cmd *cobra.Command) string {
+	var segs []string
+	for c := cmd; c.HasParent(); c = c.Parent() {
+		segs = append(segs, c.Name())
+	}
+	slices.Reverse(segs) // walked child-to-root, the path reads root-to-child
+	p := path.Join(append([]string{commandsDir}, segs...)...)
+	if cmd.HasSubCommands() {
+		return path.Join(p, manualIndex)
+	}
+	return p + manualExt
+}
+
+// applyHelpDocs assigns Short, Long, and Example to every dstow-defined command
+// in the tree from its page. It is one post-pass over the built tree rather
+// than a lookup in each constructor: the page's location is a property of the
+// tree's shape, so it is derivable exactly where the shape exists, and no
+// command constructor has to know that docs/ exists.
+//
+// Assignment is unconditional — docs/commands/ is the single owner, so a value
+// left in a constructor would be a competing one, not a fallback.
+func applyHelpDocs(fsys fs.FS, root *cobra.Command) error {
+	var walk func(cmd *cobra.Command) error
+	walk = func(cmd *cobra.Command) error {
+		file := helpDocPath(cmd)
+		content, err := fs.ReadFile(fsys, file)
+		if err != nil {
+			return fmt.Errorf("help: read %s: %w", file, err)
+		}
+		doc, err := parseHelpDoc(file, string(content))
+		if err != nil {
+			return err
+		}
+		cmd.Short, cmd.Long, cmd.Example = doc.Short, doc.Long, doc.Examples
+		for _, child := range cmd.Commands() {
+			if helpDocExempt[child.Name()] {
+				continue
+			}
+			if err := walk(child); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return walk(root)
 }

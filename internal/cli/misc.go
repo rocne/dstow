@@ -17,8 +17,6 @@ import (
 func (e *env) newVersionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "version",
-		Short:   shorts["version"],
-		Long:    "Print dstow's version.",
 		GroupID: groupAlso,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -33,9 +31,6 @@ func (e *env) newVersionCmd() *cobra.Command {
 func (e *env) newSnippetCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "snippet",
-		Short:   shorts["snippet"],
-		Long:    snippetLong,
-		Example: snippetExample,
 		GroupID: groupGroups,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -43,10 +38,8 @@ func (e *env) newSnippetCmd() *cobra.Command {
 		},
 	}
 	rc := &cobra.Command{
-		Use:     "rc",
-		Short:   snippetRCShort,
-		Example: snippetExample,
-		Args:    cobra.NoArgs,
+		Use:  "rc",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// SnippetRC is compiled-in text and cannot fail (A4); no heavy load.
 			res := (&ops.App{}).SnippetRC()
@@ -65,9 +58,6 @@ func (e *env) newSnippetCmd() *cobra.Command {
 func (e *env) newThemeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "theme",
-		Short:   shorts["theme"],
-		Long:    themeLong,
-		Example: themeExample,
 		GroupID: groupGroups,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -82,9 +72,8 @@ func (e *env) newThemeCmd() *cobra.Command {
 // bundled presets and the user themes dir — with origin and the active marker.
 func (e *env) newThemeListCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
-		Short: themeListShort,
-		Args:  cobra.NoArgs,
+		Use:  "list",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			global, warnings, err := e.loadGlobal()
 			e.renderWarnings(warnings)
@@ -121,10 +110,8 @@ func (e *env) newThemeListCmd() *cobra.Command {
 func (e *env) newThemeSlotsCmd() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
-		Use:   "slots",
-		Short: themeSlotsShort,
-		Long:  slotsLong,
-		Args:  cobra.NoArgs,
+		Use:  "slots",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// The slot names render in their own effective style, so the full
 			// §7.3 stack is composed just as the bare emit view does.
@@ -165,9 +152,6 @@ func (e *env) newThemeEmitCmd() *cobra.Command {
 	var format string
 	cmd := &cobra.Command{
 		Use:               "emit [theme] [slot=value ...]",
-		Short:             themeEmitShort,
-		Long:              emitLong,
-		Example:           emitExample,
 		Args:              cobra.ArbitraryArgs,
 		ValidArgsFunction: completeThemeEmit,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -283,7 +267,6 @@ func parseColorFormat(f string) (ops.ColorFormat, error) {
 func (e *env) newNameCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "name",
-		Short:  "Encode and decode name coordinate segments",
 		Hidden: true,
 		Args:   cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -293,7 +276,6 @@ func (e *env) newNameCmd() *cobra.Command {
 
 	encode := &cobra.Command{
 		Use:    "encode",
-		Short:  "Percent-encode a coordinate segment",
 		Hidden: true,
 		Args:   cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -303,7 +285,6 @@ func (e *env) newNameCmd() *cobra.Command {
 	}
 	decode := &cobra.Command{
 		Use:    "decode",
-		Short:  "Percent-decode a coordinate segment",
 		Hidden: true,
 		Args:   cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
