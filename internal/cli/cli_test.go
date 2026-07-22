@@ -180,6 +180,64 @@ func TestListReposHumanRowTerse(t *testing.T) {
 	}
 }
 
+// TestFreshInstallOrientationNote guards audit finding C4: on a bare machine
+// (no repos registered), list and status emit a stderr note pointing at the next
+// step instead of printing nothing. It is routine chatter — --quiet drops it
+// (O7), --json never carries it (human path only), and it must fall silent once
+// any repo exists.
+func TestFreshInstallOrientationNote(t *testing.T) {
+	const remedy = "no repos registered — add one with 'dstow repo add <source>'"
+
+	t.Run("list fresh", func(t *testing.T) {
+		isolateXDG(t)
+		out, errs, code := run(t, "list")
+		if code != 0 || out != "" {
+			t.Errorf("list: out=%q code=%d, want empty stdout / 0", out, code)
+		}
+		if !strings.Contains(errs, "note:") || !strings.Contains(errs, remedy) {
+			t.Errorf("list stderr missing the orientation note: %q", errs)
+		}
+	})
+
+	t.Run("status fresh", func(t *testing.T) {
+		isolateXDG(t)
+		_, errs, code := run(t, "status")
+		if code != 0 || !strings.Contains(errs, remedy) {
+			t.Errorf("status: code=%d stderr=%q, want the note", code, errs)
+		}
+	})
+
+	t.Run("quiet drops it", func(t *testing.T) {
+		isolateXDG(t)
+		_, errs, _ := run(t, "list", "-q")
+		if strings.Contains(errs, remedy) {
+			t.Errorf("--quiet must drop the routine note: %q", errs)
+		}
+	})
+
+	t.Run("json omits it", func(t *testing.T) {
+		isolateXDG(t)
+		out, errs, _ := run(t, "list", "--json")
+		if !strings.Contains(out, `"repos": []`) {
+			t.Errorf("list --json stdout = %q", out)
+		}
+		if strings.Contains(errs, remedy) {
+			t.Errorf("the note rides the human path only, not --json: %q", errs)
+		}
+	})
+
+	t.Run("silent once a repo exists", func(t *testing.T) {
+		isolateXDG(t)
+		repoDir := filepath.Join(os.Getenv("HOME"), "dots")
+		mkdirs(t, filepath.Join(repoDir, "zsh"))
+		t.Setenv("DSTOW_PATH", repoDir)
+		_, errs, _ := run(t, "list")
+		if strings.Contains(errs, remedy) {
+			t.Errorf("note must not fire when a repo is registered: %q", errs)
+		}
+	})
+}
+
 // TestSnippetRC emits the bootstrap snippet on stdout, byte-for-byte with the
 // ops-owned text (B1/B2), nothing on stderr.
 func TestSnippetRC(t *testing.T) {
