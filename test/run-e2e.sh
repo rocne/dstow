@@ -27,6 +27,7 @@ run_test() {
 
 run_test smoke.sh
 run_test help.sh
+run_test manual.sh
 run_test version.sh
 run_test snippet.sh
 run_test deploy.sh

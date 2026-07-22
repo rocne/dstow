@@ -4,7 +4,7 @@
 // embedded here and consumed by the internal packages.
 package dstow
 
-import _ "embed"
+import "embed"
 
 // RCSnippet is the vendored snippet.sh, verbatim — the canonical rc bootstrap
 // (DESIGN §9.1 B1 as amended: authored in release-ci, vendored beside
@@ -13,3 +13,13 @@ import _ "embed"
 //
 //go:embed snippet.sh
 var RCSnippet string
+
+// Manual is the tracked docs/ tree, embedded whole — the source the hidden
+// `manual` command group mirrors (§2.1's carve-out): directories become
+// groups, markdown files become leaves, and every node prints its own file.
+// The tree is the single source of truth, so the `all:` prefix is required —
+// without it go:embed silently drops files beginning with "." or "_", and a
+// dropped file is a topic that exists in the repo and nowhere in the binary.
+//
+//go:embed all:docs
+var Manual embed.FS

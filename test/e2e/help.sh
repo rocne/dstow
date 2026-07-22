@@ -56,6 +56,7 @@ version Print version
 Name packages and repos by any unambiguous suffix of their qualified name
 (github:rocne/dotfiles::zsh). The working directory never changes what a
 command does. See 'dstow <command> --help' for details and examples.
+Run 'dstow manual' for the full documentation.
 EOF
 
 # Bare dstow prints the same help on stdout, exit 0 (§2.1).

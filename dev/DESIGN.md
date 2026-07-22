@@ -146,6 +146,23 @@ names (`list`, `info`, `status`).
   surface).)*
 - Leaves: `stow` `unstow` `restow` `adopt` · `list` `info` `status` ·
   `check` `clean` `rebuild` · `completion` `version`.
+- **The `manual` tree is carved out of the shape rule** (ruled 2026-07-21 —
+  [dstow manual (#130)](https://github.com/rocne/dstow/issues/130)): the
+  hidden `manual` group mirrors the tracked `docs/` folder, generated from an
+  embedded FS walk — directories are nodes, markdown files are leaves. These
+  nodes are **not actions**; calling them commands is close to a category
+  error, so the group/leaf dichotomy does not bind them. A bare node prints
+  its `index.md` — which is both the directory's table of contents and its
+  content — rather than its help, so any node is discoverable by running it.
+  Filenames are command spellings exactly (identity mapping, no transform);
+  a directory without an `index.md`, a `format.md` beside a `format/`, and a
+  non-markdown file are each errors, gated by the structural suite. Markdown
+  as the only format is **tentative** and may change. The requirement this
+  serves: **dstow is fully learnable from the command line alone**, so an
+  agent never needs external documentation; human ergonomics is explicitly a
+  non-requirement, provided the information is present and reachable. Root
+  help carries one footer line naming `dstow manual` — the sole discovery
+  affordance, and load-bearing: without it the requirement is unmet.
 - **Root `--version` flag** (ruled at
   [#81](https://github.com/rocne/dstow/issues/81), 2026-07-19): prints
   exactly what `dstow version` prints — one source of truth, two spellings.
@@ -223,6 +240,7 @@ Global flags:
 Name packages and repos by any unambiguous suffix of their qualified name
 (github:rocne/dotfiles::zsh). The working directory never changes what a
 command does. See 'dstow <command> --help' for details and examples.
+Run 'dstow manual' for the full documentation.
 ```
 
 *(The `snippet` line reads "rc bootstrap" only and the `colors` group
