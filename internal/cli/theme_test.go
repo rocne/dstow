@@ -2,10 +2,17 @@ package cli
 
 import (
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
+	"regexp"
+	"sort"
 	"strings"
 	"testing"
+
+	"github.com/rocne/dstow"
+	"github.com/rocne/dstow/internal/ui"
 )
 
 // theme list enumerates the six bundled presets, all origin "bundled", none
@@ -276,5 +283,64 @@ func TestThemeSlotsJSON(t *testing.T) {
 	}
 	if len(byName["section2"]) != 0 {
 		t.Errorf("section2 consumers = %v, want empty", byName["section2"])
+	}
+}
+
+// TestSlotsDocConsumerTableMatchesTool guards finding A2: slots.md's hand-kept
+// "What consumes what" table must name exactly the consumers the tool reports
+// for every slot that has one. The authoritative mapping is ui.SlotReference()
+// — the same data behind `dstow theme slots`. Without this guard the static
+// table silently drifts from the tool, which is precisely how A2 arose (the
+// table dropped the prose-role and severity-prefix consumers).
+func TestSlotsDocConsumerTableMatchesTool(t *testing.T) {
+	raw, err := fs.ReadFile(dstow.Manual, "docs/theming/slots.md")
+	if err != nil {
+		t.Fatalf("read slots.md: %v", err)
+	}
+	doc := string(raw)
+
+	// Scope to the "What consumes what" section — earlier tables on the page
+	// list slot glosses, not consumers.
+	const heading = "## What consumes what"
+	start := strings.Index(doc, heading)
+	if start < 0 {
+		t.Fatalf("slots.md has no %q section", heading)
+	}
+	section := doc[start:]
+	if next := strings.Index(section[len(heading):], "\n## "); next >= 0 {
+		section = section[:len(heading)+next]
+	}
+
+	// A data row is | `slot` | `c1`, `c2`, ... | — the header (`Slot`) and the
+	// separator carry no backtick in the first cell, so neither matches.
+	rowRe := regexp.MustCompile("(?m)^\\|\\s*`([^`]+)`\\s*\\|(.+)\\|\\s*$")
+	tickRe := regexp.MustCompile("`([^`]+)`")
+	documented := map[string][]string{}
+	for _, m := range rowRe.FindAllStringSubmatch(section, -1) {
+		var cons []string
+		for _, c := range tickRe.FindAllStringSubmatch(m[2], -1) {
+			cons = append(cons, c[1])
+		}
+		sort.Strings(cons)
+		documented[m[1]] = cons
+	}
+
+	// Authoritative: every slot with at least one consumer.
+	authoritative := map[string][]string{}
+	for _, d := range ui.SlotReference() {
+		if len(d.Consumers) == 0 {
+			continue
+		}
+		cons := make([]string, len(d.Consumers))
+		for i, r := range d.Consumers {
+			cons[i] = string(r)
+		}
+		sort.Strings(cons)
+		authoritative[string(d.Slot)] = cons
+	}
+
+	if !reflect.DeepEqual(documented, authoritative) {
+		t.Errorf("slots.md consumer table drifted from `dstow theme slots`:\n  documented    = %v\n  authoritative = %v",
+			documented, authoritative)
 	}
 }
