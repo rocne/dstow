@@ -58,7 +58,20 @@ func (e *env) runList(req ops.ListRequest, asJSON bool) error {
 		return e.writeJSON(listJSON(res))
 	}
 	e.renderList(res)
+	e.noteEmptyRegistry(app)
 	return nil
+}
+
+// noteEmptyRegistry emits the fresh-install orientation note when no repos are
+// registered, so `list`/`status` on a bare machine give a next step instead of
+// silence (finding C4). It is routine chatter — Notef (stderr, dropped by
+// --quiet, O7) — so a script's stdout stays empty. The remedy rides in the note,
+// not a fix: line: the command succeeded (exit 0) and fix: is reserved for
+// failures ("appears precisely when nothing succeeded").
+func (e *env) noteEmptyRegistry(app *ops.App) {
+	if len(app.Repos) == 0 {
+		e.pr().Notef("no repos registered — add one with 'dstow repo add <source>'")
+	}
 }
 
 // renderList prints a listing to stdout (O1: a listing is the requested data).
@@ -308,6 +321,11 @@ func (e *env) runStatus(args []string, asJSON bool) error {
 		return e.writeJSON(statusJSON(res))
 	}
 	e.renderStatus(res)
+	// The per-path view answers a location question and prints its own line, so
+	// the empty-registry orientation note applies only to the name/bulk view.
+	if res.Path == nil {
+		e.noteEmptyRegistry(app)
+	}
 	return nil
 }
 
