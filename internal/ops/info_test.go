@@ -69,13 +69,13 @@ func TestInfoGlobalVersionUnset(t *testing.T) {
 }
 
 // TestInfoFieldSelect: -f selects only the named fields, pinned §2.4 tokens
-// (source, scheme) with their values.
+// (repo, scheme) with their values.
 func TestInfoFieldSelect(t *testing.T) {
 	e := newEnv(t)
 	root := e.addRepo("dots")
 	e.writeFile(filepath.Join(root, "zsh", "dot-zshrc"), "z\n")
 
-	res, err := e.app.Info(ops.InfoRequest{Name: "zsh", Fields: []string{"source", "scheme"}})
+	res, err := e.app.Info(ops.InfoRequest{Name: "zsh", Fields: []string{"repo", "scheme"}})
 	if err != nil {
 		t.Fatalf("Info: %v", err)
 	}
@@ -90,9 +90,43 @@ func TestInfoFieldSelect(t *testing.T) {
 	if scheme.Status != ops.FieldSet || scheme.Value != "local" {
 		t.Errorf("scheme = %+v, want set to local", scheme)
 	}
-	source, _ := findField(s, "source")
-	if source.Status != ops.FieldSet || source.Value == "" {
-		t.Errorf("source = %+v, want a set value", source)
+	repoField, _ := findField(s, "repo")
+	if repoField.Status != ops.FieldSet || repoField.Value == "" {
+		t.Errorf("repo = %+v, want a set value", repoField)
+	}
+}
+
+// TestInfoSourceFieldDropped guards #154: `source` was a degenerate projection
+// of the FQN (== qualified-name in repo scope, == repo in package scope), so it
+// is no longer a field. Provenance is not an independent axis in dstow's model
+// — the grammar folds it into the FQN — so `source` reads as an unknown field
+// (exit 2), in both scopes, and never appears in the default catalog.
+func TestInfoSourceFieldDropped(t *testing.T) {
+	e := newEnv(t)
+	root := e.addRepo("dots")
+	e.writeFile(filepath.Join(root, "zsh", "dot-zshrc"), "z\n")
+
+	for _, name := range []string{"dots", "zsh"} {
+		res, err := e.app.Info(ops.InfoRequest{Name: name, Fields: []string{"source"}})
+		if err != nil {
+			t.Fatalf("Info(%q): %v", name, err)
+		}
+		s := res.Scopes[0]
+		src, ok := findField(s, "source")
+		if !ok || src.Status != ops.FieldUnknown {
+			t.Errorf("info %s -f source: got %+v (ok=%v), want an unknown field", name, src, ok)
+		}
+	}
+
+	// And it is absent from the default (no -f) catalog of both scopes.
+	for _, name := range []string{"dots", "zsh"} {
+		res, err := e.app.Info(ops.InfoRequest{Name: name})
+		if err != nil {
+			t.Fatalf("Info(%q): %v", name, err)
+		}
+		if _, ok := findField(res.Scopes[0], "source"); ok {
+			t.Errorf("info %s: source still present in the default catalog", name)
+		}
 	}
 }
 

@@ -165,7 +165,6 @@ func (a *App) globalScope() *scopeData {
 func (a *App) repoScope(c *repoCtx) *scopeData {
 	sd := &scopeData{kind: ScopeRepo, fqn: c.r.FQN, fields: map[string]Field{}}
 	sd.warns = append(sd.warns, c.warns...)
-	sd.put("source", GroupInherent, FieldSet, c.r.FQN.String())
 	sd.put("scheme", GroupInherent, FieldSet, c.r.FQN.Scheme)
 	sd.setOrUnset("managed-path", GroupInherent, c.r.Root)
 	sd.put("qualified-name", GroupInherent, FieldSet, c.r.FQN.String())
@@ -187,7 +186,6 @@ func (a *App) packageScope(c *repoCtx, pkg string) *scopeData {
 		})
 	}
 	sd.put("repo", GroupInherent, FieldSet, c.r.FQN.String())
-	sd.put("source", GroupInherent, FieldSet, c.r.FQN.String())
 	sd.put("scheme", GroupInherent, FieldSet, c.r.FQN.Scheme)
 	sd.setOrUnset("managed-path", GroupInherent, c.pkgRoot(pkg))
 	sd.put("qualified-name", GroupInherent, FieldSet, fqn.String())
@@ -229,7 +227,7 @@ func (a *App) putConfigured(sd *scopeData, eff config.Effective, withExclude boo
 // checked against to tell Unknown (no such field) from Illegal (wrong scope).
 var knownFields = []string{
 	"version", "managed-repos-dir", "global-config-dir", "ledger-path",
-	"metadata-dir", "repo", "source", "scheme", "managed-path",
+	"metadata-dir", "repo", "scheme", "managed-path",
 	"qualified-name", "target", "translate", "fold", "ignores",
 	"exclude-from-bulk",
 }

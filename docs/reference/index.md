@@ -107,7 +107,6 @@ than the config-key vocabulary, and not a synonym for it. Fields are
 | Field | Scope | Kind | What it reports |
 |---|---|---|---|
 | `repo` | package | inherent | the repo's FQN |
-| `source` | package, repo | inherent | the qualified source the repo was registered from |
 | `scheme` | package, repo | inherent | the scheme — `local`, `github`, … |
 | `managed-path` | package, repo | inherent | absolute path to the package or repo directory |
 | `qualified-name` | package, repo | inherent | the scope's own FQN |
