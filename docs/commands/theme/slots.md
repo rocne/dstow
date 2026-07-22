@@ -7,8 +7,8 @@ Describe every color slot: what it colors and its consumers, plus the value gram
 <!-- dstow:long -->
 Every generic slot and what it colors, each name shown in its own effective
 style. dstow's internals — package states, check classes, severity prefixes,
-prose roles — reach these slots through a fixed code-owned mapping (§7.2); each
-description names the slot's consumers.
+prose roles — reach these slots through a fixed mapping owned by dstow's own
+code, never by a theme; each description names the slot's consumers.
 
 Slot values use git's color.* grammar: whitespace-separated words, in any
 order. The first color word is the foreground, the second the background, a
@@ -19,8 +19,12 @@ foreground. Attributes, any number: bold dim italic ul blink reverse strike,
 each negatable with no or no- (a negation renders as nothing — a themed slot
 replaces its default wholesale); 'reset' comes first.
 
-normal leaves a channel to the TERMINAL, not to dstow's default: a slot set to
-normal replaces its default wholesale (§7.3 top-wins) and renders plain — the
-only way to keep dstow's default for a slot is to leave it undeclared. default
-differs: it emits the terminal-default code (SGR 39/49) rather than nothing.
+normal leaves a channel to the TERMINAL, not to dstow's default: because the
+theming stack is top-wins, a slot set to normal replaces its default wholesale
+and renders plain — the only way to keep dstow's default for a slot is to leave
+it undeclared. default differs: it emits the terminal-default code (SGR 39/49)
+rather than nothing.
+
+Run 'dstow manual theming' for the whole stack, and
+'dstow manual theming values' for the value grammar in full.
 <!-- /dstow:long -->
