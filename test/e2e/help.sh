@@ -84,6 +84,10 @@ fi
 # The derivation pipeline, at a leaf (stow) and at depth (repo add — which also
 # proves the path↔command mapping below the root). A command's short renders in
 # its parent's listing; its long is the body of its own help.
+# $page and $parent are command paths, so the word splitting below is the
+# point: "repo add" must reach dstow as two operands, and an empty $parent must
+# vanish rather than become an empty argument.
+# shellcheck disable=SC2086
 check_derived() {
   page=$1     # the manual node, e.g. "stow" or "repo add"
   parent=$2   # where the short renders, e.g. "" or "repo"
