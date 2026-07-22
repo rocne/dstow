@@ -74,3 +74,27 @@ func TestFixForDerivesRunnableRemedy(t *testing.T) {
 		t.Errorf("a plain error should carry no derived fix")
 	}
 }
+
+// TestDeployNotFoundNamesRemedy pins §1.4 (finding C2) on the deploy path: a
+// per-package not-found is a StatusNotFound run-line, not a returned error, so
+// it once bypassed the fix: remedy the resolve-error path emits. The two
+// not-found experiences must name the same remedy.
+func TestDeployNotFoundNamesRemedy(t *testing.T) {
+	isolateXDG(t)
+	_, errs, code := run(t, "stow", "nonexistent")
+	if code != 1 {
+		t.Fatalf("stow nonexistent exit = %d, want 1", code)
+	}
+	if !strings.Contains(errs, "nonexistent not found") {
+		t.Errorf("missing the not-found run-line:\n%s", errs)
+	}
+	if !strings.Contains(errs, "fix:") || !strings.Contains(errs, "dstow list") {
+		t.Errorf("deploy not-found names no dstow list remedy — §1.4 unmet:\n%s", errs)
+	}
+	// One remedy line per run, not one per operand: two not-found operands emit
+	// the fix once.
+	_, errs2, _ := run(t, "stow", "fake1", "fake2")
+	if n := strings.Count(errs2, "fix:"); n != 1 {
+		t.Errorf("two not-found operands emitted %d fix lines, want 1:\n%s", n, errs2)
+	}
+}

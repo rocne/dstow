@@ -103,6 +103,7 @@ func (e *env) renderDeploy(verb string, res *ops.DeployResult) {
 	}
 
 	var ok, bad int
+	notFound := false
 	for i := range res.Packages {
 		p := &res.Packages[i]
 		e.renderPackageResult(verb, p, res.DryRun)
@@ -111,6 +112,17 @@ func (e *env) renderDeploy(verb string, res *ops.DeployResult) {
 		} else {
 			bad++
 		}
+		if p.Status == ops.StatusNotFound {
+			notFound = true
+		}
+	}
+
+	// A per-package not-found is a StatusNotFound run-line, not a returned
+	// error, so it bypasses fixFor — name its remedy here so the deploy path
+	// honours §1.4 like the resolve-error path does. One line per run, not per
+	// package: the remedy is identical for every not-found operand.
+	if notFound {
+		pr.Fixf("%s", notFoundRemedy)
 	}
 
 	for _, w := range res.Warnings {

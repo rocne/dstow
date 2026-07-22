@@ -131,6 +131,11 @@ func classifyExit(err error) int {
 	return exitNegative
 }
 
+// notFoundRemedy is the §1.4 remedy for a named thing that resolves to nothing.
+// Owned here so the resolve-error path (fixFor) and the deploy run-line path
+// (renderDeploy) name the identical fix — one owner for the wording.
+const notFoundRemedy = "dstow list   # shows every registered repo and package"
+
 // fixFor derives the runnable/pointed remedy for a typed error from its fields
 // (never by parsing its message), for the fix: line. It returns "" where the
 // error carries no distinct remedy beyond its own prose.
@@ -177,7 +182,7 @@ func fixFor(err error) string {
 	}
 	var notFound *ops.NotFoundError
 	if errors.As(err, &notFound) {
-		return "dstow list   # shows every registered repo and package"
+		return notFoundRemedy
 	}
 	var nonInter *nonInteractiveError
 	if errors.As(err, &nonInter) {
