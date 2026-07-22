@@ -21,6 +21,83 @@ than an exit code.
 - JSON goes to stdout. Diagnostics go to stderr, always, so a pipeline never
   has to parse around them.
 
+### Per-command shapes
+
+Each surface emits one shape, so a script never has to run the command once to
+discover its fields. State and class strings are spelled exactly as `dstow
+manual concepts states` gives them — the space in `partially stowed` included.
+
+**`list`** — one of three shapes, chosen by the operand:
+
+```json
+{ "repos": [
+    { "fqn": "...", "source": "...", "scheme": "...", "root": "...",
+      "excluded_from_bulk": false, "managed": true, "session": false } ] }
+```
+
+is the bare / `--repos` listing. Naming a repo (or `--packages`) lists packages,
+with `scope` naming the repo when one was given:
+
+```json
+{ "scope": "...", "packages": [ { "fqn": "...", "repo": "..." } ] }
+```
+
+Naming a package lists its paths — the raw walk, relative to the package
+directory:
+
+```json
+{ "package": "...", "paths": [ "rel/path" ] }
+```
+
+**`info`** — a flat object keyed by the snake_case field name (the *Fields*
+table below), each value the field's native type: a string, a bool, a list, or
+`null` for a known-but-unset field:
+
+```json
+{ "target": "/home/you", "translate": true, "ignores": [] }
+```
+
+Under `--recurse` it is an array of these objects, each carrying an extra
+`qualified_name` that attributes its scope:
+
+```json
+[ { "qualified_name": "...", "target": "/home/you" } ]
+```
+
+**`status`** — names give package states, plus sync counts for remote repos:
+
+```json
+{ "packages": [
+    { "fqn": "...", "state": "partially stowed", "drifted": false,
+      "links": [ { "link": "...", "source": "...", "state": "stowed",
+                   "detail": "..." } ] } ],
+  "repos": [
+    { "fqn": "...", "ahead": 0, "behind": 0, "known": true,
+      "error": "..." } ] }
+```
+
+A single path instead gives the location view:
+
+```json
+{ "path": {
+    "path": "...", "exists": true, "is_symlink": true, "link_dest": "...",
+    "kind": "...", "owner": "...", "owner_known": true,
+    "candidates": [ { "fqn": "...", "source": "...", "neighbors": 0 } ] } }
+```
+
+**`check`** — the findings, one object per broken or orphaned link:
+
+```json
+{ "findings": [
+    { "class": "orphaned", "target_root": "...", "link": "...",
+      "package": "...", "source": "...", "destination": "...",
+      "evidence": "..." } ] }
+```
+
+Seven keys are **conditional** — present only when they carry a value:
+`scope`, `detail`, `error`, `link_dest`, `owner`, and a finding's `source` and
+`destination`.
+
 ## Fields
 
 `dstow info` reports **fields**, and the field vocabulary is its own — shorter
