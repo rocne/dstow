@@ -34,8 +34,9 @@ func (e *env) newRepoCmd() *cobra.Command {
 func (e *env) newRepoAddCmd() *cobra.Command {
 	var stow bool
 	cmd := &cobra.Command{
-		Use:  "add <source>",
-		Args: cobra.ExactArgs(1),
+		Use:         "add <source>",
+		Args:        cobra.ExactArgs(1),
+		Annotations: writeCommand(), // H7: refuses from inside a hook
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoAdd(args[0], stow)
 		},
@@ -94,6 +95,7 @@ func (e *env) newRepoRemoveCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "remove <repo>",
 		Args:              cobra.ExactArgs(1),
+		Annotations:       writeCommand(), // H7: refuses from inside a hook
 		ValidArgsFunction: e.completeRepos,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoRemove(args[0], unstow, force)
@@ -133,6 +135,7 @@ func (e *env) newRepoSyncCmd(cmdName string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               cmdName + " [<repo>...]",
 		ValidArgsFunction: e.completeRepos,
+		Annotations:       writeCommand(), // H7: refuses from inside a hook
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runRepoSync(cmdName, args)
 		},

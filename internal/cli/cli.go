@@ -115,7 +115,11 @@ func (e *env) newRootCmd() *cobra.Command {
 			Theme: baseTheme(),
 		})
 		e.entered = true
-		return nil
+		// H7: a write command refuses from inside a hook (DESIGN §5). The check
+		// sits here because it is the one point every command passes through, and
+		// after `entered` so the refusal renders as a domain error (exit 3), not
+		// as a cobra usage failure (exit 2).
+		return refuseInHook(cmd)
 	}
 
 	pf := root.PersistentFlags()

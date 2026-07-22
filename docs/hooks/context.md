@@ -113,9 +113,16 @@ interactively.
 `DSTOW_HOOK_ACTION` being present in the environment is how dstow detects that
 it is running inside a hook.
 
-- **Reads are fully allowed**: `list`, `info`, `status`, `check`.
-- **Writes refuse**: the deploy verbs, `adopt`, `clean`, `rebuild`, and the
-  repo mutations, each with an error naming cause and remedy.
+- **Writes refuse**, with exit `3` and an error naming cause and remedy. The
+  set is exactly: `stow`, `unstow`, `restow`, `adopt`, `clean`, `rebuild`,
+  `repo add`, `repo remove`, `repo update`, `repo upgrade`.
+- **Everything else is a read and works**: `list`, `info`, `status`, `check`,
+  and the rest of the surface — `theme`, `snippet`, `version`, `--help`,
+  completion.
+
+The refusal is a property of the command, not of what a particular invocation
+would have done: `stow --dry-run` refuses too, even though a plan writes
+nothing.
 
 ## A complete example
 

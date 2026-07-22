@@ -35,6 +35,7 @@ func (e *env) newStowCmd(cmdName string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               cmdName + " <name>...",
 		GroupID:           groupDeploy,
+		Annotations:       writeCommand(), // H7: refuses from inside a hook
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runDeploy(verbFor(cmdName), cmdName, args, all, adopt, dryRun)
@@ -204,6 +205,7 @@ func (e *env) newAdoptCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "adopt <file> [<package>]",
 		GroupID:           groupDeploy,
+		Annotations:       writeCommand(), // H7: refuses from inside a hook
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return e.runAdopt(args, occupied, dryRun, force)

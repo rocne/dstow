@@ -104,6 +104,7 @@ func classifyExit(err error) int {
 		unsavedWork  *ops.UnsavedWorkError
 		foldConflict *ops.FoldConflictError
 		nonInter     *nonInteractiveError
+		inHook       *hookWriteError
 	)
 	switch {
 	case errors.As(err, &corrupt),
@@ -119,7 +120,8 @@ func classifyExit(err error) int {
 		errors.As(err, &stillStowed),
 		errors.As(err, &unsavedWork),
 		errors.As(err, &foldConflict),
-		errors.As(err, &nonInter):
+		errors.As(err, &nonInter),
+		errors.As(err, &inHook):
 		return exitRefusal
 	}
 
@@ -184,6 +186,10 @@ func fixFor(err error) string {
 	var bulk *bulkRefusalError
 	if errors.As(err, &bulk) {
 		return "dstow " + bulk.verb + " --all   # act on every package without asking"
+	}
+	var inHook *hookWriteError
+	if errors.As(err, &inHook) {
+		return "run this command outside the hook; reads (dstow list, info, status, check) work from inside one"
 	}
 	return ""
 }

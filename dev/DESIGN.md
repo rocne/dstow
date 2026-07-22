@@ -548,6 +548,18 @@ ledger H1–H8 as amended; lifecycle is REQUIREMENTS §9.1.*
   install hook may read dstow (`dstow status --json`, `dstow info -f target`)
   while installing tools with its own commands. No bypass in v1:
   refuse-now-allow-later is additive; the reverse breaks users.
+  **The refusing set is enumerated, and the refusal is a property of the
+  command, not of its effect** (ruled 2026-07-22 at
+  [#139](https://github.com/rocne/dstow/issues/139)): `stow` · `unstow` ·
+  `restow` · `adopt` · `clean` · `rebuild` · `repo add` · `repo remove` ·
+  `repo update` · `repo upgrade`. Everything else is a read and works from
+  inside a hook. Two memberships were **decided in the retractable
+  direction** rather than derived, and are held open as §10 doorways:
+  `repo update` refuses although REQUIREMENTS §6.1 binds the fetch phase to
+  alter no working tree, and `--dry-run` refuses although it writes nothing.
+  Neither is a claim that they *must* refuse — only that relaxing a refusal
+  later is additive while imposing one is not. The guard is therefore
+  flag-blind: one check, one sentence to document, no per-flag carve-outs.
 
 ## 6. Ledger
 
@@ -963,7 +975,8 @@ reservation* in v1; none ships semantics.
 | `.dstow/` top level & global config dir | unknown entries warn, never refuse (M5) | future kinds addable without a schema version |
 | `fix:` line | structural, machine-stable runnable remedy (O2) | maybe-v2 fix-runner |
 | Theming convertibility | one slot vocabulary + one value grammar across env/table/file (§7.3) | converter/builder family; first-class repo-shipped themes (maybe-v2) |
-| Hook write-refusal | H7 refuses writes inside hooks | maybe-v2 hook-orchestrator (refuse-now-allow-later is additive) |
+| Hook write-refusal | H7 refuses writes inside hooks; the refusing set is enumerated and flag-blind ([§5](#5-hook-context-contract)) | maybe-v2 hook-orchestrator (refuse-now-allow-later is additive) |
+| H7 set membership | `repo update` and `--dry-run` refuse — chosen retractable, not derived ([§5](#5-hook-context-contract)) | either may be released into the read set without breaking anyone (maybe-v2) |
 | `DSTOW_HOOK_*` namespace | absent-not-empty contract (H2) | scheme-specific variables (maybe-v2) |
 | `packages_dir` kind-first convention | `"packages"` documented convention (M3) | repo aggregator sibling room (maybe-v2) |
 | `snippet` group | `rc` only (B8) | `snippet hook <name>` skeletons — candidate v1.1 |

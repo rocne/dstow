@@ -78,10 +78,21 @@ output is commentary, definitionally. A hook that must emit data writes a
 file, or is invoked directly rather than through dstow.
 
 **Write commands refuse from inside a hook; reads are fully allowed.** A hook
-may run `dstow status --json` or `dstow info -f target` to read state, but the
-deploy verbs, `adopt`, `clean`, `rebuild`, and the repo mutations refuse, with
-an error naming the cause and the remedy. Detection is the presence of
-`DSTOW_HOOK_ACTION` in the environment.
+may run `dstow status --json` or `dstow info -f target` to read state. These
+ten refuse, with exit `3` and an error naming the cause and the remedy:
+
+    stow  unstow  restow  adopt  clean  rebuild
+    repo add  repo remove  repo update  repo upgrade
+
+Detection is the presence of `DSTOW_HOOK_ACTION` in the environment.
+Everything not on that list is a read and works normally, `--help` and
+completion included.
+
+The refusal attaches to the command, not to what a given invocation would have
+done — `stow --dry-run` refuses too, and so does `repo update`, which only
+touches the network. Both could defensibly have been allowed; both were
+decided the other way on purpose, because releasing a command into the read
+set later is additive while pulling one out is not.
 
 The asymmetry is deliberate. An install hook legitimately wants to *read*
 dstow while installing tools with its own commands. Recursive *writes* are how
