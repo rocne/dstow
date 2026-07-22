@@ -44,7 +44,7 @@ func isolateXDG(t *testing.T) {
 // TestTopLevelHelpContent asserts `dstow --help` carries DESIGN.md §2.3's
 // canonical content (A2 as amended — issue #96): the command inventory with
 // its wording, the global flag roster, and the closing prose. The expected
-// content is extracted from docs/DESIGN.md itself, so the test is anchored to
+// content is extracted from dev/DESIGN.md itself, so the test is anchored to
 // the design source, never to the consts it guards (no contrived-green).
 // Layout is cobra's and is deliberately not asserted.
 func TestTopLevelHelpContent(t *testing.T) {
@@ -129,11 +129,11 @@ func TestHelpColorized(t *testing.T) {
 	}
 }
 
-// designBlock reads docs/DESIGN.md and returns the index-th fenced code block
+// designBlock reads dev/DESIGN.md and returns the index-th fenced code block
 // between the given heading and the next heading of equal-or-higher level.
 func designBlock(t *testing.T, heading string, index int) string {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "DESIGN.md"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "dev", "DESIGN.md"))
 	if err != nil {
 		t.Fatalf("read DESIGN.md: %v", err)
 	}

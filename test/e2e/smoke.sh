@@ -7,7 +7,7 @@ export HOME=/home/e2e
 export XDG_DATA_HOME=/home/e2e/.local/share
 mkdir -p /home/e2e
 
-# Charter: this exerciser asserts only INTENDED behavior (docs/DESIGN.md),
+# Charter: this exerciser asserts only INTENDED behavior (dev/DESIGN.md),
 # never whatever the stub happens to do. Right now internal/cli.Run is a
 # stub that prints nothing and returns 0; DESIGN.md §2.1 ("bare group prints
 # its help") and §2.3 (the canonical help text) say bare `dstow` prints its

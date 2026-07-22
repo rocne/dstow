@@ -11,12 +11,12 @@
 
 ### Issue tracker
 
-Issues are tracked in GitHub Issues (github.com/rocne/dstow) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues (github.com/rocne/dstow) via the `gh` CLI. See `dev/agents/issue-tracker.md`.
 
 ### Triage labels
 
-Default labels, named as-is: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+Default labels, named as-is: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `dev/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context: one `CONTEXT.md` + `dev/adr/` at the repo root. See `dev/agents/domain.md`.

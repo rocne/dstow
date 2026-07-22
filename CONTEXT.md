@@ -119,7 +119,7 @@ The record of every link dstow creates and removes (XDG state) — a
 **current-state index**, never a history. The word is accounting's own
 distinction, kept deliberately: the *journal* is the chronological log of
 transactions; the *ledger* is the organized current state posted from it.
-dstow keeps the ledger and no journal ([ADR 0001](docs/adr/0001-ledger-is-a-current-state-index.md)).
+dstow keeps the ledger and no journal ([ADR 0001](dev/adr/0001-ledger-is-a-current-state-index.md)).
 Disk is always the truth; the ledger is an index, pruned wherever disk
 contradicts it.
 
