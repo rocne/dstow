@@ -35,7 +35,7 @@ func (e *env) newListCmd() *cobra.Command {
 			return e.runList(ops.ListRequest{Name: name, ReposOnly: reposOnly, PackagesOnly: packagesOnly}, asJSON)
 		},
 	}
-	cmd.Flags().BoolVar(&reposOnly, "repos", false, "Repos only (source, scheme, bulk-exclusion)")
+	cmd.Flags().BoolVar(&reposOnly, "repos", false, "Repos only, each with its path and status markers")
 	cmd.Flags().BoolVar(&packagesOnly, "packages", false, "Packages only (repo-attributed; same-named entries shown with qualified names)")
 	cmd.Flags().BoolVar(&asJSON, "json", false, "Machine-readable listing")
 	return cmd

@@ -37,7 +37,11 @@ manual configuration ignores`).
 
 ## `--repos` and `--packages`
 
-- `--repos` narrows the listing to repos alone, with each source and scheme.
+- `--repos` narrows the listing to repos alone — each repo's name, its path,
+  and any status markers (`managed`, `session`, `excluded from bulk`). A repo's
+  `source` and `scheme` are `info` fields, not columns of this view: `list`
+  enumerates, `info` reports fields. The full row that carries them is `dstow
+  list --repos --json` (`dstow manual reference`).
 - `--packages` widens it to every package across every repo, **attributing each
   to its repo** and qualifying any same-named packages so two packages called
   `zsh` from different repos are told apart; unique names stay bare.
