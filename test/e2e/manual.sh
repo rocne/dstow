@@ -119,4 +119,27 @@ for parent in reference configuration hooks concepts commands; do
   fi
 done
 
+# A command page's manual reaches further than its --help. A command page is
+# both its --help source (the tagged regions) and its manual page (the whole
+# file), so the untagged prose is a channel that reaches `dstow manual
+# commands <path>` and never `--help`. Assert the property — the manual carries
+# a section the help does not — not any wording: a page given prose grows a
+# markdown heading (## …) that the tagged help regions never render, so the
+# manual page must contain a `## ` line whose text does not appear in --help.
+# Structural, so this never couples to a sentence of the prose.
+manpage=$(dstow manual commands stow) || {
+  printf 'FAIL: dstow manual commands stow exited nonzero\n'; exit 1
+}
+stowhelp=$(dstow stow --help)
+heading=$(printf '%s\n' "$manpage" | grep -m1 '^## ' | sed 's/^## *//')
+if [ -z "$heading" ]; then
+  printf 'FAIL: manual commands stow carries no untagged section; the manual-only channel is empty\n'
+  exit 1
+fi
+case $stowhelp in
+  *"$heading"*)
+    printf 'FAIL: the section %s reached --help; untagged prose must not\n' "$heading"
+    exit 1 ;;
+esac
+
 printf 'PASS: the manual tree is reachable, raw, and hidden from the top level\n'

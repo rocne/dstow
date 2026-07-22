@@ -151,12 +151,16 @@ func TestParseHelpDocIgnoresForeignComments(t *testing.T) {
 // dstow's internal documents live in dev/ and never ship; shipped help that
 // cites them sends the reader somewhere they cannot go.
 //
-// The list is explicit rather than a pattern over dev/: a bare "dev/" also
-// matches /dev/null, which is legitimate content in a hooks example.
+// The dev/ pattern is anchored at start-of-text or a non-word, non-slash
+// character so it catches a reference into the internal tree ("dev/DESIGN.md",
+// "see dev/adr/…") without tripping on a path-internal "/dev/" — /dev/null is
+// legitimate content in a hooks example (docs/hooks/context.md). RE2 has no
+// lookbehind, so the leading separator is matched as part of the hit; that is
+// harmless, since the hit is only ever reported, never substituted.
 var internalRefs = []*regexp.Regexp{
 	regexp.MustCompile(`§`),                                     // DESIGN/REQUIREMENTS section marks
 	regexp.MustCompile(`\b(DESIGN|REQUIREMENTS|CONTEXT)\.md\b`), // the documents themselves
-	regexp.MustCompile(`\bdev/`),                                // any path into the internal tree
+	regexp.MustCompile(`(^|[^\w/])dev/`),                        // any path into the internal tree, but not /dev/null
 	regexp.MustCompile(`\b[ABCDHMO][0-9]{1,2}\b`),               // the resolution-ledger codes (A3, C7, M8, H2…)
 }
 
@@ -207,6 +211,81 @@ func TestHelpTextCitesNothingInternal(t *testing.T) {
 		}
 	}
 	walk(root)
+}
+
+// TestManualProseCitesNothingInternal extends the internal-citation rule from
+// the tagged --help regions to the *whole* embedded docs tree, so manual-only
+// prose is gated too. The tagged regions are checked through the live cobra
+// tree by TestHelpTextCitesNothingInternal, which gives the better message;
+// this one walks every markdown file in dstow.Manual and applies the same
+// rules to its raw bytes. docs/ is user-facing (#129): a §-number or a dev/
+// path in the untagged prose points a reader at a document they do not have
+// just as much as one in --help would, and this ticket — which authors prose
+// across the command pages — is exactly the one that can reintroduce the
+// citations #131 removed.
+func TestManualProseCitesNothingInternal(t *testing.T) {
+	err := fs.WalkDir(dstow.Manual, manualDir, func(p string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		if !strings.HasSuffix(p, manualExt) {
+			return nil
+		}
+		text, rerr := fs.ReadFile(dstow.Manual, p)
+		if rerr != nil {
+			return rerr
+		}
+		for _, re := range internalRefs {
+			if hit := re.FindString(string(text)); hit != "" {
+				t.Errorf("%s cites %q — an internal document the reader does not have; "+
+					"cite the manual instead (e.g. 'dstow manual concepts states')",
+					p, strings.TrimSpace(hit))
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk %s: %v", manualDir, err)
+	}
+}
+
+// TestInternalRefsPatterns pins the pattern set itself, and in particular the
+// tightened dev/ pattern: it must catch a reference into the internal tree
+// while leaving a path-internal /dev/ (like /dev/null in a hooks example)
+// alone. Asserted directly on the regexes so the boundary is documented where
+// it is easy to get wrong.
+func TestInternalRefsPatterns(t *testing.T) {
+	cases := []struct {
+		text string
+		hit  bool
+	}{
+		{"see dev/DESIGN.md for the rule", true},
+		{"dev/adr/0001-foo.md", true},
+		{"a path like dev/agents/domain.md", true},
+		{"command -v zsh >/dev/null 2>&1", false}, // the legitimate hooks example
+		{"writes to /dev/stderr", false},
+		{"a developer/name is fine", false}, // "dev" not followed by a slash
+		{"the design §7.2 says", true},
+		{"see DESIGN.md", true},
+		{"REQUIREMENTS.md and CONTEXT.md", true},
+		{"the H7 ruling", true},   // resolution-ledger code
+		{"about A3 and C7", true}, // ledger codes
+		{"deploy H set membership", false},
+		{"ordinary prose with no citation", false},
+	}
+	matchesAny := func(s string) bool {
+		for _, re := range internalRefs {
+			if re.FindString(s) != "" {
+				return true
+			}
+		}
+		return false
+	}
+	for _, c := range cases {
+		if got := matchesAny(c.text); got != c.hit {
+			t.Errorf("matchesAny(%q) = %v, want %v", c.text, got, c.hit)
+		}
+	}
 }
 
 // TestHelpDocsCoverTheCommandTree asserts the bijection between the live cobra
