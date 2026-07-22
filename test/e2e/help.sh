@@ -8,56 +8,65 @@ export XDG_STATE_HOME=/home/e2e/.local/state
 export XDG_DATA_HOME=/home/e2e/.local/share
 mkdir -p /home/e2e
 
-# Charter: assert intent from DESIGN.md, not the code's incidentals. Help is
-# cobra-generated from the commands' own definitions and carries the §2.3
-# canonical content (A2 as amended — issue #96); layout is cobra's and is not
-# asserted. Colorization rides the §7.3 enable chain: piped help is plain,
-# --color=always styles it, and stripping the styling restores the plain
-# bytes exactly (O11).
+# Charter: assert intent from DESIGN.md, not the code's incidentals.
+#
+# Help text is owned by docs/commands/**.md (§2.3/§2.4); DESIGN owns the shape
+# and the mechanism, and cobra owns layout. So this exerciser asserts two
+# things and no prose of its own:
+#
+#   * STRUCTURE — §2.3's sections, the command inventory, the global flags, the
+#     `dstow manual` footer §2.1 makes load-bearing, and stdout-only delivery.
+#   * THE PIPELINE — that a command's help really is its page. The container has
+#     no repo source, but the docs ride inside the binary, so `dstow manual
+#     commands stow` prints docs/commands/stow.md raw, tags included: extract
+#     its dstow:short and dstow:long here and assert they are what cobra
+#     renders. That verifies embed → extract → cobra end to end, which is
+#     exactly what structural assertions miss and what a unit test asserting
+#     the docs against the docs could never establish.
+#
+# Colorization rides the §7.3 enable chain: piped help is plain, --color=always
+# styles it, and stripping the styling restores the plain bytes exactly (O11).
+
+# region <tag> reads a manual page on stdin and prints one tagged region's
+# content — the same extraction the binary does, from the outside.
+region() {
+  sed -n "/<!-- dstow:$1 -->/,/<!-- \/dstow:$1 -->/p" | sed -e '1d' -e '$d'
+}
 
 got=$(dstow --help) || { printf 'FAIL: dstow --help exited nonzero\n'; exit 1; }
 
-# The §2.3 content: title line, every section title, every command with its
-# one-line description, the global flags, and the closing prose. Both sides
-# are whitespace-squeezed so column padding (cobra's layout) is never
-# asserted, only content.
-norm_got=$(printf '%s\n' "$got" | tr -s ' ')
-while IFS= read -r atom; do
-  case $norm_got in
-    *"$atom"*) ;;
-    *) printf 'FAIL: dstow --help is missing §2.3 content: %s\n' "$atom"; exit 1 ;;
+# §2.3's sections, in the root listing.
+for title in 'Deploy:' 'Inspect:' 'Maintain:' 'Groups:' 'Also:'; do
+  case $got in
+    *"$title"*) ;;
+    *) printf 'FAIL: dstow --help is missing the %s section\n' "$title"; exit 1 ;;
   esac
-done <<'EOF'
-dstow — deploy dotfiles and configuration as symlinks, from packages in repos
-Deploy:
-stow Link packages into their targets
-unstow Remove packages' links from their targets
-restow Unstow, then stow again (refresh links)
-adopt Import an existing file into a package, leaving a link behind
-Inspect:
-list What is configured: repos, packages, targets (never reads disk)
-info Everything dstow knows about one repo or package
-status What is deployed: live state of packages against their targets
-Maintain:
-check Verify every link in the ledger; classify broken and orphaned
-clean Execute exactly what check reported (broken freely, orphans ask)
-rebuild Reconstruct a lost ledger by walking configured targets (rare)
-Groups:
-repo Manage repos: add, remove, update, upgrade
-snippet Print canned shell snippets: rc bootstrap
-theme Theming: list themes, describe slots, emit colors
-Also:
-completion Generate shell completion (bash, zsh, fish, powershell)
-version Print version
---color
---quiet
---yes
---help
-Name packages and repos by any unambiguous suffix of their qualified name
-(github:rocne/dotfiles::zsh). The working directory never changes what a
-command does. See 'dstow <command> --help' for details and examples.
-Run 'dstow manual' for the full documentation.
-EOF
+done
+
+# §2.1's inventory: every command is listed, each with a description beside it.
+for name in stow unstow restow adopt list info status check clean rebuild \
+            repo snippet theme version completion; do
+  if ! printf '%s\n' "$got" | grep -q "^  $name  *[A-Za-z]"; then
+    printf 'FAIL: dstow --help does not list the %s command\n' "$name"
+    exit 1
+  fi
+done
+
+# The hidden name group stays out of the listing (§1.5).
+if printf '%s\n' "$got" | grep -q '^  name  *[A-Za-z]'; then
+  printf 'FAIL: the hidden name group leaked into dstow --help\n'
+  exit 1
+fi
+
+# The global flags, and the footer that is the sole discovery affordance for
+# the manual (§2.1: load-bearing, not decoration).
+for atom in '--color' '--quiet' '--yes' '--help' \
+            "Run 'dstow manual' for the full documentation."; do
+  case $got in
+    *"$atom"*) ;;
+    *) printf 'FAIL: dstow --help is missing: %s\n' "$atom"; exit 1 ;;
+  esac
+done
 
 # Bare dstow prints the same help on stdout, exit 0 (§2.1).
 bare=$(dstow) || { printf 'FAIL: bare dstow exited nonzero\n'; exit 1; }
@@ -72,16 +81,44 @@ if [ -n "$(dstow --help 2>&1 1>/dev/null)" ]; then
   exit 1
 fi
 
-# Per-command help carries its §2.4 content (spot check: stow).
-stow_help=$(dstow stow --help)
-case $stow_help in
-  *'naming a repo stows all of its packages'*) ;;
-  *) printf 'FAIL: dstow stow --help is missing its §2.4 prose\n'; exit 1 ;;
-esac
-case $stow_help in
-  *'--dry-run'*) ;;
-  *) printf 'FAIL: dstow stow --help is missing its flags\n'; exit 1 ;;
-esac
+# The derivation pipeline, at a leaf (stow) and at depth (repo add — which also
+# proves the path↔command mapping below the root). A command's short renders in
+# its parent's listing; its long is the body of its own help.
+check_derived() {
+  page=$1     # the manual node, e.g. "stow" or "repo add"
+  parent=$2   # where the short renders, e.g. "" or "repo"
+  raw=$(dstow manual commands $page) || {
+    printf 'FAIL: dstow manual commands %s exited nonzero\n' "$page"; exit 1; }
+
+  short=$(printf '%s\n' "$raw" | region short)
+  if [ -z "$short" ]; then
+    printf 'FAIL: docs page for %s carries no dstow:short region\n' "$page"
+    exit 1
+  fi
+  listing=$(dstow $parent --help)
+  case $(printf '%s\n' "$listing" | tr -s ' ') in
+    *"$(printf '%s\n' "$short" | tr -s ' ')"*) ;;
+    *) printf "FAIL: dstow %s --help does not carry %s's dstow:short\n" "$parent" "$page"; exit 1 ;;
+  esac
+
+  long=$(printf '%s\n' "$raw" | region long)
+  if [ -z "$long" ]; then
+    printf 'FAIL: docs page for %s carries no dstow:long region\n' "$page"
+    exit 1
+  fi
+  help=$(dstow $page --help)
+  printf '%s\n' "$long" | while IFS= read -r line; do
+    if [ -n "$line" ]; then
+      case $help in
+        *"$line"*) ;;
+        *) printf "FAIL: dstow %s --help is missing a dstow:long line: %s\n" "$page" "$line"; exit 1 ;;
+      esac
+    fi
+  done || exit 1
+}
+
+check_derived stow ''
+check_derived 'repo add' repo
 
 # Piped help (no TTY) is plain: no ANSI escapes (§7.3 enable chain).
 esc=$(printf '\033')
@@ -114,4 +151,4 @@ case $forced in
   *) printf 'FAIL: --color=always must beat NO_COLOR (§7.3)\n'; exit 1 ;;
 esac
 
-printf 'PASS: help is cobra-generated with canonical content, colorized on the enable chain\n'
+printf 'PASS: help is structurally §2.3, derived from docs/commands/, colorized on the enable chain\n'

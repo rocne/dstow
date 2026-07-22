@@ -26,7 +26,7 @@ func verbFor(cmdName string) engine.Verb {
 // newStowCmd builds stow, unstow, or restow — identical in shape (§2.4): name
 // operands or --all, -n/--dry-run, and (for stow/restow only, since --adopt
 // pre-accepts stow's occupied refusal, D15) --adopt.
-func (e *env) newStowCmd(cmdName, long, example string) *cobra.Command {
+func (e *env) newStowCmd(cmdName string) *cobra.Command {
 	var (
 		all    bool
 		adopt  bool
@@ -34,9 +34,6 @@ func (e *env) newStowCmd(cmdName, long, example string) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               cmdName + " <name>...",
-		Short:             shorts[cmdName],
-		Long:              long,
-		Example:           example,
 		GroupID:           groupDeploy,
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -206,9 +203,6 @@ func (e *env) newAdoptCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "adopt <file> [<package>]",
-		Short:             shorts["adopt"],
-		Long:              adoptLong,
-		Example:           adoptExample,
 		GroupID:           groupDeploy,
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {

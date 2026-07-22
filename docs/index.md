@@ -8,8 +8,13 @@ lists.
 
 ## Topics
 
-None yet — the topic tree is still being written. Until it lands, the fullest
-documentation surface is per-command help:
+- `commands` — one page per dstow command, mirroring the command tree. Each
+  page is also where that command's help text comes from, so
+  `dstow manual commands repo add` and `dstow repo add --help` are the same
+  content.
+
+The rest of the tree is still being written. Until it lands, per-command help
+is the fullest surface:
 
     dstow --help
     dstow <command> --help

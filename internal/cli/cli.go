@@ -10,31 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/rocne/dstow"
 	"github.com/rocne/dstow/internal/ui"
 )
-
-// shorts holds each command's §2.3 one-line description, keyed by name — the
-// canonical wording the root command list renders.
-var shorts = map[string]string{
-	"stow":   "Link packages into their targets",
-	"unstow": "Remove packages' links from their targets",
-	"restow": "Unstow, then stow again (refresh links)",
-	"adopt":  "Import an existing file into a package, leaving a link behind",
-
-	"list":   "What is configured: repos, packages, targets (never reads disk)",
-	"info":   "Everything dstow knows about one repo or package",
-	"status": "What is deployed: live state of packages against their targets",
-
-	"check":   "Verify every link in the ledger; classify broken and orphaned",
-	"clean":   "Execute exactly what check reported (broken freely, orphans ask)",
-	"rebuild": "Reconstruct a lost ledger by walking configured targets (rare)",
-
-	"repo":    "Manage repos: add, remove, update, upgrade",
-	"snippet": "Print canned shell snippets: rc bootstrap",
-	"theme":   "Theming: list themes, describe slots, emit colors",
-
-	"version": "Print version",
-}
 
 // env is the composition root's shared state: the injected streams and
 // version, the resolved persistent flags, the one printer, and the memoized
@@ -94,9 +72,11 @@ func Run(args []string, version string, stdin io.Reader, stdout, stderr io.Write
 // maps it to an exit code (A2).
 func (e *env) newRootCmd() *cobra.Command {
 	root := &cobra.Command{
-		Use:   "dstow",
-		Short: rootShort,
-		Long:  rootLong,
+		Use: "dstow",
+		// Short, Long, and Example are absent by design: applyHelpDocs assigns
+		// them, and every other command's, from docs/commands/ once the tree is
+		// built (§2.3/§2.4).
+		//
 		// Version enables cobra's root --version flag — the D30 contract
 		// (release-ci#15): the installer's ensure-check and the dry-run's
 		// assert-version-contract.sh both parse `dstow --version` line 1. The
@@ -165,9 +145,9 @@ func (e *env) newRootCmd() *cobra.Command {
 		&cobra.Group{ID: groupAlso, Title: "Also:"},
 	)
 	root.AddCommand(
-		e.newStowCmd("stow", stowLong, stowExample),
-		e.newStowCmd("unstow", unstowLong, unstowExample),
-		e.newStowCmd("restow", restowLong, restowExample),
+		e.newStowCmd("stow"),
+		e.newStowCmd("unstow"),
+		e.newStowCmd("restow"),
 		e.newAdoptCmd(),
 		e.newListCmd(),
 		e.newInfoCmd(),
@@ -189,8 +169,9 @@ func (e *env) newRootCmd() *cobra.Command {
 		root.AddCommand(manual)
 	}
 	root.SetHelpCommandGroupID(groupAlso)
-	// Materialize cobra's completion command now so it carries the §2.3
-	// wording and sits in its §2.3 section.
+	// Materialize cobra's completion command now so it carries dstow's wording
+	// and sits in its §2.3 section. It is one of the built-ins the docs
+	// derivation skips (§2.4), so its Short is owned here rather than by a page.
 	root.InitDefaultCompletionCmd()
 	for _, c := range root.Commands() {
 		if c.Name() == "completion" {
@@ -198,6 +179,14 @@ func (e *env) newRootCmd() *cobra.Command {
 			c.GroupID = groupAlso
 		}
 	}
+	// Help text comes from docs/commands/, in one post-pass over the finished
+	// tree (§2.3/§2.4): the pages are the single owner, and the mapping is a
+	// property of the tree's shape, so it runs once here rather than in fifteen
+	// constructors. Same posture as the manual tree above — a malformed or
+	// incomplete docs/ tree is a repo defect the unit suite gates, never a state
+	// a built binary reaches, so checking it at startup would only ship users a
+	// broken binary in exchange for nothing.
+	_ = applyHelpDocs(dstow.Manual, root)
 	return root
 }
 

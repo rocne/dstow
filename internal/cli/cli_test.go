@@ -2,9 +2,7 @@ package cli
 
 import (
 	"bytes"
-	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -41,67 +39,10 @@ func isolateXDG(t *testing.T) {
 	t.Cleanup(xdg.Reload)
 }
 
-// TestTopLevelHelpContent asserts `dstow --help` carries DESIGN.md §2.3's
-// canonical content (A2 as amended — issue #96): the command inventory with
-// its wording, the global flag roster, and the closing prose. The expected
-// content is extracted from dev/DESIGN.md itself, so the test is anchored to
-// the design source, never to the consts it guards (no contrived-green).
-// Layout is cobra's and is deliberately not asserted.
-func TestTopLevelHelpContent(t *testing.T) {
-	isolateXDG(t)
-	block := designBlock(t, "### 2.3 Top-level help (canonical)", 0)
-
-	out, _, code := run(t, "--help")
-	if code != 0 {
-		t.Fatalf("--help exit = %d, want 0 (help is the requested data, A2)", code)
-	}
-	assertHelpContent(t, block, out)
-
-	// The bare invocation prints the same help on stdout, exit 0 (§2.1).
-	bareOut, _, bareCode := run(t)
-	if bareCode != 0 || bareOut != out {
-		t.Errorf("bare dstow: code=%d, out matches --help=%v", bareCode, bareOut == out)
-	}
-}
-
-// TestPerCommandHelpContent asserts each per-command help carries its §2.4
-// canonical block's content, extracted from DESIGN.md.
-func TestPerCommandHelpContent(t *testing.T) {
-	isolateXDG(t)
-	cases := []struct {
-		heading string
-		index   int
-		args    []string
-	}{
-		{"#### stow / unstow / restow (leaves)", 0, []string{"stow"}},
-		{"#### adopt (leaf)", 0, []string{"adopt"}},
-		{"#### repo (group)", 0, []string{"repo"}},
-		{"#### repo (group)", 1, []string{"repo", "add"}},
-		{"#### repo (group)", 2, []string{"repo", "remove"}},
-		// update and upgrade share §2.4's combined two-phase block.
-		{"#### repo (group)", 3, []string{"repo", "update"}},
-		{"#### repo (group)", 3, []string{"repo", "upgrade"}},
-		{"#### list (leaf)", 0, []string{"list"}},
-		{"#### info (leaf)", 0, []string{"info"}},
-		{"#### status (leaf)", 0, []string{"status"}},
-		{"#### check / clean / rebuild (leaves)", 0, []string{"check"}},
-		{"#### check / clean / rebuild (leaves)", 1, []string{"clean"}},
-		{"#### check / clean / rebuild (leaves)", 2, []string{"rebuild"}},
-		{"#### snippet (group)", 0, []string{"snippet"}},
-		{"#### theme (group)", 0, []string{"theme"}},
-		{"#### theme (group)", 1, []string{"theme", "slots"}},
-		{"#### theme (group)", 2, []string{"theme", "emit"}},
-	}
-	for _, tc := range cases {
-		t.Run(strings.Join(tc.args, "_"), func(t *testing.T) {
-			block := designBlock(t, tc.heading, tc.index)
-			out, _, code := run(t, append(tc.args, "--help")...)
-			if code != 0 {
-				t.Fatalf("%v --help exit = %d, want 0", tc.args, code)
-			}
-			assertHelpContent(t, block, out)
-		})
-	}
+// normWS collapses all whitespace runs to single spaces, so content assertions
+// survive layout differences (padding, wrapping, indentation).
+func normWS(s string) string {
+	return strings.Join(strings.Fields(s), " ")
 }
 
 // TestHelpColorized asserts help rides the §7.3 enable chain: --color=always
@@ -127,136 +68,6 @@ func TestHelpColorized(t *testing.T) {
 	if got := ui.StripANSI(colored); got != plain {
 		t.Errorf("strip(colored help) != plain help (O11).\n--- stripped ---\n%q\n--- plain ---\n%q", got, plain)
 	}
-}
-
-// designBlock reads dev/DESIGN.md and returns the index-th fenced code block
-// between the given heading and the next heading of equal-or-higher level.
-func designBlock(t *testing.T, heading string, index int) string {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join("..", "..", "dev", "DESIGN.md"))
-	if err != nil {
-		t.Fatalf("read DESIGN.md: %v", err)
-	}
-	text := string(data)
-	hi := strings.Index(text, heading)
-	if hi < 0 {
-		t.Fatalf("heading %q not found in DESIGN.md", heading)
-	}
-	rest := text[hi+len(heading):]
-	// Truncate at the next heading so index-th never crosses sections.
-	if next := regexp.MustCompile(`(?m)^#{1,4} `).FindStringIndex(rest); next != nil {
-		rest = rest[:next[0]]
-	}
-	for i := 0; ; i++ {
-		open := strings.Index(rest, "```")
-		if open < 0 {
-			t.Fatalf("fence %d after %q not found", index, heading)
-		}
-		afterOpen := rest[open+3:]
-		nl := strings.IndexByte(afterOpen, '\n')
-		body := afterOpen[nl+1:]
-		closing := strings.Index(body, "```")
-		if closing < 0 {
-			t.Fatalf("unterminated code fence after %q", heading)
-		}
-		if i == index {
-			return body[:closing]
-		}
-		rest = body[closing+3:]
-	}
-}
-
-// normWS collapses all whitespace runs to single spaces, so content assertions
-// survive layout differences (padding, wrapping, indentation).
-func normWS(s string) string {
-	return strings.Join(strings.Fields(s), " ")
-}
-
-// assertHelpContent asserts every content atom of a canonical §2.3/§2.4 block
-// appears in the generated help: prose lines, command-list entries (name +
-// description), flag long names with their descriptions, example lines, and
-// entry-shaped content sections (Environment:, Exit status:). Usage syntax
-// lines are cobra's and are skipped.
-func assertHelpContent(t *testing.T, block, got string) {
-	t.Helper()
-	normGot := normWS(got)
-	contains := func(kind, atom string) {
-		t.Helper()
-		if atom == "" {
-			return
-		}
-		if !strings.Contains(normGot, normWS(atom)) {
-			t.Errorf("help is missing §2.3/§2.4 %s: %q", kind, atom)
-		}
-	}
-
-	headingRe := regexp.MustCompile(`^[A-Za-z][A-Za-z ]{0,28}:$`)
-	entryRe := regexp.MustCompile(`^  (\S+)(\s{2,})(.*)$`)
-	flagStartRe := regexp.MustCompile(`^\s+-`)
-	longFlagRe := regexp.MustCompile(`--[\w-]+`)
-	flagSpecRe := regexp.MustCompile(`^\s+(-[A-Za-z], )?(--[\w-]+)( <\w+>)?\s{2,}(.*)$`)
-
-	section := ""
-	// pending accumulates a multi-line entry (command list or flag) until the
-	// next entry or section flushes it.
-	var pending []string
-	var flush func()
-	flushEntry := func(kind string) {
-		if len(pending) > 0 {
-			contains(kind, strings.Join(pending, " "))
-			pending = nil
-		}
-	}
-	flush = func() {}
-
-	for _, ln := range strings.Split(block, "\n") {
-		trimmed := strings.TrimRight(ln, " \t")
-		if trimmed == "" {
-			flush()
-			continue
-		}
-		if headingRe.MatchString(trimmed) && !strings.HasPrefix(trimmed, " ") {
-			flush()
-			section = trimmed
-			continue
-		}
-		switch section {
-		case "Usage:":
-			// Usage syntax lines belong to cobra's rendering.
-		case "Flags:", "Global flags:":
-			if flagStartRe.MatchString(trimmed) {
-				flush()
-				m := flagSpecRe.FindStringSubmatch(trimmed)
-				if m == nil {
-					t.Errorf("unparseable canonical flag line: %q", trimmed)
-					continue
-				}
-				for _, lf := range longFlagRe.FindAllString(trimmed[:len(trimmed)-len(m[4])], -1) {
-					contains("flag", lf)
-				}
-				pending = []string{m[4]}
-				flush = func() { flushEntry("flag description") }
-			} else {
-				pending = append(pending, strings.TrimSpace(trimmed))
-			}
-		case "Examples:":
-			contains("example", strings.TrimSpace(trimmed))
-		default:
-			// The §2.3 groups, group-command Commands:, Environment:, Exit
-			// status: — and prose when no entry is open.
-			if m := entryRe.FindStringSubmatch(trimmed); m != nil {
-				flush()
-				pending = []string{m[1] + " " + m[3]}
-				flush = func() { flushEntry("entry") }
-			} else if strings.HasPrefix(ln, "    ") && len(pending) > 0 {
-				pending = append(pending, strings.TrimSpace(trimmed))
-			} else {
-				flush()
-				contains("prose", trimmed)
-			}
-		}
-	}
-	flush()
 }
 
 // TestVersion prints the injected version to stdout, exit 0.

@@ -21,8 +21,6 @@ func (e *env) newListCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "list [<name>]",
-		Short:             shorts["list"],
-		Long:              listLong,
 		GroupID:           groupInspect,
 		Args:              cobra.MaximumNArgs(1),
 		ValidArgsFunction: e.completeNames,
@@ -111,9 +109,6 @@ func (e *env) newInfoCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "info [<name>]",
-		Short:             shorts["info"],
-		Long:              infoLong,
-		Example:           infoExample,
 		GroupID:           groupInspect,
 		Args:              cobra.MaximumNArgs(1),
 		ValidArgsFunction: e.completeNames,
@@ -276,9 +271,6 @@ func (e *env) newStatusCmd() *cobra.Command {
 	var asJSON bool
 	cmd := &cobra.Command{
 		Use:               "status [<name>... | <path>]",
-		Short:             shorts["status"],
-		Long:              statusLong,
-		Example:           statusExample,
 		GroupID:           groupInspect,
 		ValidArgsFunction: e.completeNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
