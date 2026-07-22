@@ -275,7 +275,7 @@ func (e *env) newNameCmd() *cobra.Command {
 	}
 
 	encode := &cobra.Command{
-		Use:    "encode",
+		Use:    "encode <segment>",
 		Hidden: true,
 		Args:   cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -284,7 +284,7 @@ func (e *env) newNameCmd() *cobra.Command {
 		},
 	}
 	decode := &cobra.Command{
-		Use:    "decode",
+		Use:    "decode <segment>",
 		Hidden: true,
 		Args:   cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

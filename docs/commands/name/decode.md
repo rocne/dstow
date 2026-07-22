@@ -8,3 +8,7 @@ Percent-decode a coordinate segment
 Percent-decode one name coordinate segment and print the plain text it stands
 for. An invalid encoding is an error.
 <!-- /dstow:long -->
+
+<!-- dstow:examples -->
+  dstow name decode 'weird%3Aname'    # -> weird:name
+<!-- /dstow:examples -->

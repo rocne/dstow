@@ -8,3 +8,7 @@ Percent-encode a coordinate segment
 Percent-encode one name coordinate segment and print it — the spelling that is
 safe to use inside a qualified name.
 <!-- /dstow:long -->
+
+<!-- dstow:examples -->
+  dstow name encode 'weird:name'      # -> weird%3Aname
+<!-- /dstow:examples -->

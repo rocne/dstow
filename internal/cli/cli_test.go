@@ -139,6 +139,19 @@ func TestNameGroup(t *testing.T) {
 	if strings.Contains(help, "\n  name ") || strings.Contains(help, "name        ") {
 		t.Errorf("hidden name group leaked into top-level help")
 	}
+
+	// Each leaf is learnable from its own help alone (audit finding C1): the
+	// usage line shows the required <segment> operand, and an example shows how
+	// to shape it. Without both, the reader cannot tell an argument is needed.
+	for _, leaf := range []string{"encode", "decode"} {
+		h, _, _ := run(t, "name", leaf, "--help")
+		if !strings.Contains(h, "name "+leaf+" <segment>") {
+			t.Errorf("name %s help omits the <segment> operand:\n%s", leaf, h)
+		}
+		if !strings.Contains(h, "Examples:") || !strings.Contains(h, "dstow name "+leaf) {
+			t.Errorf("name %s help carries no example:\n%s", leaf, h)
+		}
+	}
 }
 
 // TestSnippetRC emits the bootstrap snippet on stdout, byte-for-byte with the
