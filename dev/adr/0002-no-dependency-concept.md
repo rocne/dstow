@@ -8,7 +8,7 @@ endorsed convention). No further claims are made.
 This supersedes a fully designed subsystem — scoped declarations, warn-only
 presence-on-PATH checks ordered around pre-hooks, status detail, a machine
 query — preserved verbatim in
-[docs/attic/dependencies.md](../attic/dependencies.md). Decided on
+[dev/attic/dependencies.md](../attic/dependencies.md). Decided on
 [Bootstrap snippet and installer design (#28)](https://github.com/rocne/dstow/issues/28)
 after the design was complete, when shaping its bundled hook exposed the
 incoherence.

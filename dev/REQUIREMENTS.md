@@ -284,7 +284,7 @@ carries no cached deployment state — deployment truth lives only in status.
 **dstow has no dependency concept** — no declarations, no presence checks, no
 dependency surfaces ([ADR 0002](adr/0002-no-dependency-concept.md); the
 superseded design is preserved in
-[docs/attic/dependencies.md](attic/dependencies.md)). Dependency management is
+[dev/attic/dependencies.md](attic/dependencies.md)). Dependency management is
 user-side hook territory: a pre-hook carrying the user's own
 check-and-install commands.
 

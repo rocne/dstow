@@ -7,7 +7,7 @@ Ubuntu container and prints `PASS:`/`FAIL:` lines.
 ## The charter
 
 Assert intent, never the code's incidental behavior: every assertion must
-trace to something [docs/DESIGN.md](../../docs/DESIGN.md) actually promises,
+trace to something [dev/DESIGN.md](../../dev/DESIGN.md) actually promises,
 never to whatever the current implementation (or a stub) happens to do.
 
 ## Adding an exerciser

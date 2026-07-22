@@ -1276,7 +1276,7 @@ reservation* in v1; none ships semantics.
 
 ADRs: [0001 — the ledger is a current-state index](adr/0001-ledger-is-a-current-state-index.md);
 [0002 — no dependency concept](adr/0002-no-dependency-concept.md) (superseded
-design preserved in [docs/attic/dependencies.md](attic/dependencies.md)).
+design preserved in [dev/attic/dependencies.md](attic/dependencies.md)).
 Every other resolution ran the ADR three-part test and minted none.
 
 ## 11. Provenance
