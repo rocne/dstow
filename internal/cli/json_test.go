@@ -2,9 +2,12 @@ package cli
 
 import (
 	"encoding/json"
+	"io/fs"
+	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/rocne/dstow"
 	"github.com/rocne/dstow/internal/ledger"
 	"github.com/rocne/dstow/internal/name"
 	"github.com/rocne/dstow/internal/ops"
@@ -114,5 +117,58 @@ func TestCheckJSONClassStrings(t *testing.T) {
 	}
 	if !strings.Contains(got, `"package":"github:o/n::zsh"`) {
 		t.Errorf("check JSON must carry the package FQN: %s", got)
+	}
+}
+
+// TestJSONShapeKeysDocumented guards finding C3: every key the per-command
+// shapes emit must be enumerated in reference/index.md's "Per-command shapes"
+// section, so an agent scripting --json never has to run a command to discover
+// its fields. json.go is the single owner of the shapes, so reflecting over its
+// element structs (plus the top-level wrapper keys, which live in anonymous
+// return structs) is the authoritative key set — the same anti-drift stance the
+// slots table guard takes. info's shape is field-keyed (the Fields table), not
+// struct-keyed, so it has no struct here.
+func TestJSONShapeKeysDocumented(t *testing.T) {
+	raw, err := fs.ReadFile(dstow.Manual, "docs/reference/index.md")
+	if err != nil {
+		t.Fatalf("read reference/index.md: %v", err)
+	}
+	doc := string(raw)
+	const heading = "### Per-command shapes"
+	start := strings.Index(doc, heading)
+	if start < 0 {
+		t.Fatalf("reference/index.md has no %q section", heading)
+	}
+	section := doc[start:]
+	if next := strings.Index(section[len(heading):], "\n## "); next >= 0 {
+		section = section[:len(heading)+next]
+	}
+
+	// Element structs json.go marshals; every json tag key must appear.
+	elems := []reflect.Type{
+		reflect.TypeOf(jsonRepoRow{}), reflect.TypeOf(jsonPackageRow{}),
+		reflect.TypeOf(jsonLinkStatus{}), reflect.TypeOf(jsonPackageStatus{}),
+		reflect.TypeOf(jsonRepoSync{}), reflect.TypeOf(jsonCandidate{}),
+		reflect.TypeOf(jsonPathStatus{}), reflect.TypeOf(jsonFinding{}),
+	}
+	keys := map[string]bool{}
+	for _, ty := range elems {
+		for i := 0; i < ty.NumField(); i++ {
+			tag := ty.Field(i).Tag.Get("json")
+			if tag == "" || tag == "-" {
+				continue
+			}
+			keys[strings.Split(tag, ",")[0]] = true
+		}
+	}
+	// Top-level wrapper keys, which live in anonymous return structs.
+	for _, k := range []string{"repos", "packages", "scope", "package", "paths", "path", "findings", "qualified_name"} {
+		keys[k] = true
+	}
+
+	for k := range keys {
+		if !strings.Contains(section, "\""+k+"\"") {
+			t.Errorf("JSON key %q is emitted by json.go but not documented in reference/index.md \"Per-command shapes\"", k)
+		}
 	}
 }
