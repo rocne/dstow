@@ -16,7 +16,8 @@ const rootLong = `dstow — deploy dotfiles and configuration as symlinks, from 
 
 Name packages and repos by any unambiguous suffix of their qualified name
 (github:rocne/dotfiles::zsh). The working directory never changes what a
-command does. See 'dstow <command> --help' for details and examples.`
+command does. See 'dstow <command> --help' for details and examples.
+Run 'dstow manual' for the full documentation.`
 
 // Deploy leaves (§2.4 stow / unstow / restow, adopt).
 

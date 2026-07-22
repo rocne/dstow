@@ -181,6 +181,13 @@ func (e *env) newRootCmd() *cobra.Command {
 		e.newNameCmd(),
 		e.newVersionCmd(),
 	)
+	// The manual tree is generated from the embedded docs/ (§2.1's carve-out).
+	// A malformed tree is a repo defect the unit suite gates, never a state a
+	// built binary reaches, so the surface simply goes unwired rather than
+	// failing an unrelated command at startup.
+	if manual, err := e.newManualCmd(); err == nil {
+		root.AddCommand(manual)
+	}
 	root.SetHelpCommandGroupID(groupAlso)
 	// Materialize cobra's completion command now so it carries the §2.3
 	// wording and sits in its §2.3 section.
