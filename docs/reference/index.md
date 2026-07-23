@@ -113,7 +113,7 @@ than the config-key vocabulary, and not a synonym for it. Fields are
 | `version` | global | inherent | the running dstow's version |
 | `managed-repos-dir` | global | inherent | where managed clones live |
 | `global-config-dir` | global | inherent | the global config directory |
-| `metadata-dir` | global | inherent | the global metadata directory |
+| `metadata-dir` | global | inherent | the global metadata directory — equal to `global-config-dir` by design (see below) |
 | `ledger-path` | global | inherent | the ledger file |
 | `target` | all | configured | the effective target root |
 | `translate` | all | configured | the effective `translate_dot_prefixes` |
@@ -127,6 +127,12 @@ chain — what you *want* for it. Three configured fields are deliberately named
 differently from their config keys (`translate`, `fold`, `ignores`), because
 what `info` reports is the composed effective value rather than one file's
 declaration.
+
+The **metadata directory** is scope-relative — `.dstow/` at a repo or package
+root, and at the global scope dstow's XDG config directory itself. So at global
+scope `metadata-dir` and `global-config-dir` deliberately report the *same*
+path: they are two roles (metadata home, config home) that coincide there by
+design, not a duplicated field.
 
     dstow info zsh -f target -f ignores     repeatable
     dstow info dotfiles -r                  a repo and everything under it
