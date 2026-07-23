@@ -43,7 +43,8 @@ const (
 
 // Field is one field's value for one scope (§2.4). Value is nil unless Set; it
 // is a string, a bool, or a []string so cli/json render the native type.
-// Suggestion names the nearest applicable field for an Unknown/Illegal ask.
+// Suggestion names the nearest applicable field for an Unknown/Illegal ask, or
+// "" when nothing is a plausible typo (see nearestField).
 type Field struct {
 	Name       string
 	Group      FieldGroup
@@ -264,15 +265,17 @@ func selectFields(sd *scopeData, requested []string) []Field {
 }
 
 // nearestField returns the candidate token closest to tok by edit distance
-// (lexical tie-break), for an Unknown/Illegal suggestion. Empty candidates
-// yields "".
+// (lexical tie-break), for an Unknown/Illegal suggestion — but only when the
+// closest is within edit distance 2, a plausible typo. A wildly wrong ask
+// (further than that from every candidate) yields "" and no "did you mean" is
+// offered, matching the config-key did-you-mean gate in config.didYouMean.
+// Empty candidates yields "".
 func nearestField(tok string, candidates []string) string {
-	best, bestD := "", -1
+	best, bestD := "", 3 // suggest only within edit distance 2
 	sorted := append([]string(nil), candidates...)
 	sort.Strings(sorted)
 	for _, c := range sorted {
-		d := editDistance(tok, c)
-		if bestD == -1 || d < bestD {
+		if d := editDistance(tok, c); d < bestD {
 			best, bestD = c, d
 		}
 	}

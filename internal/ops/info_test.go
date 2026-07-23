@@ -194,9 +194,8 @@ func TestInfoUnsetUnknownIllegal(t *testing.T) {
 	if bogus.Status != ops.FieldUnknown {
 		t.Errorf("bogus = %+v, want FieldUnknown", bogus)
 	}
-	if bogus.Suggestion == "" {
-		t.Error("an unknown field should carry a suggestion")
-	}
+	// Suggestion semantics (near typo suggests, far ask stays silent) are
+	// owned by TestInfoSuggestionDistanceGated.
 	// version is a real field, but global-only — illegal for a package scope.
 	ver, _ := findField(s, "version")
 	if ver.Status != ops.FieldIllegal {
@@ -206,6 +205,43 @@ func TestInfoUnsetUnknownIllegal(t *testing.T) {
 	ig, _ := findField(s, "ignores")
 	if ig.Status != ops.FieldUnset {
 		t.Errorf("empty ignores = %+v, want FieldUnset", ig)
+	}
+}
+
+// TestInfoSuggestionDistanceGated: an unknown field close to a real one (a
+// plausible typo) carries a "did you mean" suggestion, but a wildly wrong ask
+// gets none — no confident-but-misleading pointer at the nearest field however
+// far (issue #157; the config-key did-you-mean gate applied to info fields).
+func TestInfoSuggestionDistanceGated(t *testing.T) {
+	e := newEnv(t)
+	root := e.addRepo("dots")
+	e.writeFile(filepath.Join(root, "zsh", "dot-zshrc"), "z\n")
+
+	res, err := e.app.Info(ops.InfoRequest{
+		Name:   "zsh",
+		Fields: []string{"ignorez", "bogusfield"},
+	})
+	if err != nil {
+		t.Fatalf("Info: %v", err)
+	}
+	s := res.Scopes[0]
+
+	// ignorez is one edit from ignores — a plausible typo, so it suggests.
+	near, _ := findField(s, "ignorez")
+	if near.Status != ops.FieldUnknown {
+		t.Fatalf("ignorez = %+v, want FieldUnknown", near)
+	}
+	if near.Suggestion != "ignores" {
+		t.Errorf("ignorez suggestion = %q, want %q (edit distance 1)", near.Suggestion, "ignores")
+	}
+
+	// bogusfield is far from every field; before the gate it suggested "fold".
+	far, _ := findField(s, "bogusfield")
+	if far.Status != ops.FieldUnknown {
+		t.Fatalf("bogusfield = %+v, want FieldUnknown", far)
+	}
+	if far.Suggestion != "" {
+		t.Errorf("bogusfield suggestion = %q, want none (too far to be a typo)", far.Suggestion)
 	}
 }
 
