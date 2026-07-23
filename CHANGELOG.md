@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.6.0](https://github.com/rocne/dstow/compare/v0.5.0...v0.6.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **info:** drop redundant `source` field ([#154](https://github.com/rocne/dstow/issues/154)) (#169)
+
+### Features
+
+* **cli:** help text derives from docs/commands/, the single owner ([#137](https://github.com/rocne/dstow/issues/137)) ([8998c63](https://github.com/rocne/dstow/commit/8998c63c83bd9d9069b9f9ae85c4112e0b3e1bde))
+* **cli:** hidden manual tree mirrors docs/ as commands ([#134](https://github.com/rocne/dstow/issues/134)) ([20a1d7c](https://github.com/rocne/dstow/commit/20a1d7c829b08f7b7275acd138c69bd7d79ba109)), closes [#130](https://github.com/rocne/dstow/issues/130)
+* **cli:** orientation note when no repos are registered ([#153](https://github.com/rocne/dstow/issues/153)) ([#167](https://github.com/rocne/dstow/issues/167)) ([26ae938](https://github.com/rocne/dstow/commit/26ae9386b19ff6f8a554aa42afec3aeb1c43fcfc))
+
+
+### Bug Fixes
+
+* **cli:** deploy per-package not-found names its §1.4 remedy ([#151](https://github.com/rocne/dstow/issues/151)) ([#162](https://github.com/rocne/dstow/issues/162)) ([edaca2f](https://github.com/rocne/dstow/commit/edaca2f1c012f5f0fd510cacb54f32cdf9d2cd7f))
+* **cli:** H7 write commands refuse from inside a hook ([#143](https://github.com/rocne/dstow/issues/143)) ([9053b53](https://github.com/rocne/dstow/commit/9053b53a5678571745db6a5cf8bd27d8fe5fbcc3)), closes [#139](https://github.com/rocne/dstow/issues/139)
+* **cli:** name encode/decode show &lt;segment&gt; operand and an example ([#150](https://github.com/rocne/dstow/issues/150)) ([#160](https://github.com/rocne/dstow/issues/160)) ([63d45ed](https://github.com/rocne/dstow/commit/63d45edfd561a7bca71e8b3e0de755c61ff8129b))
+* **info:** drop redundant `source` field ([#154](https://github.com/rocne/dstow/issues/154)) ([#169](https://github.com/rocne/dstow/issues/169)) ([2cfe77c](https://github.com/rocne/dstow/commit/2cfe77c306c8aca7ec6b39fb2faea46fee5dc381))
+* **info:** gate field "did you mean" by edit distance ([#157](https://github.com/rocne/dstow/issues/157)) ([#174](https://github.com/rocne/dstow/issues/174)) ([719bede](https://github.com/rocne/dstow/commit/719bedea7334b7597c67dcfc0c6de0edde2f9951))
+
 ## [0.5.0](https://github.com/rocne/dstow/compare/v0.4.0...v0.5.0) (2026-07-20)
 
 
