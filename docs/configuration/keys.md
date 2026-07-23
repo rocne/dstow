@@ -93,6 +93,12 @@ definitionally a package, and a hidden directory there is skipped **loudly**:
 you named a dedicated packages directory, so something hidden inside it is
 worth telling you about.
 
+`packages_dir` has no `dstow info` field, by design. `info`'s configured fields
+report *composed* effective values (target, translate, fold, ignores,
+exclude-from-bulk all resolve across the config levels); `packages_dir` is
+repo-level only, so there is nothing to compose — its value is the one line in
+the repo's `.dstow/config.toml`. Read it there, or here in the manual.
+
 ### `fold_trees`
 
 GNU Stow's "tree folding": link a whole directory when dstow owns all of it,

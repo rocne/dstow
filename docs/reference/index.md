@@ -126,7 +126,9 @@ it came to be. **Configured** fields are effective values from the config
 chain — what you *want* for it. Three configured fields are deliberately named
 differently from their config keys (`translate`, `fold`, `ignores`), because
 what `info` reports is the composed effective value rather than one file's
-declaration.
+declaration. For the same reason `packages_dir` has no field: it is repo-level
+only, so it never composes — read it directly in the repo's config or the
+manual, not through `info`.
 
 The **metadata directory** is scope-relative — `.dstow/` at a repo or package
 root, and at the global scope dstow's XDG config directory itself. So at global
