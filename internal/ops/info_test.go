@@ -75,6 +75,25 @@ func TestInfoGlobalMetadataDirIsConfigDir(t *testing.T) {
 	}
 }
 
+// TestInfoPackagesDirNotAField guards #156: `packages_dir` is a settable
+// repo-level config key, but info's configured fields report *composed*
+// effective values and packages_dir is repo-level only (nothing to compose), so
+// it is deliberately not an info field. Pin that it reads as an unknown field
+// (exit-2 territory) at repo scope, so it can't drift in half-added.
+func TestInfoPackagesDirNotAField(t *testing.T) {
+	e := newEnv(t)
+	e.addRepo("dots")
+
+	res, err := e.app.Info(ops.InfoRequest{Name: "dots", Fields: []string{"packages_dir"}})
+	if err != nil {
+		t.Fatalf("Info: %v", err)
+	}
+	f, ok := findField(res.Scopes[0], "packages_dir")
+	if !ok || f.Status != ops.FieldUnknown {
+		t.Errorf("info dots -f packages_dir: got %+v (ok=%v), want an unknown field", f, ok)
+	}
+}
+
 // TestInfoGlobalVersionUnset: an empty version is applicable-but-unset (exit 1
 // territory), distinct from an unknown field (§2.4).
 func TestInfoGlobalVersionUnset(t *testing.T) {
