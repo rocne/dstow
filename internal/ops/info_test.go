@@ -51,6 +51,30 @@ func TestInfoGlobalGroups(t *testing.T) {
 	}
 }
 
+// TestInfoGlobalMetadataDirIsConfigDir guards #155: at the global scope the
+// metadata directory *is* dstow's XDG config directory (CONTEXT §Metadata
+// directory), so `metadata-dir` and `global-config-dir` deliberately report the
+// same path. This intentional coincidence is documented, not a bug; pin it so a
+// future change to one field can't silently diverge from the other unnoticed.
+func TestInfoGlobalMetadataDirIsConfigDir(t *testing.T) {
+	e := newEnv(t)
+	e.addRepo("dots")
+
+	res, err := e.app.Info(ops.InfoRequest{Fields: []string{"global-config-dir", "metadata-dir"}})
+	if err != nil {
+		t.Fatalf("Info: %v", err)
+	}
+	g := res.Scopes[0]
+	cfg, okc := findField(g, "global-config-dir")
+	meta, okm := findField(g, "metadata-dir")
+	if !okc || !okm || cfg.Status != ops.FieldSet || meta.Status != ops.FieldSet {
+		t.Fatalf("want both fields set: cfg=%+v meta=%+v", cfg, meta)
+	}
+	if cfg.Value != meta.Value {
+		t.Errorf("global metadata-dir (%q) must equal global-config-dir (%q) by design", meta.Value, cfg.Value)
+	}
+}
+
 // TestInfoGlobalVersionUnset: an empty version is applicable-but-unset (exit 1
 // territory), distinct from an unknown field (§2.4).
 func TestInfoGlobalVersionUnset(t *testing.T) {
