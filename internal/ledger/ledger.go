@@ -51,17 +51,42 @@ type Ledger struct {
 	Targets map[string][]Entry `json:"targets"` // absolute target root → entries; the grouping is rebuild's replace boundary
 }
 
+// documentName and lockName are the two basenames dstow writes into the
+// ledger directory (§6.1/§6.2): the state document and its advisory lock.
+// They live here because ledger owns them — config's M5 scan borrows them
+// through ReservedNames rather than re-spelling them.
+const (
+	documentName = "ledger.json"
+	lockName     = "ledger.lock"
+)
+
+// Dir is the directory holding the ledger document and its lock,
+// $XDG_STATE_HOME/dstow (§6.1) — one state lane for both, via adrg/xdg.
+func Dir() string {
+	return filepath.Join(xdg.StateHome, "dstow")
+}
+
 // Path is the one ledger document per machine: $XDG_STATE_HOME/dstow/ledger.json
 // (§6.1). Machine state lives in JSON in its XDG state lane, via adrg/xdg.
 func Path() string {
-	return filepath.Join(xdg.StateHome, "dstow", "ledger.json")
+	return filepath.Join(Dir(), documentName)
 }
 
 // LockPath is the sibling ledger.lock of the given ledger path (§6.2): writers
 // take an exclusive advisory flock on it; the ledger document itself is never
 // locked.
 func LockPath(path string) string {
-	return filepath.Join(filepath.Dir(path), "ledger.lock")
+	return filepath.Join(filepath.Dir(path), lockName)
+}
+
+// ReservedNames returns the basenames dstow writes into the ledger directory —
+// the state document and its lock. config's M5 reserved-territory scan consults
+// these when the global config dir and the ledger's state dir resolve to the
+// same directory (the macOS default, where $XDG_CONFIG_HOME and $XDG_STATE_HOME
+// both point at ~/Library/Application Support), so dstow never flags state it
+// wrote itself as an unexpected intruder in its own config dir.
+func ReservedNames() []string {
+	return []string{documentName, lockName}
 }
 
 // CorruptError refuses an unparseable or invalid-version ledger (§6.5):
