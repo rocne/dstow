@@ -1,0 +1,88 @@
+name: Docs release-type guard
+
+# dstow-local guard (issue #175, ADR 0003). The whole docs/ tree is compiled
+# into the binary (embed.go — //go:embed all:docs) and dispensed as two
+# user-facing surfaces: the `dstow manual` command group and every command's
+# --help text. So editing a file under docs/ changes what a released binary
+# prints — it is binary content, not documentation *about* the project.
+#
+# The reflex is to commit a docs/ edit as `docs:`, which release-please treats
+# as a non-releasing type: no version bump, no release PR, and the corrected
+# manual never reaches a tagged build. release-please has no knob to make `docs`
+# bump (changelog-sections controls visibility only), so this is a
+# classification problem, fixed by convention + this guard:
+#
+#   docs/** correction        -> fix(manual): ...   (patch)
+#   docs/** new/expanded       -> feat(manual): ...  (minor)
+#   dev/**, README, CLAUDE.md  -> docs: ...          (correctly no release)
+#
+# Deliberately NOT pushed up into rocne/release-ci: dstow is the only consumer
+# that embeds its docs, and encoding one consumer's specifics upstream is the
+# coupling release-ci#29 warns against. It graduates to a canonical check if
+# another tool ever embeds docs.
+#
+# Keys off the PR title: squash-merge lands the PR title as the conventional
+# commit release-please reads (repo setting: squash_merge_commit_title =
+# COMMIT_OR_PR_TITLE). `edited` is listened for so retitling re-runs the guard
+# without re-running the full suite — the same reason pr-title.yml does.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a releasing type when docs/** changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eu
+
+          # In scope: docs/** — the embedded, user-facing tree. Exempt paths
+          # (dev/**, README.md, CLAUDE.md, CONTEXT.md, CHANGELOG.md) are
+          # author-facing and NOT embedded, so they simply never match docs/.
+          if ! gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' \
+               | grep -q '^docs/'; then
+            echo "No docs/** changes — guard not applicable."
+            exit 0
+          fi
+          echo "PR touches docs/** — compiled into the binary via //go:embed all:docs."
+
+          # Releasing conventional-commit types (release-please default):
+          # feat -> minor, fix -> patch, and any type with ! or a BREAKING
+          # CHANGE footer -> major. Everything else cuts no release.
+          if printf '%s\n' "$TITLE" | grep -Eq '^(feat|fix)(\([^)]*\))?!?:' \
+             || printf '%s\n' "$TITLE" | grep -Eq '^[a-z]+(\([^)]*\))?!:' \
+             || printf '%s\n' "$BODY"  | grep -q 'BREAKING CHANGE'; then
+            echo "OK — \"$TITLE\" is a releasing type; the manual change ships in a tagged release."
+            exit 0
+          fi
+
+          echo "::error title=docs/** needs a releasing commit type::PR title \"$TITLE\" is non-releasing"
+          {
+            echo "This PR edits docs/**, which is compiled into the binary"
+            echo "(//go:embed all:docs) and dispensed as 'dstow manual' and every"
+            echo "command's --help. That is user-facing binary content, so it must"
+            echo "ship in a versioned release — but this PR title is a non-releasing"
+            echo "type, so release-please cuts no release and the corrected manual"
+            echo "silently never reaches users."
+            echo
+            echo "Fix — retitle the PR (squash-merge lands the PR title):"
+            echo "  correction to existing manual/help  ->  fix(manual): ..."
+            echo "  new / materially expanded content    ->  feat(manual): ..."
+            echo "Reserve 'docs:' for non-embedded docs (dev/**, README.md,"
+            echo "CLAUDE.md, CONTEXT.md). Rare one-off without reclassifying:"
+            echo "add 'Release-As: x.y.z' to the squash-commit body."
+            echo "See issue #175 / dev/adr/0003-embedded-docs-are-binary-content.md."
+          } >&2
+          exit 1
