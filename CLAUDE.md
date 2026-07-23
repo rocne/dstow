@@ -11,6 +11,10 @@
 
 - **Mobile terminal.** When Rocne says he's on mobile / "can't see" (or similar), his view is ~19 short lines. Be terse and deliver **one step at a time**: say how many parts there are, give part 1, wait for his ack, then the next ("3 things — here's 1"). Never dump a long multi-section answer at once.
 
+## Commit typing
+
+- **`docs/**` is binary content, not project docs.** The whole `docs/` tree is compiled into the binary (`//go:embed all:docs`) and dispensed as `dstow manual` and every command's `--help`. So a change under `docs/**` is user-facing product content and **must ship in a versioned release**: type it `fix(manual):` (a correction — patch) or `feat(manual):` (new/expanded content — minor), **never `docs:`**. `docs:` is only for non-embedded docs — `dev/**`, `README.md`, `CLAUDE.md`, `CONTEXT.md`, `CHANGELOG.md`. A `docs/**` PR with a non-releasing title fails CI (`docs-release-guard.yml`). See `dev/adr/0003-embedded-docs-are-binary-content.md`.
+
 ## Agent skills
 
 ### Issue tracker
