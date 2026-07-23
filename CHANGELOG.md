@@ -12,6 +12,9 @@
 * **cli:** help text derives from docs/commands/, the single owner ([#137](https://github.com/rocne/dstow/issues/137)) ([8998c63](https://github.com/rocne/dstow/commit/8998c63c83bd9d9069b9f9ae85c4112e0b3e1bde))
 * **cli:** hidden manual tree mirrors docs/ as commands ([#134](https://github.com/rocne/dstow/issues/134)) ([20a1d7c](https://github.com/rocne/dstow/commit/20a1d7c829b08f7b7275acd138c69bd7d79ba109)), closes [#130](https://github.com/rocne/dstow/issues/130)
 * **cli:** orientation note when no repos are registered ([#153](https://github.com/rocne/dstow/issues/153)) ([#167](https://github.com/rocne/dstow/issues/167)) ([26ae938](https://github.com/rocne/dstow/commit/26ae9386b19ff6f8a554aa42afec3aeb1c43fcfc))
+* **manual:** expansive command-page prose ([#141](https://github.com/rocne/dstow/issues/141)) ([#144](https://github.com/rocne/dstow/issues/144)) ([b2a9a28](https://github.com/rocne/dstow/commit/b2a9a28))
+* **manual:** reclaim docs/ as the user-facing manual tree, move internal docs to dev/ ([#133](https://github.com/rocne/dstow/issues/133)) ([5b72f9f](https://github.com/rocne/dstow/commit/5b72f9f))
+* **manual:** write the manual — topic tree + the five CLI-unreachable references ([#140](https://github.com/rocne/dstow/issues/140)) ([9685545](https://github.com/rocne/dstow/commit/9685545))
 
 
 ### Bug Fixes
@@ -21,6 +24,13 @@
 * **cli:** name encode/decode show &lt;segment&gt; operand and an example ([#150](https://github.com/rocne/dstow/issues/150)) ([#160](https://github.com/rocne/dstow/issues/160)) ([63d45ed](https://github.com/rocne/dstow/commit/63d45edfd561a7bca71e8b3e0de755c61ff8129b))
 * **info:** drop redundant `source` field ([#154](https://github.com/rocne/dstow/issues/154)) ([#169](https://github.com/rocne/dstow/issues/169)) ([2cfe77c](https://github.com/rocne/dstow/commit/2cfe77c306c8aca7ec6b39fb2faea46fee5dc381))
 * **info:** gate field "did you mean" by edit distance ([#157](https://github.com/rocne/dstow/issues/157)) ([#174](https://github.com/rocne/dstow/issues/174)) ([719bede](https://github.com/rocne/dstow/commit/719bedea7334b7597c67dcfc0c6de0edde2f9951))
+* **manual:** complete the theming slots.md consumer table ([#148](https://github.com/rocne/dstow/issues/148)) ([#163](https://github.com/rocne/dstow/issues/163)) ([ef184d8](https://github.com/rocne/dstow/commit/ef184d8))
+* **manual:** document packages_dir has no info field, by design ([#156](https://github.com/rocne/dstow/issues/156)) ([#173](https://github.com/rocne/dstow/issues/173)) ([0b577e8](https://github.com/rocne/dstow/commit/0b577e8))
+* **manual:** document per-command --json shapes ([#152](https://github.com/rocne/dstow/issues/152)) ([#164](https://github.com/rocne/dstow/issues/164)) ([474729d](https://github.com/rocne/dstow/commit/474729d))
+* **manual:** document theme slots --json, the fifth shape ([#165](https://github.com/rocne/dstow/issues/165)) ([#178](https://github.com/rocne/dstow/issues/178)) ([f03711e](https://github.com/rocne/dstow/commit/f03711e))
+* **manual:** list --repos help/manual match the terse human row ([#149](https://github.com/rocne/dstow/issues/149)) ([#166](https://github.com/rocne/dstow/issues/166)) ([cdd69f5](https://github.com/rocne/dstow/commit/cdd69f5))
+* **manual:** note global metadata-dir == config-dir is by design ([#155](https://github.com/rocne/dstow/issues/155)) ([#171](https://github.com/rocne/dstow/issues/171)) ([258202c](https://github.com/rocne/dstow/commit/258202c))
+* **manual:** scope the exit-3 decline note to guard/ambiguity prompts ([#147](https://github.com/rocne/dstow/issues/147)) ([#159](https://github.com/rocne/dstow/issues/159)) ([f0118ee](https://github.com/rocne/dstow/commit/f0118ee))
 
 ## [0.5.0](https://github.com/rocne/dstow/compare/v0.4.0...v0.5.0) (2026-07-20)
 
