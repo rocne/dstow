@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/rocne/dstow/internal/ledger"
 	"github.com/rocne/dstow/internal/name"
 )
 
@@ -228,9 +229,22 @@ func mergeCarriers(level Level, native, rc *carrier) (*carrier, []Warning) {
 // LoadGlobal loads the global level: $XDG_CONFIG_HOME/dstow/config.toml
 // supplemented by ~/.stowrc (slotted global, C20), plus the reserved-
 // territory scan of the global config dir (M5: claimed entries are
-// config.toml, repos.toml, themes/, hooks/).
+// config.toml, repos.toml, themes/, hooks/). When the config dir and the
+// ledger's state dir resolve to the same directory (the macOS default), the
+// ledger's own files are claimed too, so dstow never flags its own state.
 func LoadGlobal() (*GlobalLevel, []Warning, error) {
-	warns := scanReserved(GlobalConfigDir(), configFileName, "repos.toml", "themes", "hooks")
+	claimed := []string{configFileName, "repos.toml", "themes", "hooks"}
+	// M5 across the macOS-default lane collision: when the global config dir
+	// and the ledger's state dir are the same directory (xdg.ConfigHome ==
+	// xdg.StateHome, as on stock macOS where both resolve to ~/Library/
+	// Application Support), dstow's own ledger.json/ledger.lock sit inside the
+	// config dir. Claim them so the scan never flags state dstow wrote itself.
+	// Where the lanes differ (stock Linux), a stray ledger.json dropped in the
+	// config dir still warns — the guard is collision-conditional by design.
+	if GlobalConfigDir() == ledger.Dir() {
+		claimed = append(claimed, ledger.ReservedNames()...)
+	}
+	warns := scanReserved(GlobalConfigDir(), claimed...)
 
 	native, w, err := loadCarrier(GlobalConfigFile(), false, LevelGlobal)
 	warns = append(warns, w...)

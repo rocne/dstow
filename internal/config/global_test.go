@@ -6,7 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/adrg/xdg"
+
 	"github.com/rocne/dstow/internal/config"
+	"github.com/rocne/dstow/internal/ledger"
 )
 
 // findWarning returns the first warning whose Detail contains every needle.
@@ -313,5 +316,64 @@ func TestGlobalDirUnknownEntryWarns(t *testing.T) {
 	}
 	if w := findWarning(warns, "themes"); w != nil {
 		t.Errorf("claimed entry themes/ drew a warning: %v", *w)
+	}
+}
+
+// M5 / #181: on the macOS default layout the config dir and the ledger's state
+// dir are the same directory (adrg/xdg maps both $XDG_CONFIG_HOME and
+// $XDG_STATE_HOME to ~/Library/Application Support). dstow's own ledger.json
+// and ledger.lock then sit inside the config dir, and the scan must NOT flag
+// state dstow wrote itself — while a genuinely stray entry still warns.
+func TestGlobalDirColocatedLedgerFilesNotFlagged(t *testing.T) {
+	globalDir, _ := setupEnv(t)
+	// Point the state lane at the same base as the config lane, reproducing the
+	// collision on any platform.
+	t.Setenv("XDG_STATE_HOME", filepath.Dir(globalDir))
+	xdg.Reload()
+	if config.GlobalConfigDir() != ledger.Dir() {
+		t.Fatalf("precondition: config dir %q and ledger dir %q should coincide",
+			config.GlobalConfigDir(), ledger.Dir())
+	}
+
+	writeFile(t, filepath.Join(globalDir, "ledger.json"), "{}")
+	writeFile(t, filepath.Join(globalDir, "ledger.lock"), "")
+	writeFile(t, filepath.Join(globalDir, "stray.txt"), "boo")
+
+	_, warns, err := config.LoadGlobal()
+	if err != nil {
+		t.Fatalf("LoadGlobal: %v", err)
+	}
+	if w := findWarning(warns, "ledger.json"); w != nil {
+		t.Errorf("dstow's own ledger.json drew an M5 warning on the colocated layout: %v", *w)
+	}
+	if w := findWarning(warns, "ledger.lock"); w != nil {
+		t.Errorf("dstow's own ledger.lock drew an M5 warning on the colocated layout: %v", *w)
+	}
+	if findWarning(warns, "stray.txt") == nil {
+		t.Errorf("a genuinely stray entry no longer warns; warnings: %v", warns)
+	}
+}
+
+// M5 / #181: the ledger allow-list is collision-conditional. Where the config
+// and state lanes differ (stock Linux), a ledger.json dropped in the config dir
+// is genuinely stray and MUST still warn — the scan does not go blind.
+func TestGlobalDirStrayLedgerFileWarnsWhenLanesDiffer(t *testing.T) {
+	globalDir, _ := setupEnv(t)
+	// A distinct state lane, guaranteed different on every platform.
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+	xdg.Reload()
+	if config.GlobalConfigDir() == ledger.Dir() {
+		t.Fatalf("precondition: config dir and ledger dir must differ, both were %q",
+			config.GlobalConfigDir())
+	}
+
+	writeFile(t, filepath.Join(globalDir, "ledger.json"), "{}")
+
+	_, warns, err := config.LoadGlobal()
+	if err != nil {
+		t.Fatalf("LoadGlobal: %v", err)
+	}
+	if findWarning(warns, "ledger.json") == nil {
+		t.Errorf("a stray ledger.json in the config dir should still warn when the lanes differ; warnings: %v", warns)
 	}
 }

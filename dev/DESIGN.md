@@ -480,7 +480,16 @@ ledger M1–M8 as amended.*
   claimed entries are `config.toml` and `hooks/`; unknown top-level entries
   draw a C18-style warning, never a refusal. Same posture in
   `$XDG_CONFIG_HOME/dstow/` (claimed: `config.toml`, `repos.toml`, `themes/`,
-  `hooks/`).
+  `hooks/`). **Lane-collision carve-out:** where `$XDG_CONFIG_HOME` and
+  `$XDG_STATE_HOME` resolve to the same directory — the macOS default, both
+  `~/Library/Application Support` — the ledger's own `ledger.json`/`ledger.lock`
+  land in the config dir, so they are claimed there too and dstow never flags
+  state it wrote itself. **Collision-conditional**: where the lanes differ
+  (stock Linux, `~/.config` ≠ `~/.local/state`) a stray `ledger.json` in the
+  config dir still warns. `ledger` owns the names (`ledger.ReservedNames`);
+  `config` borrows them under the `GlobalConfigDir() == ledger.Dir()` guard.
+  (Ruled [#181](https://github.com/rocne/dstow/issues/181), 2026-07-23,
+  retractable — additively removable if macOS state ever gets a distinct lane.)
 - **Hooks: `.dstow/hooks/`, eight per-event executables, git-style** (M6):
   `{pre,post}-{stow,unstow,restow,adopt}` at all three levels (global:
   `$XDG_CONFIG_HOME/dstow/hooks/`). **Restow fires only the restow pair.**

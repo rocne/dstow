@@ -314,3 +314,44 @@ func TestPathHonorsXDGStateHome(t *testing.T) {
 		t.Errorf("LockPath() = %q, want %q", got, want)
 	}
 }
+
+// TestDirIsPathParent pins Dir() as the directory holding the ledger document
+// and its lock — the value config's M5 scan compares against its config dir.
+func TestDirIsPathParent(t *testing.T) {
+	state := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", state)
+	xdg.Reload()
+	t.Cleanup(xdg.Reload)
+
+	if got, want := ledger.Dir(), filepath.Join(state, "dstow"); got != want {
+		t.Errorf("Dir() = %q, want %q", got, want)
+	}
+	if got := filepath.Dir(ledger.Path()); got != ledger.Dir() {
+		t.Errorf("filepath.Dir(Path()) = %q, want Dir() = %q", got, ledger.Dir())
+	}
+}
+
+// TestReservedNamesAreTheLedgerBasenames pins the names config borrows for its
+// M5 scan to the actual basenames Path()/LockPath() write, so the two owners
+// can never drift.
+func TestReservedNamesAreTheLedgerBasenames(t *testing.T) {
+	names := ledger.ReservedNames()
+	want := map[string]bool{
+		filepath.Base(ledger.Path()):                  false,
+		filepath.Base(ledger.LockPath(ledger.Path())): false,
+	}
+	if len(names) != len(want) {
+		t.Fatalf("ReservedNames() = %v, want the %d ledger basenames", names, len(want))
+	}
+	for _, n := range names {
+		if _, ok := want[n]; !ok {
+			t.Errorf("ReservedNames() contains %q, not a ledger basename", n)
+		}
+		want[n] = true
+	}
+	for n, seen := range want {
+		if !seen {
+			t.Errorf("ReservedNames() omits the ledger basename %q", n)
+		}
+	}
+}
