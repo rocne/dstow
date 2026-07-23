@@ -7,6 +7,10 @@
 - **Tell the user which GitHub issue number is the current wayfinder map** when orienting the session.
 - **Read operations on issues to orient the session** — especially determining the map issue — **are allowed** before any go-ahead. Read operations done as research in pursuance of executing some task fall under "don't start without permission."
 
+## Output format
+
+- **Mobile terminal.** When Rocne says he's on mobile / "can't see" (or similar), his view is ~19 short lines. Be terse and deliver **one step at a time**: say how many parts there are, give part 1, wait for his ack, then the next ("3 things — here's 1"). Never dump a long multi-section answer at once.
+
 ## Agent skills
 
 ### Issue tracker
