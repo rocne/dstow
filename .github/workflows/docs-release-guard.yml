@@ -51,7 +51,7 @@ jobs:
           # In scope: docs/** — the embedded, user-facing tree. Exempt paths
           # (dev/**, README.md, CLAUDE.md, CONTEXT.md, CHANGELOG.md) are
           # author-facing and NOT embedded, so they simply never match docs/.
-          if ! gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].path' \
+          if ! gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' \
                | grep -q '^docs/'; then
             echo "No docs/** changes — guard not applicable."
             exit 0
