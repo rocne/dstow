@@ -77,6 +77,11 @@ Two identities in that table are structural rather than incidental:
 Because the mapping lives in code beside the descriptions `dstow theme slots`
 prints, the two cannot drift: the printed consumer list *is* the mapping.
 
+`dstow theme slots --json` emits this same roster for theme tooling — an array
+of `{ slot, description, consumers }`, one object per slot in printed order. Its
+shape is enumerated with the other machine-output surfaces in
+`dstow manual reference`.
+
 ## Why two stages
 
 The alternative — themes naming dstow's concepts directly, with an `orphaned`

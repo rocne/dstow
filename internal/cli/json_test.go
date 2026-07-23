@@ -150,6 +150,7 @@ func TestJSONShapeKeysDocumented(t *testing.T) {
 		reflect.TypeOf(jsonLinkStatus{}), reflect.TypeOf(jsonPackageStatus{}),
 		reflect.TypeOf(jsonRepoSync{}), reflect.TypeOf(jsonCandidate{}),
 		reflect.TypeOf(jsonPathStatus{}), reflect.TypeOf(jsonFinding{}),
+		reflect.TypeOf(jsonSlot{}),
 	}
 	keys := map[string]bool{}
 	for _, ty := range elems {

@@ -11,8 +11,9 @@ it reads, and where its files live.
 
 ## Machine output
 
-`--json` is available on `list`, `info`, `status`, and `check` — the four read
-surfaces. It is the supported scripting interface for anything more structured
+`--json` is available on the four read surfaces — `list`, `info`, `status`, and
+`check` — and on `theme slots`, which emits the slot vocabulary for theme
+tooling. It is the supported scripting interface for anything more structured
 than an exit code.
 
 - JSON keys are `snake_case`.
@@ -98,6 +99,14 @@ Seven keys are **conditional** — present only when they carry a value:
 `scope`, `detail`, `error`, `link_dest`, `owner`, and a finding's `source` and
 `destination`.
 
+**`theme slots`** — the slot vocabulary as an array, one object per slot, in the
+same order `dstow theme slots` prints, every key always present:
+
+```json
+[ { "slot": "section1", "description": "section headings",
+    "consumers": [ "heading" ] } ]
+```
+
 ## Fields
 
 `dstow info` reports **fields**, and the field vocabulary is its own — shorter
@@ -155,7 +164,7 @@ Available on every command:
 | `-v`, `--version` | Print the version (root only). |
 
 Per-command: `-n`/`--dry-run` on `stow`, `unstow`, `restow`, and `adopt`;
-`--json` on `list`, `info`, `status`, and `check`.
+`--json` on `list`, `info`, `status`, `check`, and `theme slots`.
 
 ## What `--yes` does and does not do
 
