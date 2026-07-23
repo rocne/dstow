@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/rocne/dstow/compare/v0.6.0...v0.6.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **config:** stop flagging dstow's own ledger files when config and state dirs coincide ([#186](https://github.com/rocne/dstow/issues/186)) ([0bcf201](https://github.com/rocne/dstow/commit/0bcf201db278ef18e0da2f49bcd863fef857e172))
+
 ## [0.6.0](https://github.com/rocne/dstow/compare/v0.5.0...v0.6.0) (2026-07-23)
 
 
