@@ -623,6 +623,16 @@ write-side courtesy only.
   for the **whole operation** (read ledger → filesystem work → write
   ledger). Pure readers take no lock. Contention **fails fast** with a clear
   error (dpkg/pacman precedent).
+- The lock file is a **persistent, empty flock target**: created on demand,
+  never written to, and deliberately **left in place** when the lock releases.
+  A leftover `ledger.lock` is therefore never evidence of a stale lock — the
+  flock is held by a descriptor and dies with the process, so a crashed dstow
+  blocks nothing. It is claimed reserved territory (M5), so it is never
+  flagged on any layout. (Ruled
+  [#182](https://github.com/rocne/dstow/issues/182), 2026-07-25, retractable
+  — the counter, unlink-on-clean-release, is preserved on the ticket: it
+  reintroduces the create/unlink race a persistent target avoids and still
+  cannot cover the crash path, so it buys tidiness only.)
 
 ### 6.3 Pruning discipline
 
