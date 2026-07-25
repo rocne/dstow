@@ -13,6 +13,18 @@ and refuses to delete a managed clone holding work not present at its
 source. Every refusal names its remedy.
 <!-- /dstow:long -->
 
+## The operand is a name, not a path
+
+remove takes the **name** of a registered repo — the spelling `dstow list`
+shows, or its canonical `local:/abs/path` / `github:owner/name` form. A path
+operand (anything starting with `/`, `~/`, `./`, or `../`) is refused with a
+`fix:` naming the qualified form, and exits `2`.
+
+This is deliberate, and not an inconsistency with `add`. The two commands take
+different kinds of operand: `add` takes a **source**, which is where a repo
+comes from and has no name yet; `remove` takes the **name** of something already
+registered. `dstow manual concepts naming` has the full operand rule.
+
 ## The two guards
 
 remove refuses in two situations:

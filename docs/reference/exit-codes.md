@@ -42,7 +42,9 @@ The invocation was malformed and dstow never got as far as doing anything:
 - An operand of the wrong shape for the command, including an unknown field
   name for `info -f`.
 
-Every exit `2` prints the error and a `fix:` line pointing at `--help`. If you
+Every exit `2` prints the error and a `fix:` line — usually pointing at
+`--help`, but at the correct spelling where dstow can name one. Handing
+`repo remove` a path says so and shows you the qualified form. If you
 are scripting dstow, treat `2` as "my command line is wrong" — it never means
 anything about the state of your system.
 

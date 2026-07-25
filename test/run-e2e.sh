@@ -34,6 +34,7 @@ run_test deploy.sh
 run_test ledger.sh
 run_test hooks.sh
 run_test exitcodes.sh
+run_test operands.sh
 run_test theme.sh
 
 printf '\nAll e2e tests passed.\n'

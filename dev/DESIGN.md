@@ -85,6 +85,18 @@ A **path operand** starts with `/`, `~/`, `./`, or `../` and always refers to
 the *target* world. A **name expression** is anything else and resolves
 against the registry. The first character decides; no command ever guesses.
 
+A command whose operand kind is **fixed** classifies before resolving and
+**refuses the other kind** as a malformed invocation (exit 2, A3 — a kind
+mismatch is not a lookup failure), naming the spelling it wanted. `adopt`
+states this for a path-taking verb; `repo remove` for a name-taking one. All
+four prefixes behave alike: the classifier is `name.IsPathOperand`, never a
+re-derivation. `repo add` is not an exception — it takes a **source** (§5.2),
+a different grammar, which is why a path is legal there and not at `remove`.
+Accepting a path *as a name* would be an input-side alias, and §1.4 ships
+none in v1. (Ruled [#183](https://github.com/rocne/dstow/issues/183),
+2026-07-25; the direction is the additive one — releasing a spelling later is
+additive, imposing a refusal later is not.)
+
 ### 1.4 Identifier resolution and aliasing
 
 Identifier resolution is **one generic system**: canonical identifiers plus
