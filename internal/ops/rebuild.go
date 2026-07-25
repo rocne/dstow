@@ -57,9 +57,12 @@ func (a *App) Rebuild() (*RebuildResult, error) {
 
 	targets := a.rebuildTargets(ctxs, res)
 
-	// Empty Scope{}: no pruning — rebuild replaces scanned groups wholesale
-	// and every unscanned group survives untouched.
-	_, uerr := ledger.Update(a.LedgerPath, ledger.Scope{}, func(l *ledger.Ledger) error {
+	// Recover, not Update: no pruning — rebuild replaces scanned groups
+	// wholesale and every unscanned group survives untouched — and a corrupt
+	// document is discarded rather than refused, since rebuild reconstructs
+	// from disk and does not need the old contents (#145). A newer-version
+	// ledger still refuses (§6.5: never rewrite one down).
+	discarded, uerr := ledger.Recover(a.LedgerPath, func(l *ledger.Ledger) error {
 		for _, root := range targets {
 			entries, scanned, warns := a.scanTarget(root, owners)
 			res.Warnings = append(res.Warnings, warns...)
@@ -85,7 +88,17 @@ func (a *App) Rebuild() (*RebuildResult, error) {
 		return nil
 	})
 	if uerr != nil {
-		return nil, uerr // corrupt / newer-version / lock refusals pass through
+		return nil, uerr // newer-version / lock refusals pass through
+	}
+	// §6.5: corruption must never degrade into amnesia. Recovering from an
+	// unreadable ledger loses whatever it recorded for target roots this
+	// rebuild did not scan, so the loss is announced, never absorbed silently.
+	if discarded {
+		res.Warnings = append(res.Warnings, Warning{
+			Source: a.LedgerPath,
+			Detail: "the previous ledger was unreadable and has been replaced; any links it recorded under target roots not scanned by this rebuild are no longer tracked",
+			Fix:    "dstow status   # confirm what dstow now tracks",
+		})
 	}
 	return res, nil
 }

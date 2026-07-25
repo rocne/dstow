@@ -392,3 +392,80 @@ func TestReservedNamesAreTheLedgerBasenames(t *testing.T) {
 		}
 	}
 }
+
+// §6.4/§6.5 (#145): Recover tolerates a corrupt document by discarding it, but
+// tolerance is the only difference from Update. A readable ledger is still read,
+// so rebuild's contract — replace the roots it scanned, leave every other group
+// untouched — survives the change.
+func TestRecoverReadsAReadableLedger(t *testing.T) {
+	path := ledgerPath(t)
+	if _, err := ledger.Update(path, ledger.Scope{}, func(l *ledger.Ledger) error {
+		l.Targets["/unscanned"] = []ledger.Entry{{Link: "keep", Package: "p"}}
+		return nil
+	}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	discarded, err := ledger.Recover(path, func(l *ledger.Ledger) error {
+		l.Targets["/scanned"] = []ledger.Entry{{Link: "new", Package: "q"}}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Recover: %v", err)
+	}
+	if discarded {
+		t.Error("discarded = true for a perfectly readable ledger")
+	}
+	got, err := ledger.Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Targets["/unscanned"]) != 1 {
+		t.Errorf("an untouched group was lost: %+v", got.Targets)
+	}
+	if len(got.Targets["/scanned"]) != 1 {
+		t.Errorf("the recovered transaction did not commit: %+v", got.Targets)
+	}
+}
+
+// §6.5: Recover discards a corrupt document and says so, but refuses a
+// newer-version one — that file is readable by the dstow that wrote it, and
+// rewriting it down would destroy recoverable state.
+func TestRecoverDiscardsCorruptButRefusesNewer(t *testing.T) {
+	corruptPath := ledgerPath(t)
+	if err := os.MkdirAll(filepath.Dir(corruptPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(corruptPath, []byte("{{{ not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	discarded, err := ledger.Recover(corruptPath, func(l *ledger.Ledger) error {
+		l.Targets["/x"] = []ledger.Entry{{Link: "a", Package: "p"}}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("Recover on a corrupt ledger: %v", err)
+	}
+	if !discarded {
+		t.Error("discarded = false after replacing an unreadable document; the caller cannot announce a loss it is not told about")
+	}
+
+	newerPath := ledgerPath(t)
+	if err := os.MkdirAll(filepath.Dir(newerPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	newer := []byte(`{"version": 99, "targets": {}}`)
+	if err := os.WriteFile(newerPath, newer, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ledger.Recover(newerPath, func(l *ledger.Ledger) error { return nil }); err == nil {
+		t.Fatal("Recover accepted a newer-version ledger; §6.5 forbids rewriting one down")
+	}
+	after, err := os.ReadFile(newerPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != string(newer) {
+		t.Errorf("the newer ledger was rewritten: %s", after)
+	}
+}
