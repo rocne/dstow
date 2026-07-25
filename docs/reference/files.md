@@ -7,6 +7,7 @@
 | `$XDG_CONFIG_HOME/dstow/themes/` | your theme presets, one `<name>.toml` each | you |
 | `$XDG_CONFIG_HOME/dstow/hooks/` | global hooks | you |
 | `$XDG_STATE_HOME/dstow/ledger.json` | the ledger | **dstow** |
+| `$XDG_STATE_HOME/dstow/ledger.lock` | the ledger's lock target, always empty | **dstow** |
 | `$XDG_DATA_HOME/dstow/repos/` | managed clones | **dstow** |
 | `<repo>/.dstow/config.toml` | repo config | you |
 | `<repo>/.dstow/hooks/` | repo hooks | you |
@@ -42,6 +43,12 @@ refusal — the same posture as an unknown config key. The same applies in
 `$XDG_CONFIG_HOME/dstow/`, where the claimed names are `config.toml`,
 `repos.toml`, `themes/`, and `hooks/`.
 
+On systems where `$XDG_CONFIG_HOME` and `$XDG_STATE_HOME` resolve to the same
+directory — the macOS default, both `~/Library/Application Support` — the
+ledger lands among your config, so `ledger.json` and `ledger.lock` are claimed
+there too and never flagged. Where the two lanes differ, as on Linux, a
+`ledger.json` sitting in your config directory is not dstow's and still warns.
+
 ## The managed directory
 
     $XDG_DATA_HOME/dstow/repos/<scheme>/<owner>/<name>
@@ -68,6 +75,13 @@ One JSON document per machine: `$XDG_STATE_HOME/dstow/ledger.json`.
   interrupted write cannot leave a half-ledger.
 - The whole operation runs under a **lock**. A second dstow that cannot take
   the lock fails fast with exit `3` rather than waiting indefinitely.
+- The lock lives in a sibling file, `ledger.lock`. It is **always empty and
+  always there**: dstow creates it on demand, never writes a byte to it, and
+  leaves it behind when the operation finishes. Finding a 0-byte `ledger.lock`
+  in your state directory means nothing is wrong and nothing is locked — the
+  lock itself is held by a running process and is gone the moment that process
+  is, crash included. Deleting the file is harmless and pointless; dstow just
+  recreates it.
 - A **corrupt** ledger, or one written by a newer dstow, is a refusal (exit
   `3`) naming the remedy. `dstow rebuild` reconstructs it by walking the
   configured targets.

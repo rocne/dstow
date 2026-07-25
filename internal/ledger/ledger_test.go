@@ -297,6 +297,43 @@ func TestUpdateFnErrorAbortsAndReleasesLock(t *testing.T) {
 	}
 }
 
+// §6.2: the lock file is a persistent, empty flock target — created on demand,
+// never written to, and left in place when the lock releases (ruled #182, the
+// counter being unlink-on-clean-release). A leftover ledger.lock is not a stale
+// lock, so tidying it away on release would buy nothing and reintroduce the
+// create/unlink race. This pins the decision: it fails if release starts
+// removing the file.
+func TestUpdateLeavesTheLockTargetInPlace(t *testing.T) {
+	path := ledgerPath(t)
+	lockPath := ledger.LockPath(path)
+
+	if _, err := ledger.Update(path, ledger.Scope{}, func(doc *ledger.Ledger) error {
+		doc.Targets["/home/rocne"] = []ledger.Entry{{Link: "seed", Package: "p"}}
+		return nil
+	}); err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+
+	info, err := os.Stat(lockPath)
+	if err != nil {
+		t.Fatalf("lock target after a clean release: %v (want it left in place)", err)
+	}
+	if info.Size() != 0 {
+		t.Errorf("lock target is %d bytes, want 0 — it is a flock target, never written to", info.Size())
+	}
+
+	// It is reused, not recreated per operation, and never blocks the next
+	// writer: a second Update over the same persistent file succeeds.
+	if _, err := ledger.Update(path, ledger.Scope{}, func(doc *ledger.Ledger) error {
+		return nil
+	}); err != nil {
+		t.Fatalf("second Update over the persistent lock target: %v", err)
+	}
+	if _, err := os.Stat(lockPath); err != nil {
+		t.Errorf("lock target after a second clean release: %v", err)
+	}
+}
+
 // TestPathHonorsXDGStateHome exercises Path() against an explicit
 // XDG_STATE_HOME, the paths_test.go pattern (t.Setenv + xdg.Reload); no other
 // test touches the real state home.
