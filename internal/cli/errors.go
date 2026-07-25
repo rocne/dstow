@@ -61,6 +61,22 @@ type usageError struct{ err error }
 func (e *usageError) Error() string { return e.err.Error() }
 func (e *usageError) Unwrap() error { return e.err }
 
+// pathOperandError is the §1.3 operand-kind mismatch: a command whose operand
+// is a name was handed a path operand, which always refers to the *target*
+// world and so has no reading here. It is wrapped in usageError — a kind
+// mismatch is a malformed invocation (exit 2), never a name that simply is not
+// there (exit 1) — and its fix names the qualified spelling where one exists.
+// Ruled #183; adopt states the inverse for a path-taking verb.
+type pathOperandError struct {
+	verb  string // the command, as typed: "repo remove"
+	needs string // the operand kind it wants: "a repo name"
+	input string // the operand as typed
+}
+
+func (e *pathOperandError) Error() string {
+	return fmt.Sprintf("%s needs %s; %q is a path (a path starts with / ~/ ./ or ../)", e.verb, e.needs, e.input)
+}
+
 // bulkRefusalError is the non-interactive bulk gate (D2/D9): a deploy verb with
 // no names and no --all cannot ask "everything?" without a terminal. It maps to
 // exit 3 (refusal) and its fix names --all.
@@ -196,7 +212,34 @@ func fixFor(err error) string {
 	if errors.As(err, &inHook) {
 		return "run this command outside the hook; reads (dstow list, info, status, check) work from inside one"
 	}
+	var pathOperand *pathOperandError
+	if errors.As(err, &pathOperand) {
+		if qualified, ok := localSpelling(pathOperand.input); ok {
+			return "dstow " + pathOperand.verb + " " + qualified
+		}
+		return "name the repo as dstow list shows it, or give an absolute path as local:/abs/path"
+	}
+	var parse *name.ParseError
+	if errors.As(err, &parse) {
+		if qualified, ok := localSpelling(parse.Input); ok {
+			return "qualify it with a scheme: " + qualified + "   # a leading / makes it a path, not a name"
+		}
+		return "dstow manual concepts naming   # the name grammar"
+	}
 	return ""
+}
+
+// localSpelling is the qualified spelling of a path-shaped operand, and whether
+// one exists. Only an *absolute* path has one: "local:" prefixes the input
+// verbatim, so "/abs/path::pkg" becomes "local:/abs/path::pkg". The other three
+// §1.3 prefixes do not — "local:~/foo" parses, but its coordinate is a literal
+// "~" segment rather than the home directory, so suggesting it would hand the
+// user a spelling that resolves to nothing.
+func localSpelling(input string) (string, bool) {
+	if !strings.HasPrefix(input, "/") {
+		return "", false
+	}
+	return "local:" + input, true
 }
 
 // fqnList joins FQNs for a remedy line.

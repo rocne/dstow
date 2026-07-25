@@ -20,8 +20,12 @@ type ParseError struct {
 	Reason string
 }
 
+// Error carries no package prefix. This message reaches users verbatim —
+// cli renders a *ParseError through the printer like any other typed error —
+// and "dstow/name:" is an internal module identifier no other dstow error
+// exposes (ruled #183).
 func (e *ParseError) Error() string {
-	return fmt.Sprintf("dstow/name: cannot parse %q: %s", e.Input, e.Reason)
+	return fmt.Sprintf("cannot parse %q: %s", e.Input, e.Reason)
 }
 
 // rewrap re-homes a *ParseError (typically from Decode of a sub-segment) onto

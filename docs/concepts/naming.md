@@ -82,6 +82,20 @@ ever guesses:
 So `dstow status ~/.zshrc` asks what occupies that path, while
 `dstow status zsh` asks about the package.
 
+A command that takes only **one** of the two kinds refuses the other rather
+than guessing, and names the spelling it wanted. `adopt` takes a path, so a
+name is refused; `repo remove` takes a name, so a path is refused:
+
+    $ dstow repo remove /home/you/dots
+    error:   repo remove needs a repo name; "/home/you/dots" is a path (a path starts with / ~/ ./ or ../)
+    fix:     dstow repo remove local:/home/you/dots
+
+`repo add` accepting that same path is not an inconsistency. `add` takes a
+**source** — where a repo comes from, which has its own grammar of paths, URLs
+and `owner/name` forms — while `remove` takes the **name** of a repo already
+registered. Once a repo is registered it has a canonical name, and that name is
+how you refer to it.
+
 ## Encoding
 
 Reserved characters percent-encode, so every possible path is spellable —

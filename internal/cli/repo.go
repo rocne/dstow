@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/rocne/dstow/internal/name"
 	"github.com/rocne/dstow/internal/ops"
 	"github.com/rocne/dstow/internal/ui"
 )
@@ -107,6 +108,16 @@ func (e *env) newRepoRemoveCmd() *cobra.Command {
 }
 
 func (e *env) runRepoRemove(repoName string, unstow, force bool) error {
+	// The operand rule (§1.3): remove takes a repo name. A path operand always
+	// refers to the target world, which remove has no reading of, so classify
+	// and refuse rather than feed a path to the name parser — add takes a
+	// *source* (a different grammar), which is why it accepts one and this does
+	// not. Ruled #183; v1 ships zero input-side aliases (§1.4), so the path
+	// spelling of a registered repo is not a name.
+	if name.IsPathOperand(repoName) {
+		return &usageError{&pathOperandError{verb: "repo remove", needs: "a repo name", input: repoName}}
+	}
+
 	app, warns, err := e.load(false) // guards: -y never bypasses them
 	if err != nil {
 		e.renderWarnings(warns)

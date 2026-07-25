@@ -3,6 +3,7 @@ package name_test
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/rocne/dstow/internal/name"
@@ -338,5 +339,38 @@ func TestFQNIsPackageAndRepo(t *testing.T) {
 	}
 	if got := repo.Repo(); !reflect.DeepEqual(got, repo) {
 		t.Errorf("repo.Repo() = %+v, want %+v", got, repo)
+	}
+}
+
+// TestParseErrorCarriesNoPackagePrefix pins #183's root fix at its source. This
+// message reaches users verbatim — cli renders a *ParseError through the printer
+// like any other typed error — so it must read as dstow's prose, not as a Go
+// package's. "dstow/name:" is an internal module identifier no other dstow error
+// exposes. Every constructor is exercised, not just one, because the prefix
+// lived in Error() and so leaked from all of them at once.
+func TestParseErrorCarriesNoPackagePrefix(t *testing.T) {
+	errs := []error{}
+	for _, in := range []string{"/abs/path::pkg", "bad%zz", "a::b::c", ""} {
+		if _, err := name.ParseExpr(in); err != nil {
+			errs = append(errs, err)
+		}
+		if _, err := name.ParseFQN(in); err != nil {
+			errs = append(errs, err)
+		}
+		if _, err := name.Decode(in); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) == 0 {
+		t.Fatal("no parse failures produced; the test asserts nothing")
+	}
+	for _, err := range errs {
+		msg := err.Error()
+		if strings.Contains(msg, "dstow/name") {
+			t.Errorf("error exposes the internal package prefix: %q", msg)
+		}
+		if !strings.HasPrefix(msg, "cannot parse ") {
+			t.Errorf("error does not open with its user-facing prose: %q", msg)
+		}
 	}
 }
