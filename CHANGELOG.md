@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.1](https://github.com/rocne/dstow/compare/v0.6.0...v0.6.1) (2026-07-25)
+
+
+### Bug Fixes
+
+* **cli:** name errors lose the internal prefix; repo remove refuses paths ([#189](https://github.com/rocne/dstow/issues/189)) ([6fd1d22](https://github.com/rocne/dstow/commit/6fd1d22994ca473ea36ea2a4517de602a19fff30))
+* **config:** stop flagging dstow's own ledger files when config and state dirs coincide ([#186](https://github.com/rocne/dstow/issues/186)) ([0bcf201](https://github.com/rocne/dstow/commit/0bcf201db278ef18e0da2f49bcd863fef857e172))
+* **manual:** account for the persistent ledger.lock file ([#188](https://github.com/rocne/dstow/issues/188)) ([437a447](https://github.com/rocne/dstow/commit/437a4474a224bd13454682551c7b1147bb1675fe)), closes [#182](https://github.com/rocne/dstow/issues/182)
+
 ## [0.6.0](https://github.com/rocne/dstow/compare/v0.5.0...v0.6.0) (2026-07-23)
 
 
