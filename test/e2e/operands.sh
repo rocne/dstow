@@ -24,6 +24,10 @@ dstow repo add "$HOME/dots" >/dev/null 2>&1 \
 # --- The refusal: all four §1.3 prefixes behave alike -------------------------
 # Before the fix they did not: a leading "/" produced a raw parser message while
 # the other three parsed as ordinary names and fell through to "not found".
+# The unexpanded "~/dots" is deliberate: dstow must receive the literal tilde
+# so its own §1.3 classifier sees the "~/" prefix. Expanding it here would test
+# the "/" case twice and never exercise the tilde at all.
+# shellcheck disable=SC2088
 for OPERAND in "$HOME/dots" "./dots" "~/dots" "../dots"; do
   OUT="$(dstow repo remove "$OPERAND" 2>&1)" && CODE=0 || CODE=$?
 
@@ -53,6 +57,7 @@ ABS_OUT="$(dstow repo remove "$HOME/dots" 2>&1 || true)"
 printf '%s' "$ABS_OUT" | grep -q "dstow repo remove local:$HOME/dots" \
   || { printf 'FAIL: absolute-path fix did not name the qualified command:\n%s\n' "$ABS_OUT"; exit 1; }
 
+# shellcheck disable=SC2088  # literal tilde on purpose, as above
 TILDE_OUT="$(dstow repo remove '~/dots' 2>&1 || true)"
 if printf '%s' "$TILDE_OUT" | grep -q 'local:~'; then
   printf 'FAIL: fix suggested "local:~/…", a spelling that resolves to nothing:\n%s\n' "$TILDE_OUT"
