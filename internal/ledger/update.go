@@ -71,16 +71,44 @@ func (e *LockedError) Error() string {
 // disk is never touched), runs fn on the pruned document, drops any empty
 // target group, and commits with one atomic write. fn returning an error
 // aborts the transaction with no write.
-func Update(path string, scope Scope, fn func(*Ledger) error) (pruned []Pruned, err error) {
+func Update(path string, scope Scope, fn func(*Ledger) error) ([]Pruned, error) {
+	_, pruned, err := transact(path, scope, false, fn)
+	return pruned, err
+}
+
+// Recover is rebuild's write transaction (§6.4): Update with an empty scope,
+// except that a **corrupt** document does not refuse — it is discarded and the
+// transaction starts from an empty ledger. rebuild is the one command that does
+// not need the old contents, since it reconstructs them from disk, which is
+// what makes §6.5's remedy ("run dstow rebuild") true rather than circular
+// (#145).
+//
+// A **newer-version** document still refuses. §6.5 forbids rewriting one down,
+// and unlike corruption it is perfectly readable by the dstow that wrote it —
+// discarding it would destroy recoverable state.
+//
+// discarded reports that the previous document was unreadable and is gone. The
+// caller must say so loudly: entries for target roots this rebuild does not
+// scan went with it, and §6.5's "corruption must never degrade into amnesia"
+// is satisfied by announcing the loss, not by hiding it.
+func Recover(path string, fn func(*Ledger) error) (discarded bool, err error) {
+	discarded, _, err = transact(path, Scope{}, true, fn)
+	return discarded, err
+}
+
+// transact is the one owner of the locked read-modify-write cycle (§6.2) that
+// Update and Recover share; tolerateCorrupt is the single difference between
+// them.
+func transact(path string, scope Scope, tolerateCorrupt bool, fn func(*Ledger) error) (discarded bool, pruned []Pruned, err error) {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, err
+		return false, nil, err
 	}
 
 	lockPath := LockPath(path)
 	lockFile, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
-		return nil, err
+		return false, nil, err
 	}
 	// Release the flock and close the descriptor on every path (§6.2).
 	defer func() {
@@ -92,15 +120,24 @@ func Update(path string, scope Scope, fn func(*Ledger) error) (pruned []Pruned, 
 
 	if lerr := unix.Flock(int(lockFile.Fd()), unix.LOCK_EX|unix.LOCK_NB); lerr != nil {
 		if errors.Is(lerr, unix.EWOULDBLOCK) {
-			return nil, &LockedError{LockPath: lockPath}
+			return false, nil, &LockedError{LockPath: lockPath}
 		}
-		return nil, lerr
+		return false, nil, lerr
 	}
 
 	// Fresh Load under the lock — never a stale caller-held snapshot (§6.3).
 	l, err := Load(path)
 	if err != nil {
-		return nil, err
+		// Only rebuild tolerates an unreadable document, and only corruption:
+		// a newer-version ledger is readable by the dstow that wrote it, so
+		// §6.5 forbids rewriting it down. An I/O failure is not recoverable by
+		// discarding either — nothing says the contents are lost.
+		var corrupt *CorruptError
+		if !tolerateCorrupt || !errors.As(err, &corrupt) {
+			return false, nil, err
+		}
+		l = Ledger{Version: Version, Targets: map[string][]Entry{}}
+		discarded = true
 	}
 
 	// Scoped pruning (§6.3): remove every contradicted entry the scope covers,
@@ -121,7 +158,7 @@ func Update(path string, scope Scope, fn func(*Ledger) error) (pruned []Pruned, 
 
 	if err := fn(&l); err != nil {
 		// fn aborts the transaction with no write (§6.2).
-		return nil, err
+		return false, nil, err
 	}
 
 	// An index holds what exists: drop target groups left empty by pruning or
@@ -133,9 +170,9 @@ func Update(path string, scope Scope, fn func(*Ledger) error) (pruned []Pruned, 
 	}
 
 	if err := writeAtomic(path, l); err != nil {
-		return nil, err
+		return false, nil, err
 	}
-	return pruned, nil
+	return discarded, pruned, nil
 }
 
 // writeAtomic commits the document with the §6.2 discipline: marshal

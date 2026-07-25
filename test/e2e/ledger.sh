@@ -46,3 +46,50 @@ if ! printf '%s' "$STRAY_ERR" | grep -q 'unexpected entry "stray.txt"'; then
 fi
 
 printf 'PASS: colocated config/state dir — own ledger files unflagged, stray still warns\n'
+
+# --- #145: rebuild is the remedy every other command names, so it must work ---
+# A corrupt ledger is refused by every command; the refusal's fix: line says
+# "dstow rebuild". Before this, rebuild refused with the identical error, so
+# the remedy pointed at itself. rebuild is the one command that does not need
+# the old contents.
+export HOME=/home/e2e-corrupt
+export XDG_CONFIG_HOME=$HOME/.config
+export XDG_STATE_HOME=$HOME/.local/state
+export XDG_DATA_HOME=$HOME/.local/share
+mkdir -p "$HOME/dots/zsh"
+printf 'export E2E=1\n' > "$HOME/dots/zsh/dot-zshrc"
+dstow repo add "$HOME/dots" >/dev/null 2>&1
+dstow stow zsh >/dev/null 2>&1
+
+LEDGER="$XDG_STATE_HOME/dstow/ledger.json"
+[ -f "$LEDGER" ] || { printf 'FAIL: precondition — no ledger to corrupt\n'; exit 1; }
+printf 'this is not json{{{\n' > "$LEDGER"
+
+# Every other command still refuses (exit 3) and names rebuild.
+dstow status >/dev/null 2>&1 && CODE=0 || CODE=$?
+[ "$CODE" = "3" ] || { printf 'FAIL: status on a corrupt ledger exit = %s, want 3\n' "$CODE"; exit 1; }
+dstow status 2>&1 >/dev/null | grep -q 'dstow rebuild' \
+  || { printf 'FAIL: the corrupt refusal no longer names dstow rebuild\n'; exit 1; }
+
+# The named remedy works, in one command, with no manual file surgery.
+OUT="$(dstow rebuild 2>&1)" && CODE=0 || CODE=$?
+if [ "$CODE" != "0" ]; then
+  printf 'FAIL: rebuild on a corrupt ledger exit = %s, want 0 (it is the named remedy)\n%s\n' "$CODE" "$OUT"
+  exit 1
+fi
+# §6.5: corruption must never degrade into amnesia — the loss is announced.
+printf '%s' "$OUT" | grep -q 'unreadable' \
+  || { printf 'FAIL: rebuild recovered silently, without announcing the discarded contents:\n%s\n' "$OUT"; exit 1; }
+
+# The ledger is readable again and tracks the deployed link.
+dstow status >/dev/null 2>&1 || { printf 'FAIL: status still fails after rebuild\n'; exit 1; }
+grep -q '"version"' "$LEDGER" || { printf 'FAIL: ledger was not rebuilt\n'; exit 1; }
+
+# A NEWER ledger is not corruption: rebuild must refuse it and leave it alone.
+printf '{"version": 99, "targets": {}}\n' > "$LEDGER"
+dstow rebuild >/dev/null 2>&1 && CODE=0 || CODE=$?
+[ "$CODE" = "3" ] || { printf 'FAIL: rebuild on a newer ledger exit = %s, want 3\n' "$CODE"; exit 1; }
+grep -q '"version": 99' "$LEDGER" \
+  || { printf 'FAIL: rebuild rewrote a newer-schema ledger down\n'; exit 1; }
+
+printf 'PASS: rebuild recovers a corrupt ledger loudly; a newer one still refuses\n'

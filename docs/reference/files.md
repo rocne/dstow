@@ -82,9 +82,13 @@ One JSON document per machine: `$XDG_STATE_HOME/dstow/ledger.json`.
   lock itself is held by a running process and is gone the moment that process
   is, crash included. Deleting the file is harmless and pointless; dstow just
   recreates it.
-- A **corrupt** ledger, or one written by a newer dstow, is a refusal (exit
-  `3`) naming the remedy. `dstow rebuild` reconstructs it by walking the
-  configured targets.
+- A **corrupt** ledger is a refusal (exit `3`) from every command except
+  `dstow rebuild`, which reconstructs it by walking the configured targets —
+  it does not need the old contents, so it replaces the unreadable file and
+  warns about what went with it.
+- A ledger written by a **newer** dstow is a refusal from every command,
+  rebuild included. The remedy is to upgrade dstow; it will not rewrite a
+  newer-schema file down.
 
 You never hand-edit it, and it is the one dstow file that is genuinely
 disposable: losing it costs you a `rebuild`, not your configuration.

@@ -3,6 +3,7 @@ package ops_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/rocne/dstow/internal/ledger"
@@ -214,5 +215,75 @@ func TestRebuildEmptyLedgerFromScratch(t *testing.T) {
 	}
 	if len(loadLedger(t, e.app.LedgerPath).Targets[e.target]) != 1 {
 		t.Error("rebuild from scratch records the discovered link")
+	}
+}
+
+// TestRebuildRecoversFromCorruptLedger is #145: every command refuses a corrupt
+// ledger and names `dstow rebuild` as the remedy, so rebuild must actually work
+// on one. It is the single command that does not need the old contents — it
+// reconstructs them from disk — and before this it refused with the identical
+// error, making its own fix: line point at itself.
+func TestRebuildRecoversFromCorruptLedger(t *testing.T) {
+	e := newEnv(t)
+	root := e.addRepo("dots")
+	e.writeFile(filepath.Join(root, "zsh", "dot-zshrc"), "x\n")
+	makeLink(t, filepath.Join(e.target, ".zshrc"), filepath.Join(root, "zsh", "dot-zshrc"))
+
+	if err := os.MkdirAll(filepath.Dir(e.app.LedgerPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(e.app.LedgerPath, []byte("this is not json{{{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := e.app.Rebuild()
+	if err != nil {
+		t.Fatalf("Rebuild on a corrupt ledger: %v (the remedy every other command names must work)", err)
+	}
+	entries := loadLedger(t, e.app.LedgerPath).Targets[e.target]
+	if len(entries) != 1 {
+		t.Fatalf("rebuilt group = %d entries, want the one owned link", len(entries))
+	}
+
+	// §6.5: corruption must never degrade into amnesia. Recovery discards
+	// whatever the unreadable file recorded for roots this rebuild did not
+	// scan, so the loss must be announced, never absorbed silently.
+	var announced bool
+	for _, w := range res.Warnings {
+		if strings.Contains(w.Detail, "unreadable") {
+			announced = true
+		}
+	}
+	if !announced {
+		t.Errorf("recovery from a corrupt ledger raised no warning; the discarded contents must be announced: %+v", res.Warnings)
+	}
+}
+
+// TestRebuildRefusesNewerLedger guards the recovery above against overreach.
+// §6.5 draws a sharp line: a corrupt file is unreadable by anyone, but a
+// newer-version one is perfectly readable by the dstow that wrote it, and
+// rewriting it down would destroy recoverable state. Only corruption is
+// tolerated.
+func TestRebuildRefusesNewerLedger(t *testing.T) {
+	e := newEnv(t)
+	e.addRepo("dots")
+
+	newer := []byte(`{"version": 99, "targets": {}}`)
+	if err := os.MkdirAll(filepath.Dir(e.app.LedgerPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(e.app.LedgerPath, newer, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := e.app.Rebuild(); err == nil {
+		t.Fatal("Rebuild on a newer-version ledger succeeded; §6.5 forbids rewriting one down")
+	}
+	got, err := os.ReadFile(e.app.LedgerPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(newer) {
+		t.Errorf("the newer ledger was rewritten:\ngot  %s\nwant %s", got, newer)
 	}
 }

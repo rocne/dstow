@@ -34,10 +34,17 @@ reconstructed from what is deployed.
 Two ledger conditions are worth distinguishing, because rebuild is not the
 answer to both:
 
-- A **corrupt** ledger — one dstow cannot parse — is refused by every command,
-  and dstow will not read past it, rebuild included. Move the unreadable file
-  aside (or restore it from a backup) so the ledger is *absent*, then rebuild
-  reconstructs it from disk.
+- A **corrupt** ledger — one dstow cannot parse — is refused by every other
+  command, which is exactly what rebuild is for. It is the one command that
+  does not need the old contents, since it reconstructs them from disk, so it
+  reads past the corruption and replaces the file. You do not have to move
+  anything aside first.
+
+  It **warns** when it does this, because the unreadable file is discarded
+  along with whatever it recorded: rebuild re-records the target roots it
+  scans, and any links the old ledger tracked under a root this rebuild does
+  not scan are no longer tracked. Restoring a backup, if you have one, keeps
+  more than rebuilding does.
 - A ledger written by a **newer** dstow is not rebuild's case at all: the remedy
   is to upgrade dstow, which the refusal names. dstow will not rewrite a
   newer-schema ledger down to an older one.

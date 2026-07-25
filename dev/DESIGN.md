@@ -692,6 +692,19 @@ write-side courtesy only.
   new schema only when a write command commits.
 - Corrupt/unparseable → refuse loudly, name the path, point at the remedy
   (`rebuild` or restore). **Corruption must never degrade into amnesia.**
+- **`rebuild` is the one exception, and it is what makes that remedy true**
+  (ruled [#145](https://github.com/rocne/dstow/issues/145), 2026-07-25):
+  every other command refuses a corrupt ledger, but rebuild reconstructs the
+  contents from disk and so does not need the old ones — it reads past the
+  corruption via `ledger.Recover` and replaces the file. Previously it
+  refused with the identical error, so the `fix:` line naming `dstow rebuild`
+  pointed at the command that had just refused. **The no-amnesia rule is
+  satisfied by announcing, not by refusing**: recovery discards whatever the
+  unreadable file recorded, so rebuild warns that links under target roots it
+  did not scan are no longer tracked. The exception is corruption **only** —
+  a newer-version ledger still refuses, rebuild included, because it is
+  readable by the dstow that wrote it and rewriting it down would destroy
+  recoverable state.
 
 ## 7. Output
 
