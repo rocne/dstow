@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -647,5 +648,63 @@ func TestFailedPostReported(t *testing.T) {
 	}
 	if len(led.Targets[e.target]) != 1 {
 		t.Error("completed work stays done: the entry is recorded")
+	}
+}
+
+// TestDryRunPlansAgainstMissingTarget is #146: the preview must never fail
+// where the real run succeeds. A first deploy on a new machine is dry-run's
+// primary scenario and the exact case where the target directory does not
+// exist yet — and it failed there, because the engine documents Target as
+// must-exist and gostow's canon_path chdirs into it.
+//
+// The assertion is the equivalence, not the message: the plan must name the
+// same links the real run then creates.
+func TestDryRunPlansAgainstMissingTarget(t *testing.T) {
+	e := newEnv(t)
+	root := e.addRepo("dots")
+	e.writeFile(filepath.Join(root, "zsh", "dot-zshrc"), "x\n")
+
+	// A target that does not exist yet, set as this repo's effective target.
+	missing := filepath.Join(e.base, "newtarget")
+	e.writeFile(filepath.Join(root, ".dstow", "config.toml"), "target = \""+missing+"\"\n")
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatalf("precondition: %s must not exist", missing)
+	}
+
+	res, err := e.app.Deploy(ops.DeployRequest{Verb: engine.VerbStow, Names: []string{"zsh"}, DryRun: true})
+	if err != nil {
+		t.Fatalf("dry-run against a missing target: %v", err)
+	}
+	if res.Failed() {
+		t.Fatalf("dry-run failed where the real run succeeds: %+v", res.Packages)
+	}
+
+	planned := map[string]bool{}
+	for _, p := range res.Packages {
+		for _, a := range p.Actions {
+			planned[a.Path] = true
+		}
+	}
+	if len(planned) == 0 {
+		t.Fatal("dry-run reported no plan for a package it can deploy")
+	}
+	// Dry-run stays mutation-free: the target is not created as a side effect.
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Error("dry-run created the target directory")
+	}
+
+	// The real run must do exactly what the plan said.
+	real, err := e.app.Deploy(ops.DeployRequest{Verb: engine.VerbStow, Names: []string{"zsh"}})
+	if err != nil {
+		t.Fatalf("real run: %v", err)
+	}
+	done := map[string]bool{}
+	for _, p := range real.Packages {
+		for _, a := range p.Actions {
+			done[a.Path] = true
+		}
+	}
+	if !reflect.DeepEqual(planned, done) {
+		t.Errorf("plan and execution disagree:\nplanned %v\ndid     %v", planned, done)
 	}
 }

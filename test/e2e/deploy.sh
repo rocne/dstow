@@ -54,3 +54,38 @@ if [ -e /home/e2e/.zshrc ] || [ -L /home/e2e/.zshrc ]; then
 fi
 
 printf 'PASS: stow / list / status / check / unstow happy path\n'
+
+# --- #146: dry-run must never fail where the real run succeeds ---------------
+# A first deploy on a new machine is dry-run's primary scenario, and the exact
+# case where the target directory does not exist yet. It used to fail there
+# ("canon_path: cannot chdir to ..."), while the real run created the directory
+# and stowed — the preview more restrictive than the execution, backwards.
+export HOME=/home/e2e-drynewtarget
+export XDG_CONFIG_HOME=$HOME/.config
+export XDG_STATE_HOME=$HOME/.local/state
+export XDG_DATA_HOME=$HOME/.local/share
+mkdir -p "$HOME/dots/tmux/.dstow" "$HOME/dots/.dstow"
+printf 'set -g mouse on\n' > "$HOME/dots/tmux/dot-tmux.conf"
+printf 'target = "%s/newtarget"\n' "$HOME" > "$HOME/dots/.dstow/config.toml"
+dstow repo add "$HOME/dots" >/dev/null 2>&1
+
+[ -d "$HOME/newtarget" ] && { printf 'FAIL: precondition — target already exists\n'; exit 1; }
+
+DRY="$(dstow stow --dry-run tmux 2>&1)" && CODE=0 || CODE=$?
+if [ "$CODE" != "0" ]; then
+  printf 'FAIL: dry-run against a missing target exit = %s, want 0\n%s\n' "$CODE" "$DRY"
+  exit 1
+fi
+printf '%s' "$DRY" | grep -q 'would create target directory' \
+  || { printf 'FAIL: dry-run did not report the would-create:\n%s\n' "$DRY"; exit 1; }
+printf '%s' "$DRY" | grep -q '.tmux.conf' \
+  || { printf 'FAIL: dry-run did not plan the link:\n%s\n' "$DRY"; exit 1; }
+# Dry-run stays mutation-free: it must not create the directory it previewed.
+[ -d "$HOME/newtarget" ] && { printf 'FAIL: dry-run created the target directory\n'; exit 1; }
+
+# The real run does what the plan said.
+dstow stow tmux >/dev/null 2>&1 || { printf 'FAIL: real run failed after a clean plan\n'; exit 1; }
+[ -L "$HOME/newtarget/.tmux.conf" ] \
+  || { printf 'FAIL: the link the plan promised was not created\n'; exit 1; }
+
+printf 'PASS: dry-run plans against a not-yet-existing target and creates nothing\n'

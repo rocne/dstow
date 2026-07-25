@@ -64,7 +64,9 @@ failed, blocked, or not found — exits `1`.
 ## The target directory and the first run
 
 A real run **creates the target directory when it is missing** and announces
-it. On the very first deploy on a machine — before any ledger exists — dstow
+it. `--dry-run` reports the same thing as a would-create and leaves the
+directory absent, so previewing a first deploy on a new machine works before
+anything exists. On the very first deploy on a machine — before any ledger exists — dstow
 also announces that tree-folding is off by default, naming the global config
 file where `fold_trees` would turn it on. Both are one-time notices about a
 surprise, not routine chatter, so `--quiet` keeps them.

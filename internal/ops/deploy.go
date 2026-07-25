@@ -287,7 +287,27 @@ func (a *App) prepare(req DeployRequest, works []work) []prepared {
 		case !targetExists && req.DryRun:
 			// The plan against a missing target is Expected against an empty
 			// one — a pure computation, so dry-run stays mutation-free.
-			exp, eerr := engine.Expected(p.op)
+			//
+			// "Empty" must be a real directory: engine.Op documents Target as
+			// must-exist, and gostow's canon_path chdirs into it. Handing the
+			// *missing* path straight through made the preview fail where the
+			// real run succeeds — backwards, and precisely in dry-run's primary
+			// scenario, a first deploy on a new machine (#145 sibling, #146).
+			// The stand-in lives outside the user's tree and is removed here,
+			// and Expected's results are target-relative, so which empty
+			// directory it is cannot affect the plan.
+			stand, terr := os.MkdirTemp("", "dstow-dryrun-")
+			if terr != nil {
+				p.status, p.err = StatusFailed, terr
+				break
+			}
+			emptyOp := p.op
+			emptyOp.Target = stand
+			exp, eerr := engine.Expected(emptyOp)
+			if rerr := os.RemoveAll(stand); rerr != nil && eerr == nil {
+				p.status, p.err = StatusFailed, rerr
+				break
+			}
 			if eerr != nil {
 				p.status, p.err = StatusFailed, eerr
 				break
