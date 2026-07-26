@@ -1,10 +1,12 @@
 package ops_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/rocne/dstow/internal/ledger"
 	"github.com/rocne/dstow/internal/ops"
 )
 
@@ -187,6 +189,63 @@ func TestCleanOrphanPrompterError(t *testing.T) {
 	}
 	if _, err := os.Lstat(filepath.Join(e.target, ".zshrc")); err != nil {
 		t.Error("a prompter error keeps the orphan link")
+	}
+}
+
+// lockProbePrompt answers like fakePrompt but, on each Confirm, probes
+// whether the ledger lock is currently held by attempting a second
+// non-blocking Update on the same ledger.
+type lockProbePrompt struct {
+	ledgerPath string
+	answers    []bool
+	probes     []error // one per Confirm: the error the nested Update returned
+}
+
+func (p *lockProbePrompt) Confirm(question string, defaultYes bool) (bool, error) {
+	_, err := ledger.Update(p.ledgerPath, ledger.Scope{All: true},
+		func(*ledger.Ledger) error { return nil })
+	p.probes = append(p.probes, err)
+
+	if len(p.answers) == 0 {
+		return false, errors.New("non-interactive: no answer scripted")
+	}
+	a := p.answers[0]
+	p.answers = p.answers[1:]
+	return a, nil
+}
+
+// TestCleanPromptsUnderTheLock pins the §6.4 ruling
+// ([#201](https://github.com/rocne/dstow/issues/201), 2026-07-26): clean's
+// orphan confirmation is asked *while holding* the ledger flock, deliberately,
+// because clean's question is only meaningful relative to the state the lock
+// protects. This asserts the decision, not the feature — it goes red if
+// someone moves the prompt outside the lock (the deploy/adopt shape), which is
+// exactly the change the ruling forbids without a fresh ruling to replace it.
+//
+// The probe works because flock(2) conflicts between two descriptors even
+// within one process, so a nested Update sees real contention.
+func TestCleanPromptsUnderTheLock(t *testing.T) {
+	e := newEnv(t)
+	root := e.addRepo("dots")
+	e.writeFile(filepath.Join(root, "zsh", "dot-zshrc"), "x\n")
+	stowPkg(t, e, "zsh")
+	e.writeFile(filepath.Join(root, "zsh", ".dstow", "config.toml"),
+		"ignore = [\"dot-zshrc\"]\n")
+
+	probe := &lockProbePrompt{ledgerPath: e.app.LedgerPath, answers: []bool{true}}
+	e.app.Prompt = probe
+
+	if _, err := e.app.Clean(ops.CleanRequest{}); err != nil {
+		t.Fatalf("Clean: %v", err)
+	}
+
+	if len(probe.probes) != 1 {
+		t.Fatalf("the orphan is confirmed exactly once, got %d probes", len(probe.probes))
+	}
+	var locked *ledger.LockedError
+	if !errors.As(probe.probes[0], &locked) {
+		t.Errorf("clean must hold the ledger lock while prompting (§6.4, #201); "+
+			"a nested Update saw %v, want *ledger.LockedError", probe.probes[0])
 	}
 }
 
