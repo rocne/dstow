@@ -22,6 +22,12 @@ Rust.** Output is *documentation* — an evaluation and a plan. Explicitly:
 - **Nothing is decided.** This pack takes no position on whether the port
   should happen. Recommendations inside it are inputs, not conclusions.
 
+**Plus one secondary charge:** as you read the Go code, flag any problems you
+notice in it — structural, logical, drift, anything — and hand the list back.
+Side effort, must not displace the evaluation. Rules and the
+already-known list are in [`07-incidental-findings.md`](07-incidental-findings.md);
+read it *before* you start reading code.
+
 ## The one structural fact to absorb first
 
 **This is a two-project port.** dstow is ~13k lines of Go over a **seam** onto
@@ -117,6 +123,7 @@ Everything still genuinely open lives in
 | [`04-rust-cli-practices.md`](04-rust-cli-practices.md) | Ecosystem research: CLI framework, error/exit-code modelling, streams and color, testing, and how the docs-driven help machinery translates. |
 | [`05-distribution-and-musl.md`](05-distribution-and-musl.md) | Build/release/signing pipeline, packaging, the installer, and the musl target constraint. |
 | [`06-open-questions.md`](06-open-questions.md) | What this pack could not settle — the decision points the evaluation must actually reason about. |
+| [`07-incidental-findings.md`](07-incidental-findings.md) | **A second, smaller charge**: flag problems you notice in the existing Go code as you read it. Read this one before you start reading code, not after. |
 
 ## The design corpus (read these, not the code, for *intent*)
 
