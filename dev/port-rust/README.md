@@ -2,6 +2,47 @@
 
 **Prepared 2026-07-26 for a Fable 5 evaluation-and-planning session.**
 
+---
+
+## ⚠ Read this before anything else: this pack is a seed, not an authority
+
+It was assembled by **Opus 5** in a preparation session — a less capable model
+than the one reading it. It exists to save you discovery cost, **not** to hand
+you conclusions. Calibrate accordingly, because the pack is two very different
+things bound together:
+
+**Authoritative — these are Rocne's, not the preparing model's:**
+
+- The task definition and the hard constraints (evaluation only; no Rust; no
+  wayfinder map; no tickets; documentation as the deliverable).
+- The three rulings under *Rulings already made* below.
+- The stated motivation under *The motivation* below.
+
+Those bind. Everything else does not.
+
+**Reliable but not binding — mechanical observations, read from source:**
+
+line counts, the exported surface of each package, the symbol-level dependency
+trace, the internal dependency graph, the measured binary size, what the
+surveyed Rust crates are and are not. These were verified against the working
+tree at `783c9d8` and are safe to reuse without re-deriving.
+
+**Not authoritative at all — one model's judgment:**
+
+every recommendation, every crate choice, the ranking of options, the verdicts
+on the engine question, the framing of what matters and what doesn't, the
+difficulty estimates, and the shape of the open questions themselves. All of it
+is a starting point to argue with. Some of it is probably wrong.
+
+**What to do with that:** disagree in writing. If you reach a different
+conclusion, say so and say why — that is a more valuable output than a plan
+built on unexamined inherited framing. **Agreeing with this pack throughout
+would be a surprising result, not a satisfying one.** The last section of
+[`06-open-questions.md`](06-open-questions.md) lists every claim here that is
+not a verified observation; it is the honest place to start pushing.
+
+---
+
 ## What this is
 
 A pre-built context corpus so the evaluating session spends its budget on
