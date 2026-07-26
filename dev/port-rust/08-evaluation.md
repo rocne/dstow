@@ -351,6 +351,48 @@ on these proceeds regardless.
 
 ---
 
+### 6.1 Decisions recorded — Rocne, 2026-07-26
+
+Answered in-session after review. Where an answer supersedes a lean above,
+the answer binds.
+
+1. **Timing: after v1.** As leaned; [the acceptance walk (#52)](https://github.com/rocne/dstow/issues/52)
+   proceeds unchanged.
+2. **macOS XDG: fix, via XDG lanes everywhere.** Ruled on principle: it is
+   an objective improvement in XDG-philosophy compliance. **Explicitly: no
+   migration is owed** — dstow has no actual users yet, so breaking a
+   current setup is a non-consideration. The plan drops the migration
+   machinery §6.2's lean had priced in.
+3. **Engine: sibling repo, library-first, full stow clone as the committed
+   destination.** Supersedes the in-repo lean. The engine is a Rust stow
+   port in its own repo — a sibling of gostow — and the **full thing (CLI,
+   the proper stow clone) is absolutely wanted**, not aspirational; it is
+   acceptable to start with the library and build the clone around it.
+   Consequence for §2: option 1a's subset transliteration remains the first
+   deliverable and dstow's dependency, but the byte-parity/CLI layer §2.1
+   descoped returns later as the product phase of the sibling project, with
+   the §2.2 harness re-point becoming exactly the right instrument at that
+   phase.
+4. **Acceptance: equivalence-except-divergence-list.** Adopted as proposed.
+5. **Completion: default to `clap_complete`** — decided, not derived, and
+   retractable. Rationale: the standing design philosophy (prefer existing
+   solutions over hand-rolling) outranks the unstable-interface concern;
+   the hand-rolled `__complete` protocol is preserved here as the
+   counter-argument and the fallback if the unstable surface breaks in
+   practice.
+6. **[#138](https://github.com/rocne/dstow/issues/138): out of scope.**
+   Ruled not this effort's decision; the issue is untouched and no
+   ruling of any kind was made on it.
+
+**Findings disposition** (same session): all confirmed findings from
+[`09`](09-incidental-findings.md) filed —
+[#195](https://github.com/rocne/dstow/issues/195)–[#204](https://github.com/rocne/dstow/issues/204)
+(`needs-triage`), suspicions as
+[#205](https://github.com/rocne/dstow/issues/205)/[#206](https://github.com/rocne/dstow/issues/206)
+(`needs-info`), and the two addenda as comments on
+[#124](https://github.com/rocne/dstow/issues/124) and
+[#125](https://github.com/rocne/dstow/issues/125).
+
 ## 7. The plan
 
 Prose phases, no map, no tickets (per ruling). Each phase names its
