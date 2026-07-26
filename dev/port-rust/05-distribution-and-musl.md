@@ -1,8 +1,21 @@
 # 05 — Build, release, distribution, and the musl constraint
 
-The headline: **the release pipeline is far more portable than expected.**
-GoReleaser has supported Rust since v2.5, which means most of the machinery
-below survives with a changed `builds:` block rather than a rewrite.
+> **Scope, per Rocne's ruling of 2026-07-26: the release path is not a concern
+> for this evaluation.** An upstream workstream in `rocne/release-ci` is
+> already accommodating Rust rather than Go. **Do not cost the release
+> pipeline, plan around it, or treat it as a blocker.**
+>
+> This chapter therefore has two halves with very different standing:
+>
+> - **Everything about the pipeline is context, not planning input.** It is
+>   here so the evaluation knows what exists and does not mistake its absence
+>   for a gap. The one-line summary — *GoReleaser has built Rust since v2.5,
+>   so the artifact-stage machinery carries over* — is sufficient; the detail
+>   below is reference.
+> - **The musl section is live.** musl is a real, undecided constraint that
+>   reaches into the **code**, not just the pipeline: the allocator question
+>   and the `~user` expansion path are port-design decisions regardless of who
+>   owns the build. Read that section properly.
 
 ---
 
@@ -51,7 +64,7 @@ the binary and emitted verbatim by `dstow snippet rc`.
 
 ---
 
-## GoReleaser builds Rust — this is the key finding
+## GoReleaser builds Rust
 
 **Since GoReleaser v2.5**, `builds:` accepts `builder: rust`. It detects a
 Rust project from `Cargo.toml`, uses **`cargo-zigbuild`** by default (with

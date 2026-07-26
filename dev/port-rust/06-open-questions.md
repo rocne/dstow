@@ -4,6 +4,11 @@ What this pack could not settle. These are the decision points the evaluation
 has to actually reason about — everything else in the pack is either an
 observation or a well-supported recommendation.
 
+**Ten were raised; two are already struck.** Q2 (the motivation) and Q8
+(release-ci) were answered by Rocne on 2026-07-26 and are kept as struck-through
+headings so the answer travels with the question rather than vanishing. **Eight
+remain open.**
+
 Nothing here is ranked by importance except Q1, which genuinely dominates.
 
 ---
@@ -142,18 +147,24 @@ Rocne's direction is tentative and pending judgment. Two things would firm it up
 - **Confirm the framing.** Rust+musl is not new ambition — it *recovers* the
   fully-static property that `CGO_ENABLED=0` already gives the Go build for
   free. That reframing may make the decision easy.
-- **Verify the untested combination.** GoReleaser's Rust builder documents
-  `-gnu`/`-darwin` triples as defaults and does **not** mention musl. This
-  pack could not verify *"GoReleaser + Rust builder + musl targets + nfpm +
-  cosign, end to end."* It is plausible (targets are configurable and
-  cargo-zigbuild supports musl) but it is the single most load-bearing
-  unverified claim in this pack. **A small prototype would settle it cheaply
-  and should probably come before the plan is finalized.**
+- **Decide the code-side consequences**, which are this evaluation's to make
+  regardless of who owns the build:
+  - **The allocator.** musl's `malloc` is materially slower than glibc's; the
+    usual mitigation is `mimalloc` or `tikv-jemallocator` gated on
+    `target_env = "musl"`. dstow is I/O-bound rather than allocation-bound, so
+    this is probably unnecessary — but it is a dependency decision, so name it
+    rather than discover it.
+  - **`~user` expansion must parse `/etc/passwd` directly** rather than use a
+    `getpwnam`-backed crate (`uzers`/`users`), which is exactly what the
+    CGO-free Go build already does. Characterized in
+    [`05`](05-distribution-and-musl.md); listed here because it is a design
+    constraint on the config module, not a build setting.
 
-Sub-item, already characterized in [`05`](05-distribution-and-musl.md) and not
-really open: `~user` expansion must parse `/etc/passwd` directly rather than
-use a `getpwnam`-backed crate — which is exactly what the CGO-free Go build
-already does.
+**Not this evaluation's problem:** whether GoReleaser's Rust builder handles
+musl targets alongside nfpm and cosign end to end. This pack could not verify
+that combination and flagged it — but under the release-path ruling it belongs
+to the upstream `rocne/release-ci` workstream, not here. Noted so the gap is
+visible, not so it gets costed.
 
 ## Q10 — What is the acceptance criterion for "the port is done"?
 
@@ -176,7 +187,7 @@ Flagged so they are not mistaken for verified facts.
 
 | Claim | Status |
 |---|---|
-| GoReleaser Rust builder works with musl + nfpm + cosign end to end | **Unverified.** Plausible; not tested. See Q9. |
+| GoReleaser Rust builder works with musl + nfpm + cosign end to end | **Unverified**, and **out of scope** — the release path is upstream's. Recorded so the gap is visible, not so it gets costed. See Q9. |
 | clap's `hide(true)` completes visible children of a hidden parent (cobra v1.10.1 does — verified Go-side at #130) | **Unverified for clap.** |
 | The gostow conformance harness can be re-pointed at a non-Go engine | **Inference**, from reading its structure. Not costed. |
 | `ops` will shrink in Rust via enums-with-payload | **Judgment**, not measurement. |

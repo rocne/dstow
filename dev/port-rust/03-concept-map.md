@@ -77,7 +77,7 @@ Adopting an existing crate is not among them; see above.
    adoption story. A product decision, not a technical one.
 5. **Don't port.** A legitimate conclusion for the evaluation to reach.
 
-### Option 3 in detail — bundling or embedding the Go binary
+### Option 3 in detail — bundling or embedding the Go gostow binary
 
 Raised by Rocne 2026-07-26 and characterized here so the evaluation does not
 have to re-derive it. It is the standard escape hatch and deserves a written

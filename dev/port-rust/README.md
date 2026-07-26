@@ -66,8 +66,8 @@ in this pack, and several recommendations change under it:
   ([`04`](04-rust-cli-practices.md) § *Error handling*) is not a minor
   ergonomic gain — it is a direct instance of the motivation. This codebase has
   been bitten twice by "a detector was built and the caller contract was
-  deferred" ([#139](https://github.com/rocne/dstow/issues/139),
-  [#151](https://github.com/rocne/dstow/issues/151)); both are the shape of bug
+  deferred" ([the unimplemented H7 write-refusal (#139)](https://github.com/rocne/dstow/issues/139),
+  [a deploy 'not found' with no fix: line (#151)](https://github.com/rocne/dstow/issues/151)); both are the shape of bug
   the motivation targets.
 - **Making invalid states unrepresentable is the point**, not a side effect.
   The observation that `ops`'s struct-plus-status-code result types collapse
@@ -99,16 +99,24 @@ narrow the evaluation; treat them as settled inputs.
 
 1. **The release path is out of scope.** An upstream workstream in
    `rocne/release-ci` is already accommodating Rust rather than Go. Do not
-   plan around it, cost it, or treat it as a blocker or dependency. What was
-   Q8 is closed. See [`05`](05-distribution-and-musl.md).
+   plan around the release pipeline, cost it, or treat it as a blocker or
+   dependency. [`05`](05-distribution-and-musl.md) is consequently **reference
+   material, not planning input** — with one exception: **musl stays live**,
+   because it reaches into the code (the allocator choice and `~user`
+   expansion), not just the build.
 2. **The existing Rust stow projects are inadequate and are not an option.**
    `rustow`, `new-stow`, `stow-rs`, `rstow` were surveyed and rejected; the
    survey is retained in [`03`](03-concept-map.md) as the record of *why*, not
    as a live option. **Whatever the engine becomes, dstow owns it.**
-3. **Bundling or embedding the Go gostow binary has been characterized** —
-   raised by Rocne, analysed in [`03`](03-concept-map.md) § *Option 3 in
-   detail*. Verdict offered: weak as a destination, genuinely useful as a
-   sequencing phase. Not a settled ruling; an option with its costs named.
+3. **Bundling or embedding the Go gostow binary has been characterized, not
+   ruled on.** Rocne raised it; its real purpose is a **two-step migration**,
+   and it is analysed under that framing in [`03`](03-concept-map.md) §
+   *Option 3 in detail — bundling or embedding the Go gostow binary*.
+   Summary: **weak as a destination**
+   (it leaves the quirk-dense engine in the weaker language — the inverse of
+   what the motivation wants), **but sound as sequencing**, with one failure
+   mode to design against and a cheaper variant that avoids it. Read the
+   section; the nuance does not compress.
 
 Everything still genuinely open lives in
 [`06-open-questions.md`](06-open-questions.md).
@@ -154,5 +162,9 @@ Also useful:
 
 Everything in this pack was read from the working tree at `783c9d8`
 (v0.6.2) or verified against live sources during preparation, except where a
-line is explicitly marked *unverified* or *recall*. Where a claim is an
-inference rather than an observation, it says so.
+line is explicitly marked **unverified**. Where a claim is an inference or a
+judgment rather than an observation, it says so.
+
+[`06-open-questions.md`](06-open-questions.md) closes with a table of every
+claim in this pack that is *not* a verified observation. **Read it.** It is
+short, and it is the difference between using this pack and trusting it.

@@ -183,7 +183,7 @@ and the O11 strip contract. Two Rust cautions:
 ## Testing
 
 dstow has 11,788 lines of Go tests and 992 lines of shell e2e. The testing
-charter (map [#35](https://github.com/rocne/dstow/issues/35)) requires that
+charter (map [the dstow v1 map (#35)](https://github.com/rocne/dstow/issues/35)) requires that
 tests assert **intended** behavior from DESIGN/REQUIREMENTS, never
 contrived-green against the code. That charter is language-agnostic and
 should carry over verbatim.

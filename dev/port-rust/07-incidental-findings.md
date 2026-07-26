@@ -20,17 +20,17 @@ You will be reading ~18.5k lines of production Go closely, asking of each part
 That posture surfaces defects that ordinary code review does not — and this
 project has direct evidence for it:
 
-- [#131](https://github.com/rocne/dstow/issues/131) and
-  [#141](https://github.com/rocne/dstow/issues/141) each found real bugs by
+- [writing the manual (#131)](https://github.com/rocne/dstow/issues/131) and
+  [expansive manual prose (#141)](https://github.com/rocne/dstow/issues/141) each found real bugs by
   **driving documented behavior** rather than reading code. #141's `/verify`
   pass corrected four plausible-and-wrong doc drafts and surfaced two
-  shipped defects ([#145](https://github.com/rocne/dstow/issues/145),
-  [#146](https://github.com/rocne/dstow/issues/146)), both since fixed.
+  shipped defects ([the corrupt-ledger dead-end (#145)](https://github.com/rocne/dstow/issues/145),
+  [dry-run on a missing target (#146)](https://github.com/rocne/dstow/issues/146)), both since fixed.
 - The map names a recurring pattern: **"the gap between tickets."** A ticket
   builds a detector and defers the caller contract; consuming tickets each
   assume someone else wired it. It has happened at least twice
-  ([#139](https://github.com/rocne/dstow/issues/139),
-  [#151](https://github.com/rocne/dstow/issues/151)). Seams are where to look.
+  ([the unimplemented H7 write-refusal (#139)](https://github.com/rocne/dstow/issues/139),
+  [a deploy 'not found' with no fix: line (#151)](https://github.com/rocne/dstow/issues/151)). Seams are where to look.
 
 Your read is a fresh pair of eyes over the whole system at once, which no
 single ticket has ever had.
@@ -39,7 +39,7 @@ single ticket has ever had.
 
 1. **Flag, don't fix.** This session is evaluation and planning; it writes no
    code. That includes not fixing "obvious" one-liners. The precedent is
-   [#141](https://github.com/rocne/dstow/issues/141), which filed what it
+   [expansive manual prose (#141)](https://github.com/rocne/dstow/issues/141), which filed what it
    found and fixed none of it.
 2. **Don't file GitHub issues.** Capture findings in your deliverable with
    enough detail that filing is mechanical. Whether any of it becomes a
@@ -125,10 +125,10 @@ unassessed severity**.
    and `internal/ops/info.go:286`, backing `config.didYouMean` and
    `ops.nearestField` respectively. Two owners of one algorithm that two
    user-facing suggestion surfaces depend on, and
-   [#157](https://github.com/rocne/dstow/issues/157) already established a
+   [distance-gating info's field suggestions (#157)](https://github.com/rocne/dstow/issues/157) already established a
    shared rule for them (distance gate ≤ 2). They can drift. Cosmetic today;
    structurally the wrong shape. Note that
-   [#127](https://github.com/rocne/dstow/issues/127) covers *adjacent*
+   [modernizing pre-Go-1.21 idiom (#127)](https://github.com/rocne/dstow/issues/127) covers *adjacent*
    hand-rolled-helper cleanup but does **not** name this one.
 
 2. **`internal/ignore` refuses `!` and `//` twice** — once at config parse and
