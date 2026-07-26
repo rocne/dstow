@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2](https://github.com/rocne/dstow/compare/v0.6.1...v0.6.2) (2026-07-25)
+
+
+### Bug Fixes
+
+* **rebuild:** recover from a corrupt ledger instead of refusing it ([#191](https://github.com/rocne/dstow/issues/191)) ([f2b2874](https://github.com/rocne/dstow/commit/f2b28741fec6bf25216a900fbdfa624104ffe2de)), closes [#145](https://github.com/rocne/dstow/issues/145)
+* **stow:** dry-run plans against a target directory that does not exist yet ([#190](https://github.com/rocne/dstow/issues/190)) ([d8856de](https://github.com/rocne/dstow/commit/d8856def4bd7d9c8046896e28fb25d47ff72bad1)), closes [#146](https://github.com/rocne/dstow/issues/146)
+
 ## [0.6.1](https://github.com/rocne/dstow/compare/v0.6.0...v0.6.1) (2026-07-25)
 
 
