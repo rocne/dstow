@@ -35,16 +35,19 @@ Sub-questions the evaluation should separate out:
   project that dstow's port depends on? gostow is a standalone released
   product with its own users, not a vendored library.
 
-## Q2 — Does the port happen at all, and what is the actual motivation?
+## ~~Q2 — What is the motivation?~~ — **answered**
 
-This pack deliberately takes no position. But the evaluation cannot produce a
-useful plan without a stated motivation, because different motivations select
-different options in Q1 and Q7.
+**Rocne, 2026-07-26: Rust is preferable for agentic coding** — type safety and
+a compiler that makes bug classes structurally impossible. Human ergonomics
+explicitly discounted; only what serves the agent counts. Stated in full in the
+README, where its consequences for ranking are worked through.
 
-dstow is at v0.6.2, feature-complete, with 41 of 42 map tickets closed and one
-HITL acceptance walk remaining before v1. The Go implementation is not in
-distress. So the port's value has to come from somewhere specific — and
-naming it changes the plan.
+What remains open is not *why* but *whether the benefit clears the cost* — and
+that is Q1 and Q3, not a separate question. Note the baseline the cost is
+measured against: dstow is at v0.6.2, feature-complete, 41 of 42 map tickets
+closed, one HITL acceptance walk from v1. **The Go implementation is not in
+distress.** The port is an improvement to a working system, so the plan should
+be honest about what is being spent and what is being bought.
 
 ## Q3 — Relationship to v1
 
@@ -88,6 +91,12 @@ Three designs, differing in **where drift is caught** ([`04`](04-rust-cli-practi
 2. **`build.rs` generating the strings at compile time** — a missing or
    malformed tag becomes a build failure.
 3. **A proc macro** — same, with more machinery.
+
+**The stated motivation ranks these**: (2) or (3) over (1), because moving a
+failure from test-time to build-time is exactly what the port is being
+undertaken to buy. That does not settle it — (2) and (3) still differ, and the
+runtime-constructed `manual` tree may force some dynamism regardless — but the
+usual "prefer the simpler runtime approach" default does **not** apply here.
 
 Related: **does the `docs/`-is-binary-content rule (ADR 0003) survive?** It
 should — it is about product semantics, not language — but its *enforcement*

@@ -105,10 +105,19 @@ platform's engine binary needs to ride in any given release artifact.
    an unsigned binary in front of Gatekeeper that never passed through any
    installer. Add `noexec` mounts on hardened Linux `/tmp` for a second
    deployment-environment failure mode.
-3. **It does not remove Go.** The Go toolchain stays in the build, gostow
-   stays maintained in Go, and the exercise becomes "rewrote the frontend."
-   If the port's motivation is single-language ownership, this option does not
-   deliver it — which makes the motivation question (Q2) decisive here.
+3. **It leaves the wrong half in Go — and this is the decisive objection.**
+   Read against the stated motivation (see the README: Rust is preferred
+   because the compiler makes bug classes structurally impossible, judged
+   purely by what serves an agent), embedding is not merely "two languages."
+   It is worse than that: it keeps **the gnarliest, most quirk-dense,
+   least-obvious code in the entire system** — Perl-faithful `Getopt::Long`
+   emulation, `shellwords` tokenizing, stow's conflict and folding rules, a
+   documented divergence ledger — in the language with the weaker guarantees,
+   while porting the comparatively well-behaved composition logic.
+
+   That is the inverse of what the motivation asks for. **The engine is the
+   part that most deserves Rust.** If any half is going to be left in Go on
+   agentic-coding grounds, it is the wrong half.
 
 **The FFI variant** — `go build -buildmode=c-archive` and link the archive
 into the Rust binary — avoids the extraction and Gatekeeper problems, and
@@ -119,11 +128,36 @@ embedding convenience, and still needs a hand-written C-ABI shim marshalling
 Go maps across the boundary. Also inherits Go's runtime — its scheduler and
 signal handling — inside a Rust process.
 
-**Verdict offered, not imposed:** weak as a destination, genuinely useful as
-**sequencing**. Shipping a Rust frontend over an out-of-process gostow would
-de-risk the 13k-line half of the port independently of the 5.4k-line half, and
-let the engine be replaced later without a second frontend migration. Worth
-the evaluation's consideration as a *phase*, not an endpoint.
+### What the idea is actually for: a two-step migration
+
+Rocne's framing, and it is the right one — the interest is **sequencing, not
+architecture**. Import the library in two steps rather than porting 18.5k
+lines in one move. Explicitly raised as an idea, not a requirement.
+
+**As sequencing it is legitimate, and the arithmetic is favourable.** Step 1
+ports dstow's 13,124 lines — **71% of the combined production code** — and
+ships a working Rust binary against the existing e2e suite. Step 2 replaces
+the engine, with no second frontend migration and no flag-day. Each step is
+independently verifiable: step 1 by the e2e exercisers, step 2 by the
+conformance oracle. That is a genuinely better risk profile than one 18.5k-line
+jump, and it front-loads the majority of the motivation's benefit.
+
+**The failure mode to design against is step 2 never happening.** A shipped,
+working, two-language dstow has no forcing function to finish, and the
+resting state it decays to is precisely the configuration objection 3
+describes as worst — permanently two languages, with the hard part still in the
+weaker one. Compounding it: the IPC surface built for step 1 is throwaway work
+that becomes load-bearing the longer step 2 is deferred, and once gostow has
+shipped a machine-readable introspection API to real users, removing it is a
+breaking change to a separate released product.
+
+**So the two-step is defensible if — and only if — step 2 is committed rather
+than aspirational**, and the plan should say which. A cheaper variant worth
+weighing: sequence the *port* in two steps without ever shipping the
+intermediate state, i.e. keep the Go engine as scaffolding during development
+and behind a feature gate, and cut one release when both halves are Rust. That
+buys the same incremental verifiability without creating a public IPC contract
+or a comfortable resting place.
 
 ### What makes this more tractable than it sounds
 

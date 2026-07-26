@@ -35,6 +35,57 @@ stow projects are **ruled out** (below). Porting dstow without an answer for
 gostow is not a plan. See [`03-concept-map.md`](03-concept-map.md) § *The
 engine question* — it is the largest single decision in the evaluation.
 
+## The motivation — stated, and load-bearing
+
+**Rocne's determination, 2026-07-26, from prior research outside this project:**
+
+> Rust is the preferable language for **agentic coding** — type safety, and a
+> compiler that makes whole classes of bug structurally impossible rather than
+> merely detectable. **Human ergonomic considerations are explicitly
+> discounted**; the question is only what is best for the agent, and what is
+> best for the agent is a language that gives clear feedback and makes problems
+> impossible.
+
+This is not background colour. It is the **ranking function** for every option
+in this pack, and several recommendations change under it:
+
+- **Compile-time beats test-time, always.** Where a design choice moves a
+  failure from "a test catches it" to "the build catches it," that is the
+  choice — even at a cost in machinery. This reverses the usual default of
+  preferring the simpler runtime approach. It directly re-ranks the help-text
+  design ([`04`](04-rust-cli-practices.md) § *Help text comes from `docs/`*)
+  toward `build.rs`, and the clap derive-vs-builder question toward derive.
+- **Exhaustiveness is a feature purchase, not a nicety.** The exit-code map
+  becoming a compiler-checked `match` over a `thiserror` enum
+  ([`04`](04-rust-cli-practices.md) § *Error handling*) is not a minor
+  ergonomic gain — it is a direct instance of the motivation. This codebase has
+  been bitten twice by "a detector was built and the caller contract was
+  deferred" ([#139](https://github.com/rocne/dstow/issues/139),
+  [#151](https://github.com/rocne/dstow/issues/151)); both are the shape of bug
+  the motivation targets.
+- **Making invalid states unrepresentable is the point**, not a side effect.
+  The observation that `ops`'s struct-plus-status-code result types collapse
+  into enums-with-payload ([`03`](03-concept-map.md)) is a *primary* benefit
+  under this framing, not an incidental line-count win.
+- **Runtime dynamism is a cost.** Anything constructed at startup rather than
+  declared at compile time — the `manual` command tree, runtime help
+  extraction, `dyn Trait` seams — is spending the exact currency the port is
+  being undertaken to acquire. Not disqualifying, but it needs to earn its
+  place rather than being chosen by default.
+- **Ergonomic arguments carry no weight.** Where this pack cites developer
+  convenience for or against an option, discount it. Where it cites
+  compiler-enforced correctness, weight it heavily.
+
+**One thing worth stating plainly**, because it affects how much the port has
+to carry: the strongest agentic-coding assets dstow already has are **not**
+language-dependent. The specification corpus (REQUIREMENTS, DESIGN, CONTEXT,
+the ADRs) and the ~1:1 test-to-production ratio are what make this codebase
+navigable and safely modifiable today, and **both survive a port unchanged**.
+Rust's guarantees compound with them; they do not replace them. A plan should
+treat the port as *adding a compiler to an already-specified system* — which
+is a much better position than porting into a spec vacuum, and is a large part
+of why this port is tractable at all.
+
 ## Rulings already made — do not re-open these
 
 Recorded 2026-07-26, after Rocne reviewed the first draft of this pack. They

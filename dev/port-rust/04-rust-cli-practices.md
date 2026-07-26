@@ -78,6 +78,15 @@ builder-constructed `Command`. So the natural design is:
 - **Builder** the `manual` subtree by walking the embedded tree at startup.
 - Merge them on one root `Command`.
 
+**Under the stated motivation this split is not merely convenient — it is the
+right boundary**, and it should be pushed as far toward derive as it will go.
+Derive gives compile-time checking of the command surface; builder is runtime
+construction, which spends exactly the currency the port exists to acquire.
+Confining runtime dynamism to the one subtree that genuinely needs it — and
+considering whether even that could be generated at build time from the
+embedded tree, since the tree is known at compile time — is the design the
+motivation argues for.
+
 Also verified for the Go side and worth re-verifying in clap: cobra v1.10.1
 lets a *hidden parent* still complete its visible children, so `dstow <TAB>`
 omits `manual` while `dstow manual <TAB>` works. Confirm clap's
