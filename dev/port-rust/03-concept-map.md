@@ -24,7 +24,10 @@ conflict detection, dot-prefix translation, ignore resolution, the task model,
 dstow consumes **26 symbols** from it. It never uses gostow's CLI, its
 man generator, its colors, or the `Stow`/`Unstow`/`Restow` sugar.
 
-**There is no Rust crate that fills this role.** Surveyed and rejected:
+**There is no Rust crate that fills this role, and adopting one is ruled out.**
+Rocne reviewed the survey below and ruled the existing projects **inadequate —
+not an option to evaluate** (2026-07-26). The table is retained as the record
+of *why*, so the evaluation does not re-survey the same ground:
 
 | Candidate | Why not |
 |---|---|
@@ -33,6 +36,9 @@ man generator, its colors, or the `Stow`/`Unstow`/`Restow` sugar.
 | [`stow-rs`](https://github.com/0xErgod/stow-rs) | Uses **hardlinks, not symlinks**. Different semantics; incompatible with dstow's ledger and status model. |
 | [`rstow`](https://github.com/mbroeders/rstow) | Explicitly WIP. |
 | `stowsave`, `farmbot` | Adjacent tools, not engines. |
+
+**Consequence for the option set below: whatever the engine becomes, dstow
+owns it.** No third party is going to carry the conformance guarantee.
 
 ### Why fidelity is not negotiable here
 
@@ -51,26 +57,73 @@ breaks the promise silently.
 ### The options, as this pack sees them
 
 Stated as options, **not** a recommendation — this is the evaluation's call.
+Adopting an existing crate is not among them; see above.
 
 1. **Port gostow to Rust as a library crate.** Faithful, keeps the guarantee,
    and the conformance harness gives an executable acceptance test. Cost:
    ~5.4k lines of production Go plus a differential test harness, *including*
    a `Getopt::Long` port and a `shellwords` port. Roughly doubles the port.
-2. **Keep gostow in Go; call the binary as a subprocess.** dstow already
-   shells out to `git` on exactly this reasoning (A17). But the seam it needs
-   is a *library* seam — `Expected` and `Owner` return structured maps that
-   drive the ledger and every maintenance verb — and gostow's CLI does not
-   expose them. Would require adding an IPC/JSON surface to gostow, and
-   ships two binaries.
-3. **Write a native Rust engine against the conformance harness.** Not a
+2. **Write a native Rust engine against the conformance harness.** Not a
    translation of gostow but a fresh implementation, verified by the same
    differential oracle re-pointed at it. Possibly cleaner than transliterating
    Go, but discards gostow's accumulated quirk-ledger knowledge unless the
    harness catches every case.
+3. **Keep gostow in Go and call it out-of-process** — as a bundled binary or
+   an embedded-and-extracted one. dstow already shells out to `git` on
+   related reasoning (A17). Characterized in full below; the short version is
+   that it is viable as a *transitional phase* and weak as a destination.
 4. **Reduce scope: drop stow compatibility.** Makes the engine dstow's own
    and much smaller — but deletes DESIGN §3.6, the `.stowrc` layer, and the
    adoption story. A product decision, not a technical one.
 5. **Don't port.** A legitimate conclusion for the evaluation to reach.
+
+### Option 3 in detail — bundling or embedding the Go binary
+
+Raised by Rocne 2026-07-26 and characterized here so the evaluation does not
+have to re-derive it. It is the standard escape hatch and deserves a written
+verdict rather than a shrug.
+
+**Size is not the objection.** gostow builds to **2.3 MB** stripped
+(`CGO_ENABLED=0`, `-ldflags="-s -w"`), measured. Against a Rust dstow of
+broadly similar size, a combined artifact is unremarkable — and only one
+platform's engine binary needs to ride in any given release artifact.
+
+**Three real objections:**
+
+1. **The seam dstow needs is a library seam.** `Expected(opts, pkg) →
+   map[string]string` and `Owner(dir, path) → (pkg, owned, err)` drive the
+   ledger reconciliation and every maintenance verb. gostow's CLI exposes
+   **neither**. So this option requires first designing and shipping a
+   machine-readable introspection surface on gostow — at which point
+   *embedding the binary* versus *requiring gostow on `PATH`* is merely a
+   packaging choice, and the real work (the IPC contract, its versioning, its
+   error mapping) is identical in both. That work is not small, and it becomes
+   a permanent compatibility surface between two separately-released products.
+2. **macOS code signing.** dstow's Homebrew cask already carries a post-install
+   hook stripping `com.apple.quarantine` from the installed binary. Extracting
+   a *second* executable to a cache directory at runtime and exec'ing it puts
+   an unsigned binary in front of Gatekeeper that never passed through any
+   installer. Add `noexec` mounts on hardened Linux `/tmp` for a second
+   deployment-environment failure mode.
+3. **It does not remove Go.** The Go toolchain stays in the build, gostow
+   stays maintained in Go, and the exercise becomes "rewrote the frontend."
+   If the port's motivation is single-language ownership, this option does not
+   deliver it — which makes the motivation question (Q2) decisive here.
+
+**The FFI variant** — `go build -buildmode=c-archive` and link the archive
+into the Rust binary — avoids the extraction and Gatekeeper problems, and
+avoids per-operation process spawns. But it **requires cgo**, which forfeits
+`CGO_ENABLED=0`, and Go's c-archive under static musl is notoriously painful.
+It trades away the musl goal ([`05`](05-distribution-and-musl.md)) to buy the
+embedding convenience, and still needs a hand-written C-ABI shim marshalling
+Go maps across the boundary. Also inherits Go's runtime — its scheduler and
+signal handling — inside a Rust process.
+
+**Verdict offered, not imposed:** weak as a destination, genuinely useful as
+**sequencing**. Shipping a Rust frontend over an out-of-process gostow would
+de-risk the 13k-line half of the port independently of the 5.4k-line half, and
+let the engine be replaced later without a second frontend migration. Worth
+the evaluation's consideration as a *phase*, not an endpoint.
 
 ### What makes this more tractable than it sounds
 

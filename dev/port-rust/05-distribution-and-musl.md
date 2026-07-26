@@ -83,20 +83,22 @@ of `.goreleaser/dstow.yaml` — the hard-won part, the part that took issues
   Go uses `-X main.version=`; the Rust equivalent is typically
   `env!("CARGO_PKG_VERSION")` or a `build.rs`, not a linker flag.
 
-### The one hard coupling: `rocne/release-ci`
+### `rocne/release-ci` — **not a concern. Already being handled upstream.**
 
-`release-ci`'s reusable `release.yml` hardcodes:
+**Ruled by Rocne, 2026-07-26: the release path is out of scope for this
+evaluation.** There is an existing upstream workstream in `rocne/release-ci`
+to accommodate Rust rather than Go. **The evaluation should not plan around
+release-ci, cost it, or treat it as a blocker or a dependency.**
 
-```yaml
-- uses: actions/setup-go@…v7.0.0
-  with:
-    go-version-file: go.mod
-```
+Recorded only so the observation is not re-derived: as of `v0.1.5` the
+reusable `release.yml` hardcodes `actions/setup-go` with
+`go-version-file: go.mod`, which is the coupling the upstream work addresses.
+That is upstream's problem and upstream is on it.
 
-So a Rust dstow cannot call `release-ci@v0.1.5` as-is. This is a small,
-well-scoped change to a repo Rocne owns — parameterize the toolchain step, or
-add a Rust variant — but it is **a change to a shared dependency with another
-consumer (gostow)**, so it is a cross-repo decision, not a dstow-local one.
+The consequence for this pack is that **the entire distribution question
+reduces to "GoReleaser can build Rust"** — which it can, since v2.5 — plus the
+musl verification below. Everything else in the pipeline is artifact-stage and
+language-agnostic.
 
 The **artifact-shape contract (D34)** that `install.sh` consumes is already
 language-agnostic and documented in the script itself:

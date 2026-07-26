@@ -10,12 +10,16 @@ Nothing here is ranked by importance except Q1, which genuinely dominates.
 
 ## Q1 — The engine. What happens to gostow?
 
-**The dominant question.** No Rust crate fills gostow's role; the surveyed
-candidates are binary-only, unconformance-tested, semantically different, or
-WIP ([`03`](03-concept-map.md)). The options — port it, subprocess it, rewrite
-natively against the conformance oracle, drop stow compatibility, or don't
-port — differ by roughly a factor of two in total project size and by a large
-margin in what they preserve.
+**The dominant question, and now a narrower one.** No Rust crate fills
+gostow's role, and **Rocne has ruled the existing projects inadequate — not an
+option to evaluate** (2026-07-26). So no third party carries the conformance
+guarantee: whatever the engine becomes, dstow owns it.
+
+What remains ([`03`](03-concept-map.md)): port gostow to Rust; write a native
+Rust engine against the conformance oracle; keep gostow in Go out-of-process
+(characterized there — weak as a destination, useful as sequencing); drop stow
+compatibility; or don't port. These differ by roughly a factor of two in total
+project size and by a large margin in what they preserve.
 
 Sub-questions the evaluation should separate out:
 
@@ -112,18 +116,15 @@ completion but implement it directly rather than through `clap_complete`.
 Follows from Q1 but is a scoping question in its own right. gostow is a
 separate released product with its own installer, packages, man page,
 conformance suite, and Homebrew cask. If it ports, that is a second project
-with its own release pipeline — and `rocne/release-ci` is a **shared**
-dependency of both (Q8).
+with its own release pipeline and its own users.
 
-## Q8 — `rocne/release-ci` is shared. Who changes it, and when?
+## ~~Q8 — `rocne/release-ci`~~ — **closed, not a question**
 
-`release-ci`'s reusable `release.yml` hardcodes
-`actions/setup-go` with `go-version-file: go.mod` ([`05`](05-distribution-and-musl.md)).
-A Rust consumer needs that parameterized or a Rust variant added.
+**Ruled by Rocne, 2026-07-26.** An upstream workstream in `rocne/release-ci`
+is already accommodating Rust. The release path is **out of scope** for this
+evaluation: do not plan around it, cost it, or treat it as a blocker.
 
-Small change, but it lands in a repo whose **other consumer is gostow** — so
-if gostow stays Go and dstow goes Rust, release-ci must support both
-simultaneously. Cross-repo sequencing question.
+Retained as a numbered heading so the answer travels with the question.
 
 ## Q9 — musl: confirm the tentative direction, and verify the toolchain path
 

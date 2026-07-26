@@ -30,9 +30,31 @@ Go reimplementation of GNU Stow 2.4.1, also Rocne's. dstow's entire deploy path
 (conflict detection, tree folding, dot-prefix translation, ignore resolution,
 adopt, `.stowrc` parsing) lives there.
 
-There is no Rust crate that fills gostow's role. Porting dstow without an
-answer for gostow is not a plan. See [`03-concept-map.md`](03-concept-map.md)
-§ *The engine question* — it is the largest single decision in the evaluation.
+There is no Rust crate that fills gostow's role, and the existing Rust
+stow projects are **ruled out** (below). Porting dstow without an answer for
+gostow is not a plan. See [`03-concept-map.md`](03-concept-map.md) § *The
+engine question* — it is the largest single decision in the evaluation.
+
+## Rulings already made — do not re-open these
+
+Recorded 2026-07-26, after Rocne reviewed the first draft of this pack. They
+narrow the evaluation; treat them as settled inputs.
+
+1. **The release path is out of scope.** An upstream workstream in
+   `rocne/release-ci` is already accommodating Rust rather than Go. Do not
+   plan around it, cost it, or treat it as a blocker or dependency. What was
+   Q8 is closed. See [`05`](05-distribution-and-musl.md).
+2. **The existing Rust stow projects are inadequate and are not an option.**
+   `rustow`, `new-stow`, `stow-rs`, `rstow` were surveyed and rejected; the
+   survey is retained in [`03`](03-concept-map.md) as the record of *why*, not
+   as a live option. **Whatever the engine becomes, dstow owns it.**
+3. **Bundling or embedding the Go gostow binary has been characterized** —
+   raised by Rocne, analysed in [`03`](03-concept-map.md) § *Option 3 in
+   detail*. Verdict offered: weak as a destination, genuinely useful as a
+   sequencing phase. Not a settled ruling; an option with its costs named.
+
+Everything still genuinely open lives in
+[`06-open-questions.md`](06-open-questions.md).
 
 ## Reading order
 
