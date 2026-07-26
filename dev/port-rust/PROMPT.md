@@ -1,8 +1,11 @@
-# Session-start prompt
+# Session-start prompt — HISTORICAL
 
-Copy-paste this to open the evaluation session. Not part of the pack's
-content — it exists so the prompt is durable and editable rather than
-retyped.
+**This prompt already served its purpose.** It opened the evaluation session
+on 2026-07-26; the evaluation is done ([`08-evaluation.md`](08-evaluation.md),
+decisions recorded in its §6.1) and this prompt's constraints (write no Rust,
+create no map or tickets) died with that session. **The next session's prompt
+is [`PROMPT-PORT.md`](PROMPT-PORT.md)** — the port kickoff. Kept verbatim
+below as the record of what the evaluating session was charged with.
 
 ---
 
