@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3](https://github.com/rocne/dstow/compare/v0.6.2...v0.6.3) (2026-07-26)
+
+
+### Bug Fixes
+
+* **manual:** document that clean holds the ledger lock across its orphan prompt ([#209](https://github.com/rocne/dstow/issues/209)) ([6ed7ea3](https://github.com/rocne/dstow/commit/6ed7ea3929ddaecaa36795a64cda806566f23e62)), closes [#201](https://github.com/rocne/dstow/issues/201)
+
 ## [0.6.2](https://github.com/rocne/dstow/compare/v0.6.1...v0.6.2) (2026-07-25)
 
 
