@@ -91,6 +91,15 @@ var errCleanNoChange = errors.New("ops: clean found nothing to change")
 // under the ledger lock (§6.4). Contradicted entries are pruned by Update;
 // broken links are removed freely; orphans are confirmed per link (unless
 // Force); unobservable entries are left alone.
+//
+// Orphan confirmation happens *inside* the transaction, so the lock is held
+// across the prompt — unlike deploy and adopt, which confirm before taking it.
+// That asymmetry is deliberate and ruled (§6.4, #201): clean's question is
+// only true relative to the ledger state the lock protects, so asking it
+// outside would reintroduce the stale-plan window the fresh recompute closes;
+// deploy's and adopt's questions are about file content, which the ledger does
+// not govern. Moving this prompt out of the closure is the change the ruling
+// forbids — TestCleanPromptsUnderTheLock goes red if it happens.
 func (a *App) Clean(req CleanRequest) (*CleanResult, error) {
 	res := &CleanResult{}
 	c := a.newClassifier()

@@ -670,6 +670,22 @@ write-side courtesy only.
   non-interactive error / force; contradicted → **prune entry only, never
   touches disk** — freely but loudly, each prune reported with its evidence.
   One atomic ledger write at the end.
+  - The orphan confirmation is asked **while the lock is held** — clean is the
+    one verb that prompts inside its own transaction. This is deliberate: the
+    question "this entry is an orphan, remove it?" is only true relative to the
+    ledger state the lock protects, so asking it outside would reintroduce the
+    stale-plan window the fresh-recompute rule exists to close. `deploy` and
+    `adopt` prompt *before* taking the lock because their question is about
+    file **content** ("the package's copy differs, overwrite?"), whose answer
+    does not depend on ledger state — a principled divergence, not an
+    oversight. The cost is that a user idling at the prompt holds the lock, so
+    concurrent writes fail fast with exit 3 until they answer. (Ruled
+    [#201](https://github.com/rocne/dstow/issues/201), 2026-07-26, retractable
+    — the counter, classify-under-lock / prompt-outside / re-acquire and
+    re-verify before acting, is preserved on the ticket: it moves human latency
+    out of the lock but pays a second lock cycle plus "this changed while you
+    were deciding" reporting, rejected on cost/benefit rather than on merit.
+    `TestCleanPromptsUnderTheLock` pins the decision.)
 - **rebuild** (write): walks every currently configured target root,
   recursively, lstat-based, never descending through symlinks. Each symlink
   found is tested with `stow.Owner` against known repos; owned links become

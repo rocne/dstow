@@ -61,7 +61,10 @@ changes.
   `--all` cannot ask "everything?" without a terminal. `--all` is the answer.
 - **A corrupt ledger**, or one written by a newer dstow than the one running.
   The `fix:` line names `dstow rebuild` for the former.
-- **Lock contention** — another dstow holds the ledger lock.
+- **Lock contention** — another dstow holds the ledger lock. It may be waiting
+  on a person: `clean` asks its orphan questions with the lock held, so a
+  dstow parked at a `remove this orphan?` prompt blocks other writes until
+  it is answered. Answer or cancel that one, and the lock frees immediately.
 - **A write command run from inside a hook.** Reads work from inside one; the
   write set refuses. See `dstow manual hooks`.
 - **Guards refusing.** `repo remove` on a repo with stowed links; a managed
